@@ -3,10 +3,8 @@ package com.highpowerbear.hpbsystem.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.highpowerbear.hpbsystem.common.CoreSettings;
 import com.highpowerbear.hpbsystem.enums.Action;
-import com.highpowerbear.hpbsystem.enums.Currency;
 import com.highpowerbear.hpbsystem.enums.OrderStatus;
 import com.highpowerbear.hpbsystem.enums.OrderType;
-import com.highpowerbear.hpbsystem.enums.SecType;
 import com.highpowerbear.hpbsystem.enums.SubmitType;
 
 import javax.persistence.CascadeType;
@@ -34,10 +32,10 @@ import java.util.List;
 @Entity
 @Table(name = "ib_order", schema = "hpbsystem", catalog = "hpbsystem")
 public class IbOrder implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1176562276081157205L;
 
     @Id
-    @SequenceGenerator(name="ib_order_generator", sequenceName = "ib_order_seq", schema = "hpbanalytics", catalog = "hpbanalytics", allocationSize = 1)
+    @SequenceGenerator(name="ib_order_generator", sequenceName = "ib_order_seq", schema = "hpbsystem", catalog = "hpbsystem", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ib_order_generator")
     private Long id;
     private Long permId;
@@ -47,12 +45,8 @@ public class IbOrder implements Serializable {
     private Action action;
     private Integer quantity;
     @ManyToOne
-    private Underlying underlying;
-    @Enumerated(EnumType.STRING)
-    private Currency currency;
+    private InstrumentRoot instrumentRoot;
     private String symbol;
-    @Enumerated(EnumType.STRING)
-    private SecType secType;
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
     @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
@@ -99,8 +93,7 @@ public class IbOrder implements Serializable {
 
         IbOrder ibOrder = (IbOrder) o;
 
-        return !(id != null ? !id.equals(ibOrder.id) : ibOrder.id != null);
-
+        return id != null ? id.equals(ibOrder.id) : ibOrder.id == null;
     }
 
     @Override
@@ -156,20 +149,12 @@ public class IbOrder implements Serializable {
         this.quantity = quantity;
     }
 
-    public Underlying getUnderlying() {
-        return underlying;
+    public InstrumentRoot getInstrumentRoot() {
+        return instrumentRoot;
     }
 
-    public void setUnderlying(Underlying underlying) {
-        this.underlying = underlying;
-    }
-
-    public Currency getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(Currency currency) {
-        this.currency = currency;
+    public void setInstrumentRoot(InstrumentRoot instrumentRoot) {
+        this.instrumentRoot = instrumentRoot;
     }
 
     public String getSymbol() {
@@ -178,14 +163,6 @@ public class IbOrder implements Serializable {
 
     public void setSymbol(String symbol) {
         this.symbol = symbol;
-    }
-
-    public SecType getSecType() {
-        return secType;
-    }
-
-    public void setSecType(SecType secType) {
-        this.secType = secType;
     }
 
     public OrderType getOrderType() {

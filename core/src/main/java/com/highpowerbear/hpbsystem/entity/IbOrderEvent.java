@@ -15,11 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Calendar;
 
 /**
  * Created by robertk on 10/27/2018.
@@ -27,10 +24,10 @@ import java.util.Calendar;
 @Entity
 @Table(name = "ib_order_event", schema = "hpbsystem", catalog = "hpbsystem")
 public class IbOrderEvent implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7594577069454549547L;
 
     @Id
-    @SequenceGenerator(name="ib_order_event_generator", sequenceName = "ib_order_event_seq", schema = "hpbanalytics", catalog = "hpbanalytics", allocationSize = 1)
+    @SequenceGenerator(name="ib_order_event_generator", sequenceName = "ib_order_event_seq", schema = "hpbsystem", catalog = "hpbsystem", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ib_order_event_generator")
     private Long id;
     @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
@@ -54,7 +51,7 @@ public class IbOrderEvent implements Serializable {
 
         IbOrderEvent that = (IbOrderEvent) o;
 
-        return !(id != null ? !id.equals(that.id) : that.id != null);
+        return id != null ? id.equals(that.id) : that.id == null;
     }
 
     @Override
