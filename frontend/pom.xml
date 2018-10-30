@@ -52,7 +52,7 @@
                             <outputDirectory>${basedir}/target/classes/static</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/src/main/app/build/production/HanGui</directory>
+                                    <directory>${basedir}/src/main/app/build/production/HpbSystemGui</directory>
                                 </resource>
                             </resources>
                         </configuration>
