@@ -1,8 +1,8 @@
-package com.highpowerbear.hpbsystem.entity;
+package com.highpowerbear.hpboptions.entity;
 
-import com.highpowerbear.hpbsystem.enums.Currency;
-import com.highpowerbear.hpbsystem.enums.Exchange;
-import com.highpowerbear.hpbsystem.enums.SecType;
+import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.Exchange;
+import com.highpowerbear.hpboptions.enums.SecType;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -15,7 +15,7 @@ import java.io.Serializable;
  * Created by robertk on 10/28/2018.
  */
 @Entity
-@Table(name = "instrument", schema = "hpbsystem", catalog = "hpbsystem")
+@Table(name = "instrument", schema = "hpboptions", catalog = "hpboptions")
 public class InstrumentRoot implements Serializable {
     private static final long serialVersionUID = 7243224755428283653L;
 

@@ -1,11 +1,11 @@
-package com.highpowerbear.hpbsystem.entity;
+package com.highpowerbear.hpboptions.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.highpowerbear.hpbsystem.common.CoreSettings;
-import com.highpowerbear.hpbsystem.enums.Action;
-import com.highpowerbear.hpbsystem.enums.OrderStatus;
-import com.highpowerbear.hpbsystem.enums.OrderType;
-import com.highpowerbear.hpbsystem.enums.SubmitType;
+import com.highpowerbear.hpboptions.common.CoreSettings;
+import com.highpowerbear.hpboptions.enums.Action;
+import com.highpowerbear.hpboptions.enums.OrderStatus;
+import com.highpowerbear.hpboptions.enums.OrderType;
+import com.highpowerbear.hpboptions.enums.SubmitType;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -30,12 +30,12 @@ import java.util.List;
  * Created by robertk on 10/27/2018.
  */
 @Entity
-@Table(name = "ib_order", schema = "hpbsystem", catalog = "hpbsystem")
+@Table(name = "ib_order", schema = "hpboptions", catalog = "hpboptions")
 public class IbOrder implements Serializable {
     private static final long serialVersionUID = -1176562276081157205L;
 
     @Id
-    @SequenceGenerator(name="ib_order_generator", sequenceName = "ib_order_seq", schema = "hpbsystem", catalog = "hpbsystem", allocationSize = 1)
+    @SequenceGenerator(name="ib_order_generator", sequenceName = "ib_order_seq", schema = "hpboptions", catalog = "hpboptions", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ib_order_generator")
     private Long id;
     private Long permId;

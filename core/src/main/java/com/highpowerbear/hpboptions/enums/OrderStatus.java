@@ -1,4 +1,4 @@
-package com.highpowerbear.hpbsystem.enums;
+package com.highpowerbear.hpboptions.enums;
 
 /**
  * Created by robertk on 10/27/2018.

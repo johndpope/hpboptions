@@ -1,4 +1,4 @@
-package com.highpowerbear.hpbsystem.common;
+package com.highpowerbear.hpboptions.common;
 
 import java.time.format.DateTimeFormatter;
 

@@ -1,10 +1,10 @@
-package com.highpowerbear.hpbsystem.entity;
+package com.highpowerbear.hpboptions.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.highpowerbear.hpbsystem.common.CoreSettings;
-import com.highpowerbear.hpbsystem.enums.OrderStatus;
+import com.highpowerbear.hpboptions.common.CoreSettings;
+import com.highpowerbear.hpboptions.enums.OrderStatus;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -22,12 +22,12 @@ import java.time.LocalDateTime;
  * Created by robertk on 10/27/2018.
  */
 @Entity
-@Table(name = "ib_order_event", schema = "hpbsystem", catalog = "hpbsystem")
+@Table(name = "ib_order_event", schema = "hpboptions", catalog = "hpboptions")
 public class IbOrderEvent implements Serializable {
     private static final long serialVersionUID = 7594577069454549547L;
 
     @Id
-    @SequenceGenerator(name="ib_order_event_generator", sequenceName = "ib_order_event_seq", schema = "hpbsystem", catalog = "hpbsystem", allocationSize = 1)
+    @SequenceGenerator(name="ib_order_event_generator", sequenceName = "ib_order_event_seq", schema = "hpboptions", catalog = "hpboptions", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ib_order_event_generator")
     private Long id;
     @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)

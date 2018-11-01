@@ -1,4 +1,4 @@
-package com.highpowerbear.hpbsystem;
+package com.highpowerbear.hpboptions;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
