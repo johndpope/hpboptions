@@ -10,5 +10,6 @@ public enum SecType {
     CASH,
     CFD,
     CMDTY,
+    IND,
     BAG
 }

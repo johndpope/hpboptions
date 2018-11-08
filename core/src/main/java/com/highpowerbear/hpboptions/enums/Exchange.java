@@ -6,12 +6,16 @@ package com.highpowerbear.hpboptions.enums;
 public enum Exchange {
     SMART,
     IDEALPRO,
+    CBOE,
     GLOBEX,
     ECBOT,
     NYMEX,
-    CBOE,
     DTB,
     OSE_JPN,
     HKFE,
-    KSE
+    KSE;
+
+    public String getCode() {
+        return name().replace("_", ".");
+    }
 }
