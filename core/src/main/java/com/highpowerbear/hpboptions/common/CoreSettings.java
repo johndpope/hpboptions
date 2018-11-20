@@ -15,5 +15,6 @@ public class CoreSettings {
     public static final DateTimeFormatter LOG_DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss.SSS");
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
-    public static final String WS_TOPIC_PROCESS = "/topic/process";
+    public static final String WS_TOPIC_ORDER = "/topic/order";
+    public static final String WS_TOPIC_MKTDATA = "/topic/mktdata";
 }

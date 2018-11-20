@@ -6,13 +6,14 @@ import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.highpowerbear.hpboptions.process.HeartbeatControl;
 import com.highpowerbear.hpboptions.process.OpenOrderHandler;
+import com.highpowerbear.hpboptions.process.RealtimeDataController;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_PROCESS;
+import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 
 /**
  *
@@ -25,14 +26,16 @@ public class IbListener extends GenericIbListener {
     private final OpenOrderHandler openOrderHandler;
     private final IbController ibController;
     private final HeartbeatControl heartbeatControl;
+    private final RealtimeDataController realtimeDataController;
     private final MessageSender messageSender;
 
     @Autowired
-    public IbListener(ProcessDao processDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatControl heartbeatControl, MessageSender messageSender) {
+    public IbListener(ProcessDao processDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatControl heartbeatControl, RealtimeDataController realtimeDataController, MessageSender messageSender) {
         this.processDao = processDao;
         this.openOrderHandler = openOrderHandler;
         this.ibController = ibController;
         this.heartbeatControl = heartbeatControl;
+        this.realtimeDataController = realtimeDataController;
         this.messageSender = messageSender;
     }
 
@@ -71,13 +74,28 @@ public class IbListener extends GenericIbListener {
             processDao.updateIbOrder(ibOrder);
             heartbeatControl.removeHeartbeat(ibOrder);
         }
-        messageSender.sendWsMessage(WS_TOPIC_PROCESS, "order status changed");
+        messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");
     }
 
     @Override
     public void managedAccounts(String accountsList) {
         super.managedAccounts(accountsList);
         ibController.getIbConnection().setAccounts(accountsList);
+    }
+
+    @Override
+    public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
+        realtimeDataController.tickPriceReceived(tickerId, field, price);
+    }
+
+    @Override
+    public void tickSize(int tickerId, int field, int size) {
+        realtimeDataController.tickSizeReceived(tickerId, field, size);
+    }
+
+    @Override
+    public void tickGeneric(int tickerId, int tickType, double value) {
+        realtimeDataController.tickGenericReceived(tickerId, tickType, value);
     }
 
     @Override

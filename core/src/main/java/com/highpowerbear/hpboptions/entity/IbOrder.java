@@ -45,7 +45,7 @@ public class IbOrder implements Serializable {
     private Action action;
     private Integer quantity;
     @ManyToOne
-    private ContractRoot contractRoot;
+    private OptionRoot optionRoot;
     private String symbol;
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
@@ -149,12 +149,12 @@ public class IbOrder implements Serializable {
         this.quantity = quantity;
     }
 
-    public ContractRoot getContractRoot() {
-        return contractRoot;
+    public OptionRoot getOptionRoot() {
+        return optionRoot;
     }
 
-    public void setContractRoot(ContractRoot contractRoot) {
-        this.contractRoot = contractRoot;
+    public void setOptionRoot(OptionRoot optionRoot) {
+        this.optionRoot = optionRoot;
     }
 
     public String getSymbol() {

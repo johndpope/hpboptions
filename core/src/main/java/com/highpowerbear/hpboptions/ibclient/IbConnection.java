@@ -34,10 +34,6 @@ public class IbConnection {
         this.eReaderSignal = eReaderSignal;
     }
 
-    private String print() {
-        return "host=" + host + ", port=" + port + ", clientId=" + clientId;
-    }
-
     public void connect() {
         if (eClientSocket == null) {
             return;
@@ -85,6 +81,14 @@ public class IbConnection {
             }
         }
     }
+
+    public boolean checkConnected() {
+        if (!isConnected()) {
+            log.info("not connected " + print());
+        }
+        return isConnected();
+    }
+
     @JsonProperty
     public Boolean isConnected() {
         return eClientSocket != null && eClientSocket.isConnected();
@@ -116,5 +120,9 @@ public class IbConnection {
 
     public EClientSocket getClientSocket() {
         return eClientSocket;
+    }
+
+    private String print() {
+        return "host=" + host + ", port=" + port + ", clientId=" + clientId;
     }
 }

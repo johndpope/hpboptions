@@ -5,37 +5,30 @@ import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.enums.SecType;
 
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.io.Serializable;
 
 /**
- * Created by robertk on 10/28/2018.
+ * Created by robertk on 11/20/2018.
  */
 @Entity
-@Table(name = "contract_root", schema = "hpboptions", catalog = "hpboptions")
-public class ContractRoot implements Serializable {
-    private static final long serialVersionUID = 7243224755428283653L;
-
+@Table(name = "option_root", schema = "hpboptions", catalog = "hpboptions")
+public class OptionRoot {
     @Id
     private Long id;
-    @Enumerated(EnumType.STRING)
-    private SecType secType;
     private Currency currency;
     private Exchange exchange;
     private Integer multiplier;
-    @ManyToOne
-    private Underlying underlying;
+    private SecType undlSecType;
+    private String undlSymbol;
+    private Exchange undlExchange;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ContractRoot that = (ContractRoot) o;
+        OptionRoot that = (OptionRoot) o;
 
         return id != null ? id.equals(that.id) : that.id == null;
     }
@@ -51,14 +44,6 @@ public class ContractRoot implements Serializable {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public SecType getSecType() {
-        return secType;
-    }
-
-    public void setSecType(SecType secType) {
-        this.secType = secType;
     }
 
     public Currency getCurrency() {
@@ -85,11 +70,27 @@ public class ContractRoot implements Serializable {
         this.multiplier = multiplier;
     }
 
-    public Underlying getUnderlying() {
-        return underlying;
+    public SecType getUndlSecType() {
+        return undlSecType;
     }
 
-    public void setUnderlying(Underlying underlying) {
-        this.underlying = underlying;
+    public void setUndlSecType(SecType undlSecType) {
+        this.undlSecType = undlSecType;
+    }
+
+    public String getUndlSymbol() {
+        return undlSymbol;
+    }
+
+    public void setUndlSymbol(String undlSymbol) {
+        this.undlSymbol = undlSymbol;
+    }
+
+    public Exchange getUndlExchange() {
+        return undlExchange;
+    }
+
+    public void setUndlExchange(Exchange undlExchange) {
+        this.undlExchange = undlExchange;
     }
 }
