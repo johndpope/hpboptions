@@ -49,7 +49,7 @@ public class IbController {
     }
 
     public boolean requestRealtimeData(int reqId, Contract contract) {
-        log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.printIbContract(contract));
+        log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 
         if (ibConnection.checkConnected()) {
             ibConnection.getClientSocket().reqMktData(reqId, contract, "", false, null);

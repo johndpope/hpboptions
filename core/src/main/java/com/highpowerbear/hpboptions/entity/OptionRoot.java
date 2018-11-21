@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.entity;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.enums.SecType;
+import com.ib.client.Types;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -19,7 +19,7 @@ public class OptionRoot {
     private Currency currency;
     private Exchange exchange;
     private Integer multiplier;
-    private SecType undlSecType;
+    private Types.SecType undlSecType;
     private String undlSymbol;
     private Exchange undlExchange;
 
@@ -70,11 +70,11 @@ public class OptionRoot {
         this.multiplier = multiplier;
     }
 
-    public SecType getUndlSecType() {
+    public Types.SecType getUndlSecType() {
         return undlSecType;
     }
 
-    public void setUndlSecType(SecType undlSecType) {
+    public void setUndlSecType(Types.SecType undlSecType) {
         this.undlSecType = undlSecType;
     }
 

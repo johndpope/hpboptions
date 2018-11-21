@@ -4,7 +4,7 @@ import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.dao.ProcessDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.highpowerbear.hpboptions.process.HeartbeatControl;
+import com.highpowerbear.hpboptions.process.HeartbeatMonitor;
 import com.highpowerbear.hpboptions.process.OpenOrderHandler;
 import com.highpowerbear.hpboptions.process.RealtimeDataController;
 import com.ib.client.Contract;
@@ -25,16 +25,16 @@ public class IbListener extends GenericIbListener {
     private final ProcessDao processDao;
     private final OpenOrderHandler openOrderHandler;
     private final IbController ibController;
-    private final HeartbeatControl heartbeatControl;
+    private final HeartbeatMonitor heartbeatMonitor;
     private final RealtimeDataController realtimeDataController;
     private final MessageSender messageSender;
 
     @Autowired
-    public IbListener(ProcessDao processDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatControl heartbeatControl, RealtimeDataController realtimeDataController, MessageSender messageSender) {
+    public IbListener(ProcessDao processDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, RealtimeDataController realtimeDataController, MessageSender messageSender) {
         this.processDao = processDao;
         this.openOrderHandler = openOrderHandler;
         this.ibController = ibController;
-        this.heartbeatControl = heartbeatControl;
+        this.heartbeatMonitor = heartbeatMonitor;
         this.realtimeDataController = realtimeDataController;
         this.messageSender = messageSender;
     }
@@ -62,17 +62,17 @@ public class IbListener extends GenericIbListener {
         }
 
         if ((OrderStatus.SUBMITTED.getIbStatus().equals(status) || OrderStatus.PRESUBMITTED.getIbStatus().equals(status)) && OrderStatus.SUBMITTED.equals(ibOrder.getStatus())) {
-            heartbeatControl.initHeartbeat(ibOrder);
+            heartbeatMonitor.initHeartbeat(ibOrder);
 
         } else if (OrderStatus.FILLED.getIbStatus().equals(status) && remaining == 0 && !OrderStatus.FILLED.equals(ibOrder.getStatus())) {
             ibOrder.addEvent(OrderStatus.FILLED, avgFillPrice);
             processDao.updateIbOrder(ibOrder);
-            heartbeatControl.removeHeartbeat(ibOrder);
+            heartbeatMonitor.removeHeartbeat(ibOrder);
 
         } else if (OrderStatus.CANCELLED.getIbStatus().equals(status) && !OrderStatus.CANCELLED.equals(ibOrder.getStatus())) {
             ibOrder.addEvent(OrderStatus.CANCELLED, null);
             processDao.updateIbOrder(ibOrder);
-            heartbeatControl.removeHeartbeat(ibOrder);
+            heartbeatMonitor.removeHeartbeat(ibOrder);
         }
         messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");
     }

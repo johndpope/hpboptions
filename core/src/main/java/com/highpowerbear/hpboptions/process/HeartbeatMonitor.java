@@ -17,13 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by robertk on 4/6/2015.
  */
 @Component
-public class HeartbeatControl {
+public class HeartbeatMonitor {
 
     private final ProcessDao processDao;
     private final Map<IbOrder, Integer> openOrderHeartbeatMap = new ConcurrentHashMap<>(); // ibOrder --> number of failed heartbeats left before UNKNOWN
 
     @Autowired
-    public HeartbeatControl(ProcessDao processDao) {
+    public HeartbeatMonitor(ProcessDao processDao) {
         this.processDao = processDao;
     }
 

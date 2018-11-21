@@ -4,7 +4,6 @@ package com.highpowerbear.hpboptions.enums;
  * Created by robertk on 10/27/2018.
  */
 public enum OrderStatus {
-
     PRESUBMITTED(com.ib.client.OrderStatus.PreSubmitted),
     SUBMITTED(com.ib.client.OrderStatus.Submitted),
     UPDATED(null),

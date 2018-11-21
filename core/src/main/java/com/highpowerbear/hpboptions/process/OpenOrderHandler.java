@@ -16,12 +16,12 @@ public class OpenOrderHandler {
     private static final Logger log = LoggerFactory.getLogger(OpenOrderHandler.class);
 
     private final ProcessDao processDao;
-    private final HeartbeatControl heartbeatControl;
+    private final HeartbeatMonitor heartbeatMonitor;
 
     @Autowired
-    public OpenOrderHandler(ProcessDao processDao, HeartbeatControl heartbeatControl) {
+    public OpenOrderHandler(ProcessDao processDao, HeartbeatMonitor heartbeatMonitor) {
         this.processDao = processDao;
-        this.heartbeatControl = heartbeatControl;
+        this.heartbeatMonitor = heartbeatMonitor;
     }
 
     public void handleOpenOrder(int orderId, Contract contract, Order order) {

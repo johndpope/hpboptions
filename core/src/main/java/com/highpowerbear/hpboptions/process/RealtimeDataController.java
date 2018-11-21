@@ -2,19 +2,22 @@ package com.highpowerbear.hpboptions.process;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.enums.RealtimeFieldType;
+import com.highpowerbear.hpboptions.enums.FieldType;
 import com.highpowerbear.hpboptions.ibclient.IbController;
+import com.highpowerbear.hpboptions.process.model.Instrument;
 import com.highpowerbear.hpboptions.process.model.RealtimeData;
 import com.ib.client.TickType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
@@ -22,13 +25,15 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
 /**
  * Created by robertk on 11/5/2018.
  */
-@Service
+@Component
 public class RealtimeDataController {
     private static final Logger log = LoggerFactory.getLogger(RealtimeDataController.class);
 
     private final IbController ibController;
     private final MessageSender messageSender;
+
     private Map<Integer, RealtimeData> realtimeDataMap = new HashMap<>(); // ib request id --> realtimeData
+    private AtomicInteger ibRequestId = new AtomicInteger(0);
 
     @Autowired
     public RealtimeDataController(IbController ibController, MessageSender messageSender) {
@@ -48,11 +53,11 @@ public class RealtimeDataController {
         if (realtimeData == null) {
             return;
         }
-        RealtimeFieldType fieldType = RealtimeFieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.createUpdateMessage(fieldType, price);
+        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
+        String updateMessage = realtimeData.updateValue(fieldType, price);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
 
-        if (fieldType == RealtimeFieldType.LAST) {
+        if (fieldType == FieldType.LAST) {
             String updateMessageChangePct = realtimeData.createUpdateMsgChangePct();
             if (updateMessageChangePct != null) {
                 messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessageChangePct);
@@ -65,8 +70,8 @@ public class RealtimeDataController {
         if (realtimeData == null) {
             return;
         }
-        RealtimeFieldType fieldType = RealtimeFieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.createUpdateMessage(fieldType, size);
+        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
+        String updateMessage = realtimeData.updateValue(fieldType, size);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
@@ -75,38 +80,29 @@ public class RealtimeDataController {
         if (realtimeData == null) {
             return;
         }
-        RealtimeFieldType fieldType = RealtimeFieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.createUpdateMessage(fieldType, value);
+        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
+        String updateMessage = realtimeData.updateValue(fieldType, value);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
-    public void toggleRealtimeData(String contractInfo) {
-        RealtimeData realtimeData = realtimeDataMap.values().stream().filter(r -> r.getContractInfo().equals(contractInfo)).findAny().orElse(null);
-        int ibRequestId = 0; // TODO
+    public void requestRealtimeData(Instrument instrument) {
+        Optional<RealtimeData> realtimeDataOptional = realtimeDataMap.values().stream().filter(rtd -> rtd.getInstrument().equals(instrument)).findAny();
 
-        if (realtimeData == null) {
-            realtimeData = new RealtimeData(contractInfo, ibRequestId);
+        if (!realtimeDataOptional.isPresent()) {
+            log.info("requesting realtime data for " + instrument);
 
-            log.info("requesting realtime data for " + contractInfo);
-            realtimeDataMap.put(ibRequestId, realtimeData);
-            boolean requested = ibController.requestRealtimeData(ibRequestId, CoreUtil.createContract(contractInfo));
-
-            if (!requested) {
-                realtimeDataMap.remove(ibRequestId);
-            }
-        } else {
-            log.info("canceling realtime data for " + contractInfo);
-
-            if (ibController.cancelRealtimeData(ibRequestId)) {
-                realtimeDataMap.remove(ibRequestId);
+            if (ibController.requestRealtimeData(ibRequestId.incrementAndGet(), CoreUtil.contract(instrument))) {
+                realtimeDataMap.put(ibRequestId.get(), new RealtimeData(instrument, ibRequestId.get()));
             }
         }
     }
 
-    public void cancelAllMktData() {
-        for (Integer requestId : new ArrayList<>(realtimeDataMap.keySet())) {
-            RealtimeData realtimeData = realtimeDataMap.get(requestId);
-            log.info("canceling realtime data for " + realtimeData.getContractInfo());
+    public void cancelRealtimeData(Instrument instrument) {
+        Optional<RealtimeData> realtimeDataOptional = realtimeDataMap.values().stream().filter(rtd -> rtd.getInstrument().equals(instrument)).findAny();
+
+        if (realtimeDataOptional.isPresent()) {
+            log.info("canceling realtime data for " + instrument);
+            RealtimeData realtimeData = realtimeDataOptional.get();
 
             if (ibController.cancelRealtimeData(realtimeData.getIbRequestId())) {
                 realtimeDataMap.remove(realtimeData.getIbRequestId());

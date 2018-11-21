@@ -2,10 +2,12 @@ package com.highpowerbear.hpboptions.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.enums.Action;
+import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.highpowerbear.hpboptions.enums.OrderType;
 import com.highpowerbear.hpboptions.enums.SubmitType;
+import com.ib.client.Types;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -15,7 +17,6 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
@@ -42,11 +43,16 @@ public class IbOrder implements Serializable {
     private Integer orderId;
     private String ibAccountId;
     @Enumerated(EnumType.STRING)
-    private Action action;
+    private Types.Action action;
     private Integer quantity;
-    @ManyToOne
-    private OptionRoot optionRoot;
+    @Enumerated(EnumType.STRING)
+    private Types.SecType secType;
     private String symbol;
+    private String underlying;
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
+    @Enumerated(EnumType.STRING)
+    private Exchange exchange;
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
     @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
@@ -133,11 +139,11 @@ public class IbOrder implements Serializable {
         this.ibAccountId = ibAccountId;
     }
 
-    public Action getAction() {
+    public Types.Action getAction() {
         return action;
     }
 
-    public void setAction(Action action) {
+    public void setAction(Types.Action action) {
         this.action = action;
     }
 
@@ -149,12 +155,12 @@ public class IbOrder implements Serializable {
         this.quantity = quantity;
     }
 
-    public OptionRoot getOptionRoot() {
-        return optionRoot;
+    public Types.SecType getSecType() {
+        return secType;
     }
 
-    public void setOptionRoot(OptionRoot optionRoot) {
-        this.optionRoot = optionRoot;
+    public void setSecType(Types.SecType secType) {
+        this.secType = secType;
     }
 
     public String getSymbol() {
@@ -163,6 +169,30 @@ public class IbOrder implements Serializable {
 
     public void setSymbol(String symbol) {
         this.symbol = symbol;
+    }
+
+    public String getUnderlying() {
+        return underlying;
+    }
+
+    public void setUnderlying(String underlying) {
+        this.underlying = underlying;
+    }
+
+    public Currency getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
+    }
+
+    public Exchange getExchange() {
+        return exchange;
+    }
+
+    public void setExchange(Exchange exchange) {
+        this.exchange = exchange;
     }
 
     public OrderType getOrderType() {

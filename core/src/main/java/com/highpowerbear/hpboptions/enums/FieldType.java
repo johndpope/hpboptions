@@ -5,7 +5,7 @@ import com.ib.client.TickType;
 /**
  * Created by robertk on 11/5/2018.
  */
-public enum RealtimeFieldType {
+public enum FieldType {
     BID,
     ASK,
     LAST,
@@ -24,7 +24,7 @@ public enum RealtimeFieldType {
     IV_LAST,
     IV_CHANGE;
 
-    public static RealtimeFieldType getFromTickType(TickType tickType) {
+    public static FieldType getFromTickType(TickType tickType) {
         switch(tickType) {
             case BID: return BID;
             case ASK: return ASK;
