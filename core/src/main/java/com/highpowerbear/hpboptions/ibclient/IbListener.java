@@ -1,12 +1,12 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.dao.ProcessDao;
+import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.highpowerbear.hpboptions.process.HeartbeatMonitor;
-import com.highpowerbear.hpboptions.process.OpenOrderHandler;
-import com.highpowerbear.hpboptions.process.RealtimeDataController;
+import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
+import com.highpowerbear.hpboptions.corelogic.OpenOrderHandler;
+import com.highpowerbear.hpboptions.corelogic.RealtimeDataController;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
@@ -22,7 +22,7 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 @Component
 public class IbListener extends GenericIbListener {
 
-    private final ProcessDao processDao;
+    private final CoreDao coreDao;
     private final OpenOrderHandler openOrderHandler;
     private final IbController ibController;
     private final HeartbeatMonitor heartbeatMonitor;
@@ -30,8 +30,8 @@ public class IbListener extends GenericIbListener {
     private final MessageSender messageSender;
 
     @Autowired
-    public IbListener(ProcessDao processDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, RealtimeDataController realtimeDataController, MessageSender messageSender) {
-        this.processDao = processDao;
+    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, RealtimeDataController realtimeDataController, MessageSender messageSender) {
+        this.coreDao = coreDao;
         this.openOrderHandler = openOrderHandler;
         this.ibController = ibController;
         this.heartbeatMonitor = heartbeatMonitor;
@@ -56,7 +56,7 @@ public class IbListener extends GenericIbListener {
             return;
         }
 
-        IbOrder ibOrder = processDao.getIbOrderByPermId((long) permId);
+        IbOrder ibOrder = coreDao.getIbOrderByPermId((long) permId);
         if (ibOrder == null) {
             return;
         }
@@ -66,12 +66,12 @@ public class IbListener extends GenericIbListener {
 
         } else if (OrderStatus.FILLED.getIbStatus().equals(status) && remaining == 0 && !OrderStatus.FILLED.equals(ibOrder.getStatus())) {
             ibOrder.addEvent(OrderStatus.FILLED, avgFillPrice);
-            processDao.updateIbOrder(ibOrder);
+            coreDao.updateIbOrder(ibOrder);
             heartbeatMonitor.removeHeartbeat(ibOrder);
 
         } else if (OrderStatus.CANCELLED.getIbStatus().equals(status) && !OrderStatus.CANCELLED.equals(ibOrder.getStatus())) {
             ibOrder.addEvent(OrderStatus.CANCELLED, null);
-            processDao.updateIbOrder(ibOrder);
+            coreDao.updateIbOrder(ibOrder);
             heartbeatMonitor.removeHeartbeat(ibOrder);
         }
         messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");

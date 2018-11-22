@@ -1,7 +1,7 @@
-package com.highpowerbear.hpboptions.process;
+package com.highpowerbear.hpboptions.corelogic;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.dao.ProcessDao;
+import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,24 +19,24 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class HeartbeatMonitor {
 
-    private final ProcessDao processDao;
+    private final CoreDao coreDao;
     private final Map<IbOrder, Integer> openOrderHeartbeatMap = new ConcurrentHashMap<>(); // ibOrder --> number of failed heartbeats left before UNKNOWN
 
     @Autowired
-    public HeartbeatMonitor(ProcessDao processDao) {
-        this.processDao = processDao;
+    public HeartbeatMonitor(CoreDao coreDao) {
+        this.coreDao = coreDao;
     }
 
     @PostConstruct
     public void init() {
-        processDao.getOpenIbOrders().forEach(this::initHeartbeat);
+        coreDao.getOpenIbOrders().forEach(this::initHeartbeat);
     }
 
     public Map<IbOrder, Integer> getOpenOrderHeartbeatMap() {
         return openOrderHeartbeatMap;
     }
 
-    public void updateHeartbeats(String accountId) {
+    public void updateHeartbeats() {
         Set<IbOrder> ibOrders = new HashSet<>(openOrderHeartbeatMap.keySet());
 
         for (IbOrder ibOrder : ibOrders) {
@@ -45,7 +45,7 @@ public class HeartbeatMonitor {
             if (failedHeartbeatsLeft <= 0) {
                 if (!OrderStatus.UNKNOWN.equals(ibOrder.getStatus())) {
                     ibOrder.addEvent(OrderStatus.UNKNOWN, null);
-                    processDao.updateIbOrder(ibOrder);
+                    coreDao.updateIbOrder(ibOrder);
                 }
                 openOrderHeartbeatMap.remove(ibOrder);
             } else {

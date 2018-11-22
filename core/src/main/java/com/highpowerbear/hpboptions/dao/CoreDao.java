@@ -7,9 +7,9 @@ import java.util.List;
 /**
  * Created by robertk on 11/8/2018.
  */
-public interface ProcessDao {
+public interface CoreDao {
     List<IbOrder> getOpenIbOrders();
-    void newIbOrder(IbOrder ibOrder);
+    void createIbOrder(IbOrder ibOrder);
     void updateIbOrder(IbOrder ibOrder);
     IbOrder getIbOrderByPermId(long permId);
 }

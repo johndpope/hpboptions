@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Repository
 @Transactional(propagation = Propagation.SUPPORTS)
-public class ProcessDaoImpl implements ProcessDao {
+public class CoreDaoImpl implements CoreDao {
 
     @PersistenceContext
     private EntityManager em;
@@ -37,7 +37,7 @@ public class ProcessDaoImpl implements ProcessDao {
 
     @Transactional
     @Override
-    public void newIbOrder(IbOrder ibOrder) {
+    public void createIbOrder(IbOrder ibOrder) {
         em.persist(ibOrder);
     }
 

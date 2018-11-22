@@ -48,6 +48,10 @@ public class IbController {
         ibConnection.disconnect();
     }
 
+    public boolean isConnected() {
+        return ibConnection.isConnected();
+    }
+
     public boolean requestRealtimeData(int reqId, Contract contract) {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 

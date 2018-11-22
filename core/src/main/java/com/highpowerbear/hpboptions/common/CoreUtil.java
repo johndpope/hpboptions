@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.common;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.process.model.Instrument;
+import com.highpowerbear.hpboptions.corelogic.model.Instrument;
 import com.ib.client.Contract;
 
 /**

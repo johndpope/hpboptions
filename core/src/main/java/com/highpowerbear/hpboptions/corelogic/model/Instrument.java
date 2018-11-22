@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.process.model;
+package com.highpowerbear.hpboptions.corelogic.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;

@@ -5,6 +5,8 @@ import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Types;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -16,11 +18,17 @@ import javax.persistence.Table;
 public class OptionRoot {
     @Id
     private Long id;
+    @Enumerated(EnumType.STRING)
+    private Types.SecType secType;
+    @Enumerated(EnumType.STRING)
     private Currency currency;
+    @Enumerated(EnumType.STRING)
     private Exchange exchange;
     private Integer multiplier;
+    @Enumerated(EnumType.STRING)
     private Types.SecType undlSecType;
     private String undlSymbol;
+    @Enumerated(EnumType.STRING)
     private Exchange undlExchange;
 
     @Override
@@ -44,6 +52,14 @@ public class OptionRoot {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Types.SecType getSecType() {
+        return secType;
+    }
+
+    public void setSecType(Types.SecType secType) {
+        this.secType = secType;
     }
 
     public Currency getCurrency() {

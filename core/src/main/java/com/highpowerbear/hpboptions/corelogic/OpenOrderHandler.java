@@ -1,6 +1,6 @@
-package com.highpowerbear.hpboptions.process;
+package com.highpowerbear.hpboptions.corelogic;
 
-import com.highpowerbear.hpboptions.dao.ProcessDao;
+import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import org.slf4j.Logger;
@@ -15,12 +15,12 @@ import org.springframework.stereotype.Service;
 public class OpenOrderHandler {
     private static final Logger log = LoggerFactory.getLogger(OpenOrderHandler.class);
 
-    private final ProcessDao processDao;
+    private final CoreDao coreDao;
     private final HeartbeatMonitor heartbeatMonitor;
 
     @Autowired
-    public OpenOrderHandler(ProcessDao processDao, HeartbeatMonitor heartbeatMonitor) {
-        this.processDao = processDao;
+    public OpenOrderHandler(CoreDao coreDao, HeartbeatMonitor heartbeatMonitor) {
+        this.coreDao = coreDao;
         this.heartbeatMonitor = heartbeatMonitor;
     }
 

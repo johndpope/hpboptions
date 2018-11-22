@@ -1,11 +1,11 @@
-package com.highpowerbear.hpboptions.process;
+package com.highpowerbear.hpboptions.corelogic;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.enums.FieldType;
 import com.highpowerbear.hpboptions.ibclient.IbController;
-import com.highpowerbear.hpboptions.process.model.Instrument;
-import com.highpowerbear.hpboptions.process.model.RealtimeData;
+import com.highpowerbear.hpboptions.corelogic.model.Instrument;
+import com.highpowerbear.hpboptions.corelogic.model.RealtimeData;
 import com.ib.client.TickType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
