@@ -11,6 +11,7 @@ import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
@@ -20,6 +21,7 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
  * Created by robertk on 11/5/2018.
  */
 @Component
+@Scope("prototype")
 public class IbListener extends GenericIbListener {
 
     private final CoreDao coreDao;

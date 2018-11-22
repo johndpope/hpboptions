@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Provider;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -20,7 +21,7 @@ import javax.annotation.PostConstruct;
 public class IbController {
     private static final Logger log = LoggerFactory.getLogger(IbController.class);
 
-    private final IbListener ibListener;
+    private final Provider<IbListener> ibListenerProvider;
     private IbConnection ibConnection;
 
     public IbConnection getIbConnection() {
@@ -28,14 +29,14 @@ public class IbController {
     }
 
     @Autowired
-    public IbController(IbListener ibListener) {
-        this.ibListener = ibListener;
+    public IbController(Provider<IbListener> ibListenerProvider) {
+        this.ibListenerProvider = ibListenerProvider;
     }
 
     @PostConstruct
     private void init() {
         EReaderSignal eReaderSignal = new EJavaSignal();
-        EClientSocket eClientSocket = new EClientSocket(ibListener, eReaderSignal);
+        EClientSocket eClientSocket = new EClientSocket(ibListenerProvider.get(), eReaderSignal);
 
         ibConnection = new IbConnection(CoreSettings.IB_HOST, CoreSettings.IB_PORT, CoreSettings.IB_CLIENT_ID, eClientSocket, eReaderSignal);
     }
