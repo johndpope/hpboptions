@@ -4,6 +4,7 @@ import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.corelogic.model.Instrument;
 import com.highpowerbear.hpboptions.corelogic.model.RealtimeData;
 import com.highpowerbear.hpboptions.enums.FieldType;
+import com.highpowerbear.hpboptions.enums.InstrumentGroup;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
 
@@ -27,7 +29,7 @@ public class RealtimeDataController {
     private final IbController ibController;
     private final MessageSender messageSender;
 
-    private final Map<Integer, RealtimeData> realtimeDataMap = new HashMap<>(); // ib request id --> realtimeData
+    private final Map<Integer, RealtimeData> dataMap = new LinkedHashMap<>(); // ib request id --> realtimeData
     private final AtomicInteger ibRequestId = new AtomicInteger(0);
 
     @Autowired
@@ -37,12 +39,26 @@ public class RealtimeDataController {
         this.messageSender = messageSender;
     }
 
-    public List<RealtimeData> getRealtimeDataList() {
-        return new ArrayList<>(realtimeDataMap.values());
+    public List<RealtimeData> getUndlData() {
+        return dataMap.values().stream()
+                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.UNDERLYING)
+                .collect(Collectors.toList());
     }
 
-    public void tickPriceReceived(int tickerId, int tickTypeIndex, double price) {
-        RealtimeData realtimeData = realtimeDataMap.get(tickerId);
+    public List<RealtimeData> getPositionsData() {
+        return dataMap.values().stream()
+                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.POSITION)
+                .collect(Collectors.toList());
+    }
+
+    public List<RealtimeData> getChainsData() {
+        return dataMap.values().stream()
+                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.CHAINS)
+                .collect(Collectors.toList());
+    }
+
+    public void tickPriceReceived(int requestId, int tickTypeIndex, double price) {
+        RealtimeData realtimeData = dataMap.get(requestId);
         if (realtimeData == null) {
             return;
         }
@@ -58,8 +74,8 @@ public class RealtimeDataController {
         }
     }
 
-    public void tickSizeReceived(int tickerId, int tickTypeIndex, int size) {
-        RealtimeData realtimeData = realtimeDataMap.get(tickerId);
+    public void tickSizeReceived(int requestId, int tickTypeIndex, int size) {
+        RealtimeData realtimeData = dataMap.get(requestId);
         if (realtimeData == null) {
             return;
         }
@@ -68,8 +84,8 @@ public class RealtimeDataController {
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
-    public void tickGenericReceived(int tickerId, int tickTypeIndex, double value) {
-        RealtimeData realtimeData = realtimeDataMap.get(tickerId);
+    public void tickGenericReceived(int requestId, int tickTypeIndex, double value) {
+        RealtimeData realtimeData = dataMap.get(requestId);
         if (realtimeData == null) {
             return;
         }
@@ -80,7 +96,9 @@ public class RealtimeDataController {
 
     public void requestRealtimeData(Instrument instrument) {
         log.info("requesting realtime data for " + instrument);
-        Optional<RealtimeData> realtimeDataOptional = realtimeDataMap.values().stream().filter(rtd -> rtd.getInstrument().equals(instrument)).findAny();
+        Optional<RealtimeData> realtimeDataOptional = dataMap.values().stream()
+                .filter(rtd -> rtd.getInstrument().equals(instrument))
+                .findAny();
 
         if (realtimeDataOptional.isPresent()) {
             RealtimeData realtimeData = realtimeDataOptional.get();
@@ -88,20 +106,22 @@ public class RealtimeDataController {
 
         } else {
             if (ibController.requestRealtimeData(ibRequestId.incrementAndGet(), instrument.toIbContract())) {
-                realtimeDataMap.put(ibRequestId.get(), new RealtimeData(instrument, ibRequestId.get()));
+                dataMap.put(ibRequestId.get(), new RealtimeData(instrument, ibRequestId.get()));
             }
         }
     }
 
     public void cancelRealtimeData(Instrument instrument) {
-        Optional<RealtimeData> realtimeDataOptional = realtimeDataMap.values().stream().filter(rtd -> rtd.getInstrument().equals(instrument)).findAny();
+        Optional<RealtimeData> realtimeDataOptional = dataMap.values().stream()
+                .filter(rtd -> rtd.getInstrument().equals(instrument))
+                .findAny();
 
         if (realtimeDataOptional.isPresent()) {
             log.info("canceling realtime data for " + instrument);
             RealtimeData realtimeData = realtimeDataOptional.get();
 
             if (ibController.cancelRealtimeData(realtimeData.getIbRequestId())) {
-                realtimeDataMap.remove(realtimeData.getIbRequestId());
+                dataMap.remove(realtimeData.getIbRequestId());
             }
         }
     }

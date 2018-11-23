@@ -2,6 +2,7 @@ package com.highpowerbear.hpboptions.corelogic.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
+import com.highpowerbear.hpboptions.enums.InstrumentGroup;
 import com.ib.client.Contract;
 import com.ib.client.Types;
 
@@ -15,13 +16,15 @@ public class Instrument {
     private final String underlying;
     private final Currency currency;
     private final Exchange exchange;
+    private final InstrumentGroup group;
 
-    public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange) {
+    public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange, InstrumentGroup group) {
         this.secType = secType;
         this.symbol = symbol;
         this.underlying = underlying;
         this.currency = currency;
         this.exchange = exchange;
+        this.group = group;
     }
 
     public Contract toIbContract() {
@@ -56,6 +59,10 @@ public class Instrument {
         return exchange;
     }
 
+    public InstrumentGroup getGroup() {
+        return group;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -67,7 +74,8 @@ public class Instrument {
         if (!symbol.equals(that.symbol)) return false;
         if (!underlying.equals(that.underlying)) return false;
         if (currency != that.currency) return false;
-        return exchange == that.exchange;
+        if (exchange != that.exchange) return false;
+        return group == that.group;
     }
 
     @Override
@@ -77,6 +85,7 @@ public class Instrument {
         result = 31 * result + underlying.hashCode();
         result = 31 * result + currency.hashCode();
         result = 31 * result + exchange.hashCode();
+        result = 31 * result + group.hashCode();
         return result;
     }
 
@@ -88,6 +97,7 @@ public class Instrument {
                 ", underlying='" + underlying + '\'' +
                 ", currency=" + currency +
                 ", exchange=" + exchange +
+                ", group=" + group +
                 '}';
     }
 }

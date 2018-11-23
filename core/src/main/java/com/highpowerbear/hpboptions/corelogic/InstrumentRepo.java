@@ -3,6 +3,7 @@ package com.highpowerbear.hpboptions.corelogic;
 import com.highpowerbear.hpboptions.corelogic.model.Instrument;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.OptionRoot;
+import com.highpowerbear.hpboptions.enums.InstrumentGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,10 @@ public class InstrumentRepo {
     public void refreshUndlInstruments() {
         undlInstruments.clear();
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
-        optionRoots.forEach(or -> undlInstruments.add(new Instrument(or.getUndlSecType(), or.getUndlSymbol(), or.getUndlSymbol(), or.getCurrency(), or.getUndlExchange())));
+        optionRoots.forEach(or -> {
+            Instrument instrument = new Instrument(or.getUndlSecType(), or.getUndlSymbol(), or.getUndlSymbol(), or.getCurrency(), or.getUndlExchange(), InstrumentGroup.UNDERLYING);
+            undlInstruments.add(instrument);
+        });
     }
 
     public List<Instrument> getUndlInstruments() {
