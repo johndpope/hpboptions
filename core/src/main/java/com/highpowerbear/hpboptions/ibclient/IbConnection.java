@@ -20,7 +20,7 @@ public class IbConnection {
     private final Integer port;
     private final Integer clientId;
     private String accounts; // csv, filled upon connection to IB, main account + FA subaccounts if any
-    private boolean markConnected = false;
+    private boolean markConnected;
     @JsonIgnore
     private final EClientSocket eClientSocket; // null means not connected yet or manually disconnected
     @JsonIgnore
@@ -35,10 +35,7 @@ public class IbConnection {
     }
 
     public void connect() {
-        if (eClientSocket == null) {
-            return;
-        }
-        this.markConnected = true;
+        markConnected = true;
 
         if (!isConnected()) {
             log.info("connecting " + info());
@@ -67,9 +64,6 @@ public class IbConnection {
     }
 
     public void disconnect() {
-        if (eClientSocket == null) {
-            return;
-        }
         markConnected = false;
 
         if (isConnected()) {

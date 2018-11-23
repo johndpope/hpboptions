@@ -41,18 +41,6 @@ public class IbController {
         ibConnection = new IbConnection(CoreSettings.IB_HOST, CoreSettings.IB_PORT, CoreSettings.IB_CLIENT_ID, eClientSocket, eReaderSignal);
     }
 
-    public void connect() {
-        ibConnection.connect();
-    }
-
-    public void disconnect() {
-        ibConnection.disconnect();
-    }
-
-    public boolean isConnected() {
-        return ibConnection.isConnected();
-    }
-
     public boolean requestRealtimeData(int reqId, Contract contract) {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 

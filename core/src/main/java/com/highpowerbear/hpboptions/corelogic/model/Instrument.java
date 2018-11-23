@@ -2,17 +2,19 @@ package com.highpowerbear.hpboptions.corelogic.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
+import com.ib.client.Contract;
 import com.ib.client.Types;
 
 /**
  * Created by robertk on 11/21/2018.
  */
 public class Instrument {
-    private Types.SecType secType;
-    private String symbol;
-    private String underlying;
-    private Currency currency;
-    private Exchange exchange;
+
+    private final Types.SecType secType;
+    private final String symbol;
+    private final String underlying;
+    private final Currency currency;
+    private final Exchange exchange;
 
     public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange) {
         this.secType = secType;
@@ -20,6 +22,18 @@ public class Instrument {
         this.underlying = underlying;
         this.currency = currency;
         this.exchange = exchange;
+    }
+
+    public Contract toIbContract() {
+        Contract contract = new Contract();
+
+        contract.localSymbol(symbol);
+        contract.symbol(underlying);
+        contract.secType(secType);
+        contract.exchange(exchange.name());
+        contract.currency(currency.name());
+
+        return contract;
     }
 
     public Types.SecType getSecType() {

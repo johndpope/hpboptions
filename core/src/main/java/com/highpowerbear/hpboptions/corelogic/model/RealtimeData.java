@@ -9,11 +9,12 @@ import java.util.Map;
  * Created by robertk on 11/5/2018.
  */
 public class RealtimeData {
-    private Instrument instrument;
-    private int ibRequestId;
 
-    private Map<FieldType, Double> valueMapDouble = new HashMap<>();
-    private Map<FieldType, Integer> valueMapInteger = new HashMap<>();
+    private final Instrument instrument;
+    private final int ibRequestId;
+
+    private final Map<FieldType, Double> valueMapDouble = new HashMap<>();
+    private final Map<FieldType, Integer> valueMapInteger = new HashMap<>();
 
     public RealtimeData(Instrument instrument, int ibRequestId) {
         this.instrument = instrument;

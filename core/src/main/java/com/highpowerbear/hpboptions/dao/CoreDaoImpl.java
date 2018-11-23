@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.dao;
 
 import com.highpowerbear.hpboptions.entity.IbOrder;
+import com.highpowerbear.hpboptions.entity.OptionRoot;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -55,5 +56,11 @@ public class CoreDaoImpl implements CoreDao {
         List<IbOrder> ibOrders = q.getResultList();
 
         return !ibOrders.isEmpty() ? ibOrders.get(0) : null;
+    }
+
+    @Override
+    public List<OptionRoot> getActiveOptionRoots() {
+        TypedQuery<OptionRoot> q = em.createQuery("SELECT or FROM OptionRoot or WHERE or.active = TRUE ORDER BY or.id", OptionRoot.class);
+        return q.getResultList();
     }
 }

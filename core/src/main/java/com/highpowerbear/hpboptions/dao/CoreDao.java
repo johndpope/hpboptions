@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.dao;
 
 import com.highpowerbear.hpboptions.entity.IbOrder;
+import com.highpowerbear.hpboptions.entity.OptionRoot;
 
 import java.util.List;
 
@@ -12,4 +13,5 @@ public interface CoreDao {
     void createIbOrder(IbOrder ibOrder);
     void updateIbOrder(IbOrder ibOrder);
     IbOrder getIbOrderByPermId(long permId);
+    List<OptionRoot> getActiveOptionRoots();
 }

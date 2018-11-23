@@ -9,6 +9,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Objects;
 
 /**
  * Created by robertk on 11/20/2018.
@@ -16,6 +17,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "option_root", schema = "hpboptions", catalog = "hpboptions")
 public class OptionRoot {
+    private static final long serialVersionUID = 1162498913826827666L;
+
     @Id
     private Long id;
     @Enumerated(EnumType.STRING)
@@ -30,6 +33,7 @@ public class OptionRoot {
     private String undlSymbol;
     @Enumerated(EnumType.STRING)
     private Exchange undlExchange;
+    private Boolean active;
 
     @Override
     public boolean equals(Object o) {
@@ -38,7 +42,7 @@ public class OptionRoot {
 
         OptionRoot that = (OptionRoot) o;
 
-        return id != null ? id.equals(that.id) : that.id == null;
+        return Objects.equals(id, that.id);
     }
 
     @Override
@@ -108,5 +112,13 @@ public class OptionRoot {
 
     public void setUndlExchange(Exchange undlExchange) {
         this.undlExchange = undlExchange;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

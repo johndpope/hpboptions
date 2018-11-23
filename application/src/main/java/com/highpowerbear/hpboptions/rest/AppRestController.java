@@ -1,9 +1,7 @@
 package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
-import com.highpowerbear.hpboptions.dao.CoreDao;
-import com.highpowerbear.hpboptions.ibclient.IbController;
+import com.highpowerbear.hpboptions.corelogic.ConnectionController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,28 +15,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/")
 public class AppRestController {
 
-    private final CoreDao processDao;
-    private final IbController ibController;
-    private final HeartbeatMonitor heartbeatMonitor;
+    private final ConnectionController connectionController;
 
     @Autowired
-    public AppRestController(CoreDao processDao, IbController ibController, HeartbeatMonitor heartbeatMonitor) {
-        this.processDao = processDao;
-        this.ibController = ibController;
-        this.heartbeatMonitor = heartbeatMonitor;
+    public AppRestController(ConnectionController connectionController) {
+        this.connectionController = connectionController;
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connect")
     public ResponseEntity<?> connect() {
-        ibController.connect();
-        CoreUtil.waitMilliseconds(1000);
-        return ResponseEntity.ok("connected: " + ibController.isConnected());
+        connectionController.connect();
+
+        return ResponseEntity.ok("connected: " + connectionController.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
     public ResponseEntity<?> disconnect() {
-        ibController.disconnect();
+        connectionController.disconnect();
         CoreUtil.waitMilliseconds(1000);
-        return ResponseEntity.ok("connected: " + ibController.isConnected());
+        return ResponseEntity.ok("connected: " + connectionController.isConnected());
     }
 }
