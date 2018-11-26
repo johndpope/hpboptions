@@ -45,6 +45,6 @@ public class AppRestController {
     @RequestMapping("undlData")
     public ResponseEntity<?> getUndlData() {
         List<RealtimeData> undlData = dataController.getUndlData();
-        return ResponseEntity.ok(undlData);
+        return ResponseEntity.ok(new RestList<>(undlData, (long) undlData.size()));
     }
 }

@@ -58,7 +58,7 @@ public class RealtimeData {
     }
 
     private String createMessage(FieldType fieldType, String value) {
-        return "rt," + instrument + "," + fieldType + "," + value;
+        return "rt," + ibRequestId + "," + instrument.getSymbol() + "," + fieldType + "," + value;
     }
 
     public Instrument getInstrument() {
