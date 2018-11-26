@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -22,10 +25,9 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
  * Created by robertk on 11/5/2018.
  */
 @Component
-public class RealtimeDataController {
-    private static final Logger log = LoggerFactory.getLogger(RealtimeDataController.class);
+public class DataController {
+    private static final Logger log = LoggerFactory.getLogger(DataController.class);
 
-    private final InstrumentRepo instrumentRepo;
     private final IbController ibController;
     private final MessageSender messageSender;
 
@@ -33,41 +35,40 @@ public class RealtimeDataController {
     private final AtomicInteger ibRequestId = new AtomicInteger(0);
 
     @Autowired
-    public RealtimeDataController(InstrumentRepo instrumentRepo, IbController ibController, MessageSender messageSender) {
-        this.instrumentRepo = instrumentRepo;
+    public DataController(IbController ibController, MessageSender messageSender) {
         this.ibController = ibController;
         this.messageSender = messageSender;
     }
 
     public List<RealtimeData> getUndlData() {
         return dataMap.values().stream()
-                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.UNDERLYING)
+                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.UNDERLYING)
                 .collect(Collectors.toList());
     }
 
     public List<RealtimeData> getPositionsData() {
         return dataMap.values().stream()
-                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.POSITION)
+                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.POSITION)
                 .collect(Collectors.toList());
     }
 
     public List<RealtimeData> getChainsData() {
         return dataMap.values().stream()
-                .filter(rtd -> rtd.getInstrument().getGroup() == InstrumentGroup.CHAINS)
+                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.CHAINS)
                 .collect(Collectors.toList());
     }
 
     public void tickPriceReceived(int requestId, int tickTypeIndex, double price) {
-        RealtimeData realtimeData = dataMap.get(requestId);
-        if (realtimeData == null) {
+        RealtimeData data = dataMap.get(requestId);
+        if (data == null) {
             return;
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.updateValue(fieldType, price);
+        String updateMessage = data.updateValue(fieldType, price);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
 
         if (fieldType == FieldType.LAST) {
-            String updateMessageChangePct = realtimeData.createUpdateMsgChangePct();
+            String updateMessageChangePct = data.createUpdateMsgChangePct();
             if (updateMessageChangePct != null) {
                 messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessageChangePct);
             }
@@ -75,34 +76,39 @@ public class RealtimeDataController {
     }
 
     public void tickSizeReceived(int requestId, int tickTypeIndex, int size) {
-        RealtimeData realtimeData = dataMap.get(requestId);
-        if (realtimeData == null) {
+        RealtimeData data = dataMap.get(requestId);
+        if (data == null) {
             return;
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.updateValue(fieldType, size);
+        String updateMessage = data.updateValue(fieldType, size);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
     public void tickGenericReceived(int requestId, int tickTypeIndex, double value) {
-        RealtimeData realtimeData = dataMap.get(requestId);
-        if (realtimeData == null) {
+        RealtimeData data = dataMap.get(requestId);
+        if (data == null) {
             return;
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = realtimeData.updateValue(fieldType, value);
+        String updateMessage = data.updateValue(fieldType, value);
         messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
-    public void requestRealtimeData(Instrument instrument) {
+    public void reset() {
+        dataMap.values().forEach(data -> ibController.cancelRealtimeData(data.getIbRequestId()));
+        dataMap.clear();
+    }
+
+    public void requestData(Instrument instrument) {
         log.info("requesting realtime data for " + instrument);
-        Optional<RealtimeData> realtimeDataOptional = dataMap.values().stream()
-                .filter(rtd -> rtd.getInstrument().equals(instrument))
+        Optional<RealtimeData> dataOptional = dataMap.values().stream()
+                .filter(data -> data.getInstrument().equals(instrument))
                 .findAny();
 
-        if (realtimeDataOptional.isPresent()) {
-            RealtimeData realtimeData = realtimeDataOptional.get();
-            ibController.requestRealtimeData(realtimeData.getIbRequestId(), instrument.toIbContract());
+        if (dataOptional.isPresent()) {
+            RealtimeData data = dataOptional.get();
+            ibController.requestRealtimeData(data.getIbRequestId(), instrument.toIbContract());
 
         } else {
             if (ibController.requestRealtimeData(ibRequestId.incrementAndGet(), instrument.toIbContract())) {
@@ -111,26 +117,18 @@ public class RealtimeDataController {
         }
     }
 
-    public void cancelRealtimeData(Instrument instrument) {
-        Optional<RealtimeData> realtimeDataOptional = dataMap.values().stream()
-                .filter(rtd -> rtd.getInstrument().equals(instrument))
+    public void cancelData(Instrument instrument) {
+        Optional<RealtimeData> dataOptional = dataMap.values().stream()
+                .filter(data -> data.getInstrument().equals(instrument))
                 .findAny();
 
-        if (realtimeDataOptional.isPresent()) {
+        if (dataOptional.isPresent()) {
             log.info("canceling realtime data for " + instrument);
-            RealtimeData realtimeData = realtimeDataOptional.get();
+            RealtimeData data = dataOptional.get();
 
-            if (ibController.cancelRealtimeData(realtimeData.getIbRequestId())) {
-                dataMap.remove(realtimeData.getIbRequestId());
+            if (ibController.cancelRealtimeData(data.getIbRequestId())) {
+                dataMap.remove(data.getIbRequestId());
             }
         }
-    }
-
-    public void requestAllUndlRealtimeData() {
-        instrumentRepo.getUndlInstruments().forEach(this::requestRealtimeData);
-    }
-
-    public void cancelAllUndlRealtimeData() {
-        instrumentRepo.getUndlInstruments().forEach(this::cancelRealtimeData);
     }
 }

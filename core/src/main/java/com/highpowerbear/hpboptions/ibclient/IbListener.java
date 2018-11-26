@@ -6,7 +6,7 @@ import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
 import com.highpowerbear.hpboptions.corelogic.OpenOrderHandler;
-import com.highpowerbear.hpboptions.corelogic.RealtimeDataController;
+import com.highpowerbear.hpboptions.corelogic.DataController;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
@@ -28,16 +28,16 @@ public class IbListener extends GenericIbListener {
     private final OpenOrderHandler openOrderHandler;
     private final IbController ibController;
     private final HeartbeatMonitor heartbeatMonitor;
-    private final RealtimeDataController realtimeDataController;
+    private final DataController dataController;
     private final MessageSender messageSender;
 
     @Autowired
-    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, RealtimeDataController realtimeDataController, MessageSender messageSender) {
+    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, DataController dataController, MessageSender messageSender) {
         this.coreDao = coreDao;
         this.openOrderHandler = openOrderHandler;
         this.ibController = ibController;
         this.heartbeatMonitor = heartbeatMonitor;
-        this.realtimeDataController = realtimeDataController;
+        this.dataController = dataController;
         this.messageSender = messageSender;
     }
 
@@ -87,17 +87,17 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
-        realtimeDataController.tickPriceReceived(tickerId, field, price);
+        dataController.tickPriceReceived(tickerId, field, price);
     }
 
     @Override
     public void tickSize(int tickerId, int field, int size) {
-        realtimeDataController.tickSizeReceived(tickerId, field, size);
+        dataController.tickSizeReceived(tickerId, field, size);
     }
 
     @Override
     public void tickGeneric(int tickerId, int tickType, double value) {
-        realtimeDataController.tickGenericReceived(tickerId, tickType, value);
+        dataController.tickGenericReceived(tickerId, tickType, value);
     }
 
     @Override

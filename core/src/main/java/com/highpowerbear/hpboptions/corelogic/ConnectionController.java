@@ -13,22 +13,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConnectionController {
 
+    private final InstrumentRepo instrumentRepo;
     private final IbController ibController;
-    private final RealtimeDataController realtimeDataController;
+    private final DataController dataController;
 
     @Autowired
-    public ConnectionController(IbController ibController, RealtimeDataController realtimeDataController) {
+    public ConnectionController(InstrumentRepo instrumentRepo, IbController ibController, DataController dataController) {
+        this.instrumentRepo = instrumentRepo;
         this.ibController = ibController;
-        this.realtimeDataController = realtimeDataController;
+        this.dataController = dataController;
     }
 
     public void connect() {
+        instrumentRepo.refreshUndlInstruments();
         ibController.getIbConnection().connect();
-        realtimeDataController.requestAllUndlRealtimeData();
+        dataController.reset();
+        instrumentRepo.getUndlInstruments().forEach(dataController::requestData);
     }
 
     public void disconnect() {
-        realtimeDataController.cancelAllUndlRealtimeData();
+        instrumentRepo.getUndlInstruments().forEach(dataController::cancelData);
         CoreUtil.waitMilliseconds(1000);
         ibController.getIbConnection().disconnect();
     }
