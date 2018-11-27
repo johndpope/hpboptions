@@ -87,17 +87,17 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
-        dataController.tickPriceReceived(tickerId, field, price);
+        dataController.updateValue(tickerId, field, price);
     }
 
     @Override
     public void tickSize(int tickerId, int field, int size) {
-        dataController.tickSizeReceived(tickerId, field, size);
+        dataController.updateValue(tickerId, field, size);
     }
 
     @Override
     public void tickGeneric(int tickerId, int tickType, double value) {
-        dataController.tickGenericReceived(tickerId, tickType, value);
+        dataController.updateValue(tickerId, tickType, value);
     }
 
     @Override

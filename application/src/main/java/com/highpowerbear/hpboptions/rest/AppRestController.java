@@ -3,14 +3,11 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.corelogic.ConnectionController;
 import com.highpowerbear.hpboptions.corelogic.DataController;
-import com.highpowerbear.hpboptions.corelogic.model.RealtimeData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * Created by robertk on 11/22/2018.
@@ -39,12 +36,12 @@ public class AppRestController {
     public ResponseEntity<?> disconnect() {
         connectionController.disconnect();
         CoreUtil.waitMilliseconds(1000);
+
         return ResponseEntity.ok("connected: " + connectionController.isConnected());
     }
 
-    @RequestMapping("undlData")
-    public ResponseEntity<?> getUndlData() {
-        List<RealtimeData> undlData = dataController.getUndlData();
-        return ResponseEntity.ok(new RestList<>(undlData, (long) undlData.size()));
+    @RequestMapping("underlyings")
+    public ResponseEntity<?> getUnderlyings() {
+        return ResponseEntity.ok(dataController.getUnderlyings());
     }
 }

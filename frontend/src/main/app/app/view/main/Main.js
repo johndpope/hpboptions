@@ -25,9 +25,6 @@ Ext.define('HopGui.view.main.Main', {
         align: 'stretch'
     },
     scrollable: true,
-    listeners: {
-        beforerender: 'setGlyphs'
-    },
     items: [{
         xtype: 'hop-underlying-grid'
     }, {

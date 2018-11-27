@@ -17,11 +17,5 @@ Ext.define('HopGui.view.position.PositionController', {
 
     placeOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
         // TODO
-    },
-
-    setGlyphs: function() {
-        var me = this;
-
-        me.lookupReference('position').setGlyph(HopGui.common.Glyphs.getGlyph('list'));
     }
 });

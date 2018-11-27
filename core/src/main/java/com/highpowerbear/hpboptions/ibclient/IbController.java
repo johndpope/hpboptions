@@ -41,23 +41,19 @@ public class IbController {
         ibConnection = new IbConnection(CoreSettings.IB_HOST, CoreSettings.IB_PORT, CoreSettings.IB_CLIENT_ID, eClientSocket, eReaderSignal);
     }
 
-    public boolean requestRealtimeData(int reqId, Contract contract) {
+    public void requestRealtimeData(int reqId, Contract contract) {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 
         if (ibConnection.checkConnected()) {
             ibConnection.getClientSocket().reqMktData(reqId, contract, "", false, null);
-            return true;
         }
-        return false;
     }
 
-    public boolean cancelRealtimeData(int reqId) {
+    public void cancelRealtimeData(int reqId) {
         log.info("canceling realtime data for reqId=" + reqId);
 
         if (ibConnection.checkConnected()) {
             ibConnection.getClientSocket().cancelMktData(reqId);
-            return true;
         }
-        return false;
     }
 }

@@ -17,11 +17,5 @@ Ext.define('HopGui.view.chain.ChainController', {
 
     placeOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
         // TODO
-    },
-
-    setGlyphs: function() {
-        var me = this;
-
-        me.lookupReference('chain').setGlyph(HopGui.common.Glyphs.getGlyph('chain'));
     }
 });

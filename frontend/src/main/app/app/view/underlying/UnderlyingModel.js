@@ -4,17 +4,17 @@
 Ext.define('HopGui.view.underlying.UnderlyingModel', {
     extend: 'Ext.app.ViewModel',
     requires: [
-        'HopGui.model.UnderlyingData'
+        'HopGui.model.Underlying'
     ],
 
     alias: 'viewmodel.hop-underlying',
 
     stores: {
         underlyings: {
-            model: 'HopGui.model.UnderlyingData',
+            model: 'HopGui.model.Underlying',
             autoload: true,
             proxy: {
-                url: HopGui.common.Definitions.urlPrefix + '/undlData'
+                url: HopGui.common.Definitions.urlPrefix + '/underlyings'
             }
         }
     }

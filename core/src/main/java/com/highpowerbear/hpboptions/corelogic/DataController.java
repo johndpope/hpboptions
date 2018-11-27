@@ -1,10 +1,10 @@
 package com.highpowerbear.hpboptions.corelogic;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.corelogic.model.Instrument;
-import com.highpowerbear.hpboptions.corelogic.model.RealtimeData;
+import com.highpowerbear.hpboptions.corelogic.model.*;
+import com.highpowerbear.hpboptions.dao.CoreDao;
+import com.highpowerbear.hpboptions.entity.OptionRoot;
 import com.highpowerbear.hpboptions.enums.FieldType;
-import com.highpowerbear.hpboptions.enums.InstrumentGroup;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
 import org.slf4j.Logger;
@@ -12,12 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
 
@@ -28,107 +24,66 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
 public class DataController {
     private static final Logger log = LoggerFactory.getLogger(DataController.class);
 
+    private final CoreDao coreDao;
     private final IbController ibController;
     private final MessageSender messageSender;
 
-    private final Map<Integer, RealtimeData> dataMap = new LinkedHashMap<>(); // ib request id --> realtimeData
-    private final AtomicInteger ibRequestId = new AtomicInteger(0);
+    private final List<Underlying> underlyings = new ArrayList<>();
+    private final List<Position> positions = new ArrayList<>();
+    private final List<ChainItem> chainItems = new ArrayList<>();
+
+    private final Map<Integer, DataHolder> dataMap = new LinkedHashMap<>(); // ib request id --> dataHolder
+    private final AtomicInteger ibRequestIdGenerator = new AtomicInteger(0);
 
     @Autowired
-    public DataController(IbController ibController, MessageSender messageSender) {
+    public DataController(CoreDao coreDao, IbController ibController, MessageSender messageSender) {
+        this.coreDao = coreDao;
         this.ibController = ibController;
         this.messageSender = messageSender;
     }
 
-    public List<RealtimeData> getUndlData() {
-        return dataMap.values().stream()
-                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.UNDERLYING)
-                .collect(Collectors.toList());
+    public void initUnderlyings() {
+        underlyings.clear();
+        List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
+        optionRoots.forEach(or -> {
+            Instrument instrument = new Instrument(or.getUndlSecType(), or.getUndlSymbol(), or.getUndlSymbol(), or.getCurrency(), or.getUndlExchange());
+            Underlying underlying = new Underlying(instrument, ibRequestIdGenerator.incrementAndGet());
+            underlyings.add(underlying);
+        });
     }
 
-    public List<RealtimeData> getPositionsData() {
-        return dataMap.values().stream()
-                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.POSITION)
-                .collect(Collectors.toList());
+    public List<Underlying> getUnderlyings() {
+        return underlyings;
     }
 
-    public List<RealtimeData> getChainsData() {
-        return dataMap.values().stream()
-                .filter(data -> data.getInstrument().getGroup() == InstrumentGroup.CHAINS)
-                .collect(Collectors.toList());
-    }
-
-    public void tickPriceReceived(int requestId, int tickTypeIndex, double price) {
-        RealtimeData data = dataMap.get(requestId);
-        if (data == null) {
+    public void updateValue(int requestId, int tickTypeIndex, Number value) {
+        DataHolder dataHolder = dataMap.get(requestId);
+        if (dataHolder == null) {
             return;
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = data.updateValue(fieldType, price);
-        messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
+        dataHolder.updateValue(fieldType, value);
+        messageSender.sendWsMessage(WS_TOPIC_MKTDATA, dataHolder.createMessage(fieldType));
 
         if (fieldType == FieldType.LAST) {
-            String updateMessageChangePct = data.createUpdateMsgChangePct();
-            if (updateMessageChangePct != null) {
-                messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessageChangePct);
-            }
+            messageSender.sendWsMessage(WS_TOPIC_MKTDATA, dataHolder.createMessage(FieldType.CHANGE_PCT));
         }
-    }
-
-    public void tickSizeReceived(int requestId, int tickTypeIndex, int size) {
-        RealtimeData data = dataMap.get(requestId);
-        if (data == null) {
-            return;
-        }
-        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = data.updateValue(fieldType, size);
-        messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
-    }
-
-    public void tickGenericReceived(int requestId, int tickTypeIndex, double value) {
-        RealtimeData data = dataMap.get(requestId);
-        if (data == null) {
-            return;
-        }
-        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        String updateMessage = data.updateValue(fieldType, value);
-        messageSender.sendWsMessage(WS_TOPIC_MKTDATA, updateMessage);
     }
 
     public void reset() {
-        dataMap.values().forEach(data -> ibController.cancelRealtimeData(data.getIbRequestId()));
+        dataMap.keySet().forEach(ibController::cancelRealtimeData);
         dataMap.clear();
     }
 
-    public void requestData(Instrument instrument) {
-        log.info("requesting realtime data for " + instrument);
-        Optional<RealtimeData> dataOptional = dataMap.values().stream()
-                .filter(data -> data.getInstrument().equals(instrument))
-                .findAny();
-
-        if (dataOptional.isPresent()) {
-            RealtimeData data = dataOptional.get();
-            ibController.requestRealtimeData(data.getIbRequestId(), instrument.toIbContract());
-
-        } else {
-            if (ibController.requestRealtimeData(ibRequestId.incrementAndGet(), instrument.toIbContract())) {
-                dataMap.put(ibRequestId.get(), new RealtimeData(instrument, ibRequestId.get()));
-            }
-        }
+    public void requestData(DataHolder dataHolder) {
+        log.info("requesting realtime data for " + dataHolder.getInstrument());
+        dataMap.putIfAbsent(dataHolder.getIbRequestId(), dataHolder);
+        ibController.requestRealtimeData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract());
     }
 
-    public void cancelData(Instrument instrument) {
-        Optional<RealtimeData> dataOptional = dataMap.values().stream()
-                .filter(data -> data.getInstrument().equals(instrument))
-                .findAny();
-
-        if (dataOptional.isPresent()) {
-            log.info("canceling realtime data for " + instrument);
-            RealtimeData data = dataOptional.get();
-
-            if (ibController.cancelRealtimeData(data.getIbRequestId())) {
-                dataMap.remove(data.getIbRequestId());
-            }
-        }
+    public void cancelData(DataHolder dataHolder) {
+        log.info("canceling realtime data for " + dataHolder.getInstrument());
+        ibController.cancelRealtimeData(dataHolder.getIbRequestId());
+        dataMap.remove(dataHolder.getIbRequestId());
     }
 }
