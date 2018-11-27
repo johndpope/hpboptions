@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.corelogic;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.corelogic.model.*;
 import com.highpowerbear.hpboptions.dao.CoreDao;
@@ -67,10 +68,10 @@ public class DataController {
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
         dataHolder.updateValue(fieldType, value);
-        messageSender.sendWsMessage(dataHolder.getWsTopic(), dataHolder.createMessage(fieldType));
+        messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType));
 
         if (fieldType == FieldType.LAST) {
-            messageSender.sendWsMessage(dataHolder.getWsTopic(), dataHolder.createMessage(FieldType.CHANGE_PCT));
+            messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(FieldType.CHANGE_PCT));
         }
     }
 
@@ -89,5 +90,17 @@ public class DataController {
         log.info("canceling realtime data for " + dataHolder.getInstrument());
         ibController.cancelRealtimeData(dataHolder.getIbRequestId());
         dataMap.remove(dataHolder.getIbRequestId());
+    }
+
+    public String getWsTopic(DataHolder dataHolder) {
+        if (dataHolder instanceof Underlying) {
+            return CoreSettings.WS_TOPIC_UNDERLYING;
+        } else if (dataHolder instanceof Position) {
+            return CoreSettings.WS_TOPIC_POSITION;
+        } else if (dataHolder instanceof ChainItem) {
+            return CoreSettings.WS_TOPIC_CHAIN;
+        } else {
+            throw new IllegalStateException("unsupported dataHolder type " + dataHolder.getClass().getSimpleName());
+        }
     }
 }

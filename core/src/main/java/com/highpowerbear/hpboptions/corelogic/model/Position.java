@@ -1,6 +1,5 @@
 package com.highpowerbear.hpboptions.corelogic.model;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.enums.FieldType;
 
 /**
@@ -15,10 +14,5 @@ public class Position extends AbstractDataHolder {
     @Override
     public String createMessage(FieldType fieldType) {
         return "position," + ibRequestId + "," + fieldType + "," + valueMap.get(fieldType);
-    }
-
-    @Override
-    public String getWsTopic() {
-        return CoreSettings.WS_TOPIC_POSITION;
     }
 }

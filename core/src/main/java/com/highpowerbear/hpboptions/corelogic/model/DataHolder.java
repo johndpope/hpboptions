@@ -10,5 +10,4 @@ public interface DataHolder {
     int getIbRequestId();
     void updateValue(FieldType fieldType, Number value);
     String createMessage(FieldType fieldType);
-    String getWsTopic();
 }

@@ -63,9 +63,6 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public abstract String createMessage(FieldType fieldType);
 
-    @Override
-    public abstract String getWsTopic();
-
     public double getBid() {
         return valueMap.get(FieldType.BID).doubleValue();
     }
@@ -98,7 +95,7 @@ public abstract class AbstractDataHolder implements DataHolder {
         return valueMap.get(FieldType.LAST_SIZE).intValue();
     }
 
-    public int geVolume() {
+    public int getVolume() {
         return valueMap.get(FieldType.VOLUME).intValue();
     }
 }
