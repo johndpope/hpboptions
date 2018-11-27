@@ -6,15 +6,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
     xtype: 'hop-order-grid',
     requires: [
         'Ext.grid.column.Date',
-        'HopGui.view.order.OrderController',
-        'HopGui.view.order.OrderModel'
+        'Ext.toolbar.Paging'
     ],
-    title: 'Orders',
-    controller: 'hop-order',
-    viewModel: {
-        type: 'hop-order'
-    },
-    reference: 'orderGrid',
     bind: '{orders}',
     listeners: {
         'cellclick': 'submitOrder'
@@ -26,5 +19,11 @@ Ext.define('HopGui.view.order.OrderGrid', {
         text: 'ID',
         width: 80,
         dataIndex: 'id'
+    }],
+    dockedItems: [{
+        xtype: 'pagingtoolbar',
+        bind: '{orders}',
+        dock: 'bottom',
+        displayInfo: true
     }]
 });

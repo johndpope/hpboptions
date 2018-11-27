@@ -12,10 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_MKTDATA;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -42,6 +41,11 @@ public class DataController {
         this.messageSender = messageSender;
     }
 
+    @PostConstruct
+    public void init() {
+        initUnderlyings();
+    }
+
     public void initUnderlyings() {
         underlyings.clear();
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
@@ -63,10 +67,10 @@ public class DataController {
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
         dataHolder.updateValue(fieldType, value);
-        messageSender.sendWsMessage(WS_TOPIC_MKTDATA, dataHolder.createMessage(fieldType));
+        messageSender.sendWsMessage(dataHolder.getWsTopic(), dataHolder.createMessage(fieldType));
 
         if (fieldType == FieldType.LAST) {
-            messageSender.sendWsMessage(WS_TOPIC_MKTDATA, dataHolder.createMessage(FieldType.CHANGE_PCT));
+            messageSender.sendWsMessage(dataHolder.getWsTopic(), dataHolder.createMessage(FieldType.CHANGE_PCT));
         }
     }
 

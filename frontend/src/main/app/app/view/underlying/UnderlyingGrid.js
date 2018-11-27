@@ -6,15 +6,8 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     xtype: 'hop-underlying-grid',
     requires: [
         'Ext.grid.column.Date',
-        'HopGui.view.underlying.UnderlyingController',
-        'HopGui.view.underlying.UnderlyingModel'
+        'Ext.toolbar.Paging'
     ],
-    title: 'Underlying Data',
-    controller: 'hop-underlying',
-    viewModel: {
-        type: 'hop-underlying'
-    },
-    reference: 'underlyingGrid',
     bind: '{underlyings}',
     listeners: {
         'cellclick': 'setupChain'
@@ -23,8 +16,14 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         stripeRows: true
     },
     columns: [{
-        text: 'ID',
+        text: 'ReqID',
         width: 80,
-        dataIndex: 'id'
+        dataIndex: 'ibRequestId'
+    }],
+    dockedItems: [{
+        xtype: 'pagingtoolbar',
+        bind: '{underlyings}',
+        dock: 'bottom',
+        displayInfo: true
     }]
 });

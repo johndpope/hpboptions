@@ -4,12 +4,12 @@
 Ext.define('HopGui.model.Base', {
     extend: 'Ext.data.Model',
 
-    idProperty: 'id',
+    idProperty: 'ibRequestId',
     fields: [
-        {name: 'id', type: 'string'}
+        {name: 'ibRequestId', type: 'int'}
     ],
     schema: {
-        id: 'HopSchema',
+        id: 'hopSchema',
         namespace: 'HopGui.model',  // generate auto entityName,
         proxy: {
             type: 'ajax',

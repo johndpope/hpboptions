@@ -60,7 +60,7 @@ public class CoreDaoImpl implements CoreDao {
 
     @Override
     public List<OptionRoot> getActiveOptionRoots() {
-        TypedQuery<OptionRoot> q = em.createQuery("SELECT or FROM OptionRoot or WHERE or.active = TRUE ORDER BY or.id", OptionRoot.class);
+        TypedQuery<OptionRoot> q = em.createQuery("SELECT oRoot FROM OptionRoot oRoot WHERE oRoot.active = TRUE ORDER BY oRoot.id", OptionRoot.class);
         return q.getResultList();
     }
 }

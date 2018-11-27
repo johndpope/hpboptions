@@ -13,7 +13,7 @@ Ext.define('HopGui.view.main.MainController', {
     setGlyphs: function() {
         var me = this;
 
-        me.lookupReference('positionGrid').setGlyph(HopGui.common.Glyphs.getGlyph('list'));
-        me.lookupReference('chainGrid').setGlyph(HopGui.common.Glyphs.getGlyph('chain'));
+        me.lookupReference('positionPanel').setGlyph(HopGui.common.Glyphs.getGlyph('list'));
+        me.lookupReference('chainPanel').setGlyph(HopGui.common.Glyphs.getGlyph('chain'));
     }
 });

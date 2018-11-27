@@ -12,10 +12,7 @@ Ext.define('HopGui.view.underlying.UnderlyingModel', {
     stores: {
         underlyings: {
             model: 'HopGui.model.Underlying',
-            autoload: true,
-            proxy: {
-                url: HopGui.common.Definitions.urlPrefix + '/underlyings'
-            }
+            autoload: true
         }
     }
 });

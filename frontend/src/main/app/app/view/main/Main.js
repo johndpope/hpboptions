@@ -10,10 +10,10 @@ Ext.define('HopGui.view.main.Main', {
         'HopGui.common.Glyphs',
         'HopGui.view.main.MainController',
         'HopGui.view.main.MainModel',
-        'HopGui.view.underlying.UnderlyingGrid',
-        'HopGui.view.order.OrderGrid',
-        'HopGui.view.position.PositionGrid',
-        'HopGui.view.chain.ChainGrid'
+        'HopGui.view.underlying.Underlying',
+        'HopGui.view.order.Order',
+        'HopGui.view.position.Position',
+        'HopGui.view.chain.Chain'
     ],
     
     controller: 'main',
@@ -26,18 +26,22 @@ Ext.define('HopGui.view.main.Main', {
     },
     scrollable: true,
     items: [{
-        xtype: 'hop-underlying-grid'
+        xtype: 'hop-underlying',
+        reference: 'underlyingPanel'
     }, {
-        xtype: 'hop-order-grid'
+        xtype: 'hop-order',
+        reference: 'orderPanel'
     }, {
         xtype: 'tabpanel',
         listeners: {
             beforerender: 'setGlyphs'
         },
         items: [{
-            xtype: 'hop-position-grid'
+            xtype: 'hop-position',
+            reference: 'positionPanel'
         }, {
-            xtype: 'hop-chain-grid'
+            xtype: 'hop-chain',
+            reference: 'chainPanel'
         }]
     }]
 });

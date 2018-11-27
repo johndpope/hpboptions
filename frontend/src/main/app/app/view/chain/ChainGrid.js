@@ -6,15 +6,8 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     xtype: 'hop-chain-grid',
     requires: [
         'Ext.grid.column.Date',
-        'HopGui.view.chain.ChainController',
-        'HopGui.view.chain.ChainModel'
+        'Ext.toolbar.Paging'
     ],
-    title: 'Chains',
-    controller: 'hop-chain',
-    viewModel: {
-        type: 'hop-chain'
-    },
-    reference: 'chainGrid',
     bind: '{chains}',
     listeners: {
         'cellclick': 'placeOrder'
@@ -26,5 +19,11 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         text: 'ID',
         width: 80,
         dataIndex: 'id'
+    }],
+    dockedItems: [{
+        xtype: 'pagingtoolbar',
+        bind: '{chains}',
+        dock: 'bottom',
+        displayInfo: true
     }]
 });

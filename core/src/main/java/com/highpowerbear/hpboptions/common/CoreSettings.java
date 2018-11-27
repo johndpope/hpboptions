@@ -16,5 +16,7 @@ public class CoreSettings {
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
     public static final String WS_TOPIC_ORDER = "/topic/order";
-    public static final String WS_TOPIC_MKTDATA = "/topic/mktdata";
+    public static final String WS_TOPIC_UNDERLYING = "/topic/underlying";
+    public static final String WS_TOPIC_POSITION = "/topic/position";
+    public static final String WS_TOPIC_CHAIN = "/topic/chain";
 }

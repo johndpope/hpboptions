@@ -63,6 +63,9 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public abstract String createMessage(FieldType fieldType);
 
+    @Override
+    public abstract String getWsTopic();
+
     public double getBid() {
         return valueMap.get(FieldType.BID).doubleValue();
     }
