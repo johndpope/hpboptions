@@ -13,6 +13,6 @@ public class Underlying extends AbstractDataHolder {
 
     @Override
     public String createMessage(FieldType fieldType) {
-        return "underlying," + ibRequestId + "," + fieldType + "," + valueMap.get(fieldType);
+        return "underlying," + ibRequestId + "," + fieldType.toCamelCase() + "," + valueMap.get(fieldType);
     }
 }

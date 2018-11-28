@@ -51,8 +51,7 @@ public class DataController {
         underlyings.clear();
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
         optionRoots.forEach(or -> {
-            Instrument instrument = new Instrument(or.getUndlSecType(), or.getUndlSymbol(), or.getUndlSymbol(), or.getCurrency(), or.getUndlExchange());
-            Underlying underlying = new Underlying(instrument, ibRequestIdGenerator.incrementAndGet());
+            Underlying underlying = new Underlying(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
             underlyings.add(underlying);
         });
     }
@@ -67,6 +66,9 @@ public class DataController {
             return;
         }
         FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
+        if (fieldType == null) {
+            return;
+        }
         dataHolder.updateValue(fieldType, value);
         messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType));
 

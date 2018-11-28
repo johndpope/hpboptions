@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.enums;
 
 import com.ib.client.TickType;
+import org.apache.commons.text.CaseUtils;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -23,6 +24,10 @@ public enum FieldType {
     OPEN_INTEREST,
     IV_LAST,
     IV_CHANGE;
+
+    public String toCamelCase() {
+        return CaseUtils.toCamelCase(name(), false, '_');
+    }
 
     public static FieldType getFromTickType(TickType tickType) {
         switch(tickType) {

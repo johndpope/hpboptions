@@ -32,7 +32,7 @@ public class AppRestController {
     public ResponseEntity<?> connect() {
         connectionController.connect();
 
-        return ResponseEntity.ok("connected: " + connectionController.isConnected());
+        return ResponseEntity.ok("connected=" + connectionController.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
@@ -40,7 +40,12 @@ public class AppRestController {
         connectionController.disconnect();
         CoreUtil.waitMilliseconds(1000);
 
-        return ResponseEntity.ok("connected: " + connectionController.isConnected());
+        return ResponseEntity.ok("connected=" + connectionController.isConnected());
+    }
+
+    @RequestMapping("connection-info")
+    public ResponseEntity<?> getConnectionInfo() {
+        return ResponseEntity.ok(connectionController.getConnectionInfo());
     }
 
     @RequestMapping("underlyings")

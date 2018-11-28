@@ -19,4 +19,5 @@ public class CoreSettings {
     public static final String WS_TOPIC_UNDERLYING = "/topic/underlying";
     public static final String WS_TOPIC_POSITION = "/topic/position";
     public static final String WS_TOPIC_CHAIN = "/topic/chain";
+    public static final String WS_TOPIC_IB_CONNECTION = "/topic/ib_connection";
 }

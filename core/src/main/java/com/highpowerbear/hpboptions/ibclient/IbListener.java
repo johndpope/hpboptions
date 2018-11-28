@@ -14,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
+import java.net.SocketException;
+
+import static com.highpowerbear.hpboptions.common.CoreSettings.*;
 
 /**
  *
@@ -77,6 +79,26 @@ public class IbListener extends GenericIbListener {
             heartbeatMonitor.removeHeartbeat(ibOrder);
         }
         messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");
+    }
+
+    @Override
+    public void error(Exception e) {
+        super.error(e);
+        if (e instanceof SocketException && e.getMessage().equals("Socket closed")) {
+            messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+        }
+    }
+
+    @Override
+    public void connectionClosed() {
+        super.connectionClosed();
+        messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+    }
+
+    @Override
+    public void connectAck() {
+        super.connectAck();
+        messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "connected");
     }
 
     @Override

@@ -46,7 +46,8 @@ public abstract class AbstractDataHolder implements DataHolder {
         Double close = valueMap.get(FieldType.CLOSE).doubleValue();
 
         if (!last.isNaN() && !close.isNaN()) {
-            valueMap.put(FieldType.CHANGE_PCT, ((last - close) / close) * 100d);
+            double changePct = Double.parseDouble(String.format("%.2f", ((last - close) / close) * 100d));
+            valueMap.put(FieldType.CHANGE_PCT, changePct);
         }
     }
 

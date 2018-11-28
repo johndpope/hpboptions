@@ -15,13 +15,15 @@ public class Instrument {
     private final String underlying;
     private final Currency currency;
     private final Exchange exchange;
+    private final Exchange primaryExchange;
 
-    public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange) {
+    public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange, Exchange primaryExchange) {
         this.secType = secType;
         this.symbol = symbol;
         this.underlying = underlying;
         this.currency = currency;
         this.exchange = exchange;
+        this.primaryExchange = primaryExchange;
     }
 
     public Contract toIbContract() {
@@ -29,6 +31,7 @@ public class Instrument {
 
         contract.localSymbol(symbol);
         contract.symbol(underlying);
+        contract.primaryExch("ARCA");
         contract.secType(secType);
         contract.exchange(exchange.name());
         contract.currency(currency.name());
@@ -58,6 +61,6 @@ public class Instrument {
 
     @Override
     public String toString() {
-        return secType + "-" + symbol + "-" + underlying + "-" + currency + "-" + exchange;
+        return secType + "-" + symbol + "-" + underlying + "-" + currency + "-" + exchange + "-" + primaryExchange;
     }
 }

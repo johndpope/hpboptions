@@ -13,6 +13,6 @@ public class Position extends AbstractDataHolder {
 
     @Override
     public String createMessage(FieldType fieldType) {
-        return "position," + ibRequestId + "," + fieldType + "," + valueMap.get(fieldType);
+        return "position," + ibRequestId + "," + fieldType.toCamelCase() + "," + valueMap.get(fieldType);
     }
 }

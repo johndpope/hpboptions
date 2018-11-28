@@ -13,6 +13,7 @@ import com.ib.client.SoftDollarTier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Set;
 
 /**
@@ -114,32 +115,32 @@ public class GenericIbListener implements EWrapper {
 
     @Override
     public void tickEFP(int tickerId, int tickType, double basisPoints, String formattedBasisPoints, double impliedFuture, int holdDays, String futureExpiry, double dividendImpact, double dividendsToExpiry) {
-        log.info(EWrapperMsgGenerator.tickEFP(tickerId, tickType, basisPoints, formattedBasisPoints, impliedFuture, holdDays, futureExpiry, dividendImpact, dividendsToExpiry));
+        //log.info(EWrapperMsgGenerator.tickEFP(tickerId, tickType, basisPoints, formattedBasisPoints, impliedFuture, holdDays, futureExpiry, dividendImpact, dividendsToExpiry));
     }
 
     @Override
     public void tickGeneric(int tickerId, int tickType, double value) {
-        log.info(EWrapperMsgGenerator.tickGeneric(tickerId, tickType, value));
+        //log.info(EWrapperMsgGenerator.tickGeneric(tickerId, tickType, value));
     }
 
     @Override
     public void tickOptionComputation(int tickerId, int field, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
-        log.info(EWrapperMsgGenerator.tickOptionComputation(tickerId, field, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice));
+        //log.info(EWrapperMsgGenerator.tickOptionComputation(tickerId, field, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice));
     }
 
     @Override
     public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
-        log.info(EWrapperMsgGenerator.tickPrice(tickerId, field, price, canAutoExecute));
+        //log.info(EWrapperMsgGenerator.tickPrice(tickerId, field, price, canAutoExecute));
     }
 
     @Override
     public void tickSize(int tickerId, int field, int size) {
-        log.info(EWrapperMsgGenerator.tickSize(tickerId, field, size));
+        //log.info(EWrapperMsgGenerator.tickSize(tickerId, field, size));
     }
 
     @Override
     public void tickString(int tickerId, int tickType, String value) {
-        log.info(EWrapperMsgGenerator.tickString(tickerId, tickType, value));
+        //log.info(EWrapperMsgGenerator.tickString(tickerId, tickType, value));
     }
 
     @Override
@@ -239,58 +240,72 @@ public class GenericIbListener implements EWrapper {
 
     @Override
     public void verifyMessageAPI(String apiData) {
+        log.info("verifyMessageAPI, apiData= " + apiData);
     }
 
     @Override
     public void verifyCompleted(boolean isSuccessful, String errorText) {
+        log.info("verifyCompleted, isSuccessful=" + isSuccessful + ", errorText=" + errorText);
     }
 
     @Override
     public void displayGroupList(int reqId, String groups) {
+        log.info("displayGroupList, reqId=" + reqId + ", groups=" + groups);
     }
 
     @Override
     public void displayGroupUpdated(int reqId, String contractInfo) {
+        log.info("displayGroupUpdated, reqId=" + reqId + ", contractInfo=" + contractInfo);
     }
 
     // API 9.72
     @Override
-    public void verifyAndAuthCompleted(boolean b, String s) {
+    public void verifyAndAuthCompleted(boolean isSuccessful, String errorText) {
+        log.info("verifyAndAuthCompleted, isSuccessful=" + isSuccessful + ", errorText=" + errorText);
     }
 
     @Override
-    public void positionMulti(int i, String s, String s1, Contract contract, double v, double v1) {
+    public void positionMulti(int reqId, String account, String modelCode, Contract contract, double pos, double avgCost) {
+        log.info(EWrapperMsgGenerator.positionMulti(reqId, account, modelCode, contract, pos, avgCost));
     }
 
     @Override
-    public void positionMultiEnd(int i) {
+    public void positionMultiEnd(int reqId) {
+        log.info(EWrapperMsgGenerator.positionMultiEnd(reqId));
     }
 
     @Override
-    public void verifyAndAuthMessageAPI(String s, String s1) {
+    public void verifyAndAuthMessageAPI(String apiData, String xyzChallenge) {
+        log.info("verifyAndAuthMessageAPI, apiData=" + apiData + ", xyzChallenge=" + xyzChallenge);
     }
 
     @Override
     public void connectAck() {
+        log.info("connectAck");
     }
 
     @Override
-    public void accountUpdateMulti(int i, String s, String s1, String s2, String s3, String s4) {
+    public void accountUpdateMulti(int reqId, String account, String modelCode, String key, String value, String currency) {
+        log.info(EWrapperMsgGenerator.accountUpdateMulti(reqId, account, modelCode, key, value, currency));
     }
 
     @Override
-    public void accountUpdateMultiEnd(int i) {
+    public void accountUpdateMultiEnd(int reqId) {
+        log.info(EWrapperMsgGenerator.accountUpdateMultiEnd(reqId));
     }
 
     @Override
-    public void securityDefinitionOptionalParameter(int i, String s, int i1, String s1, String s2, Set<String> set, Set<Double> set1) {
+    public void securityDefinitionOptionalParameter(int reqId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
+        log.info(EWrapperMsgGenerator.securityDefinitionOptionalParameter(reqId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes));
     }
 
     @Override
-    public void securityDefinitionOptionalParameterEnd(int i) {
+    public void securityDefinitionOptionalParameterEnd(int reqId) {
+        log.info("securityDefinitionOptionalParameterEnd, reqId=" + reqId);
     }
 
     @Override
-    public void softDollarTiers(int i, SoftDollarTier[] softDollarTiers) {
+    public void softDollarTiers(int reqId, SoftDollarTier[] tiers) {
+        log.info("softDollarTiers, reqId=" + reqId + ", tiers=" + Arrays.toString(tiers));
     }
 }

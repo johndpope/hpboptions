@@ -17,69 +17,87 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     },
     columns: [{
         text: 'ReqID',
-        width: 80,
+        width: 70,
         dataIndex: 'ibRequestId'
     }, {
         text: 'Sec',
         width: 60,
         dataIndex: 'secType'
     }, {
-        text: 'Symbol',
-        width: 180,
+        text: 'Sym',
+        width: 60,
         dataIndex: 'symbol'
     }, {
-        text: 'Currency',
-        width: 120,
+        text: 'Cur',
+        width: 60,
         dataIndex: 'currency'
     }, {
         text: 'Exchange',
-        width: 120,
+        width: 100,
         dataIndex: 'exchange'
     }, {
-        text: 'Bid Size',
-        width: 100,
+        text: 'BidS',
+        width: 80,
         dataIndex: 'bidSize',
-        align: 'right'
+        tdCls: 'bidSize hop-size',
+        align: 'right',
+        renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 100,
+        width: 80,
         dataIndex: 'bid',
-        align: 'right'
+        tdCls: 'bid hop-price',
+        align: 'right',
+        renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 100,
+        width: 80,
         dataIndex: 'ask',
-        align: 'right'
+        tdCls: 'ask hop-price',
+        align: 'right',
+        renderer: 'priceRenderer'
     }, {
-        text: 'Ask Size',
-        width: 100,
+        text: 'AskS',
+        width: 80,
         dataIndex: 'askSize',
-        align: 'right'
+        tdCls: 'askSize hop-size',
+        align: 'right',
+        renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 100,
+        width: 80,
         dataIndex: 'last',
-        align: 'right'
+        tdCls: 'last hop-price',
+        align: 'right',
+        renderer: 'priceRenderer'
     }, {
-        text: 'Last Size',
-        width: 100,
+        text: 'LastS',
+        width: 80,
         dataIndex: 'lastSize',
-        align: 'right'
+        tdCls: 'lastSize hop-size',
+        align: 'right',
+        renderer: 'sizeRenderer'
     }, {
-        text: 'Volume',
-        width: 100,
+        text: 'Vol',
+        width: 80,
         dataIndex: 'volume',
-        align: 'right'
+        tdCls: 'volume hop-size',
+        align: 'right',
+        renderer: 'sizeRenderer'
     }, {
         text: 'Close',
-        width: 100,
+        width: 80,
         dataIndex: 'close',
-        align: 'right'
+        tdCls: 'close hop-price',
+        align: 'right',
+        renderer: 'priceRenderer'
     }, {
-        text: 'Change',
-        width: 100,
+        text: 'Chg%',
+        width: 80,
         dataIndex: 'changePct',
-        align: 'right'
+        tdCls: 'changePct hop-pct',
+        align: 'right',
+        renderer: 'pctRenderer'
     }, {
         flex: 1
     }],
@@ -88,5 +106,34 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         bind: '{underlyings}',
         dock: 'bottom',
         displayInfo: true
+    }, {
+        xtype: 'toolbar',
+        items: [{
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: 'Connect',
+            handler: 'connect',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('play'));
+                }
+            }
+        }, {
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: 'Disconnect',
+            handler: 'disconnect',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('stop'));
+                }
+            }
+        }, {
+            xtype: 'tbtext',
+            html: 'connection info',
+            width: 180,
+            margin: '0 0 0 10',
+            reference: 'ibConnectionInfo'
+        }]
     }]
 });

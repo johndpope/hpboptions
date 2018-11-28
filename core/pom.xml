@@ -57,6 +57,11 @@
             <artifactId>tws-api</artifactId>
             <version>9.72.17-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.6</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -5,6 +5,9 @@ package com.highpowerbear.hpboptions.enums;
  */
 public enum Exchange {
     SMART,
+    ARCA,
+    NASDAQ,
+    NYSE,
     IDEALPRO,
     CBOE,
     GLOBEX,

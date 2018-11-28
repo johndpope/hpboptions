@@ -39,6 +39,10 @@ public class ConnectionController {
         return ibController.getIbConnection().isConnected();
     }
 
+    public String getConnectionInfo() {
+        return ibController.getIbConnection().getInfo();
+    }
+
     @Scheduled(fixedRate = 5000)
     private void reconnect() {
         IbConnection c = ibController.getIbConnection();

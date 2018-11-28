@@ -13,6 +13,6 @@ public class ChainItem extends AbstractDataHolder {
 
     @Override
     public String createMessage(FieldType fieldType) {
-        return "chainItem," + ibRequestId + "," + fieldType + "," + valueMap.get(fieldType);
+        return "chainItem," + ibRequestId + "," + fieldType.toCamelCase() + "," + valueMap.get(fieldType);
     }
 }

@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.entity;
 
+import com.highpowerbear.hpboptions.corelogic.model.Instrument;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Types;
@@ -33,7 +34,13 @@ public class OptionRoot {
     private String undlSymbol;
     @Enumerated(EnumType.STRING)
     private Exchange undlExchange;
+    @Enumerated(EnumType.STRING)
+    private Exchange undlPrimaryExchange;
     private Boolean active;
+
+    public Instrument getUnderlyingInstrument() {
+        return new Instrument(undlSecType, undlSymbol, undlSymbol, currency, undlExchange, undlPrimaryExchange);
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -112,6 +119,14 @@ public class OptionRoot {
 
     public void setUndlExchange(Exchange undlExchange) {
         this.undlExchange = undlExchange;
+    }
+
+    public Exchange getUndlPrimaryExchange() {
+        return undlPrimaryExchange;
+    }
+
+    public void setUndlPrimaryExchange(Exchange undlPrimaryExchange) {
+        this.undlPrimaryExchange = undlPrimaryExchange;
     }
 
     public Boolean getActive() {

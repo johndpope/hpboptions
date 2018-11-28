@@ -34,16 +34,20 @@ public class IbConnection {
         this.eReaderSignal = eReaderSignal;
     }
 
+    public String getInfo() {
+        return host + ":" + port + ":" + clientId + "," + isConnected();
+    }
+
     public void connect() {
         markConnected = true;
 
         if (!isConnected()) {
-            log.info("connecting " + info());
+            log.info("connecting " + getInfo());
             eClientSocket.eConnect(host, port, clientId);
             CoreUtil.waitMilliseconds(1000);
 
             if (isConnected()) {
-                log.info("successfully connected " + info());
+                log.info("successfully connected " + getInfo());
 
                 final EReader eReader = new EReader(eClientSocket, eReaderSignal);
 
@@ -67,12 +71,12 @@ public class IbConnection {
         markConnected = false;
 
         if (isConnected()) {
-            log.info("disconnecting " + info());
+            log.info("disconnecting " + getInfo());
             eClientSocket.eDisconnect();
             CoreUtil.waitMilliseconds(1000);
 
             if (!isConnected()) {
-                log.info("successfully disconnected " + info());
+                log.info("successfully disconnected " + getInfo());
                 this.accounts = null;
             }
         }
@@ -80,7 +84,7 @@ public class IbConnection {
 
     public boolean checkConnected() {
         if (!isConnected()) {
-            log.info("not connected " + info());
+            log.info("not connected " + getInfo());
         }
         return isConnected();
     }
@@ -116,9 +120,5 @@ public class IbConnection {
 
     public EClientSocket getClientSocket() {
         return eClientSocket;
-    }
-
-    private String info() {
-        return "host=" + host + ", port=" + port + ", clientId=" + clientId;
     }
 }

@@ -1,39 +1,34 @@
 @import "fontAwesome/font-awesome";
 
-.d3-bar {
-    fill: steelblue;
+.hop-uptick div {
+    color: #76FF03;
+    background-color: #212121;
 }
 
-rect.d3-bar:hover, g.d3-bar:hover > rect {
-    fill: orange !important;
+.hop-downtick div {
+    color: #FF9800;
+    background-color: #212121;
 }
 
-.esb-axis {
-    font: 10px sans-serif;
+.hop-unchanged div {
+    color: #FFEB3B;
+    background-color: #212121;
 }
 
-.d3-axis path,
-.d3-axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
+.hop-positive div {
+    color: white;
+    background-color: #0D47A1;
 }
 
-.d3-tooltip {
-    position: absolute;
-    text-align: center;
-    width: 120px;
-    height: 32px;
-    padding: 2px;
-    font: 12px sans-serif;
-    background: lightsteelblue;
-    border: 0;
-    border-radius: 8px;
-    pointer-events: none;
+.hop-negative div {
+    color: white;
+    background-color: #B71C1C;
 }
 
-.d3-line {
-    fill: none;
-    stroke: steelblue;
-    stroke-width: 1.5px;
+.hop-connected {
+    color: green !important;
+}
+
+.hop-disconnected {
+    color: red !important;
 }
