@@ -30,16 +30,19 @@ public class AppRestController {
 
     @RequestMapping(method = RequestMethod.PUT, value = "connect")
     public ResponseEntity<?> connect() {
-        connectionController.connect();
+        if (!connectionController.isConnected()) {
+            connectionController.connect();
+        }
 
         return ResponseEntity.ok("connected=" + connectionController.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
     public ResponseEntity<?> disconnect() {
-        connectionController.disconnect();
-        CoreUtil.waitMilliseconds(1000);
-
+        if (connectionController.isConnected()) {
+            connectionController.disconnect();
+            CoreUtil.waitMilliseconds(1000);
+        }
         return ResponseEntity.ok("connected=" + connectionController.isConnected());
     }
 

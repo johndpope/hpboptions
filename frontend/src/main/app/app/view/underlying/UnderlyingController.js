@@ -15,9 +15,11 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         var me = this,
             underlyings = me.getStore('underlyings');
 
+        me.updateIbConnectionInfo();
+
         if (underlyings) {
             underlyings.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlyings');
-            me.reloadUnderlyings();
+            me.loadUnderlyings();
         }
 
         var socket  = new SockJS('/websocket');
@@ -32,7 +34,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             });
 
             stompClient.subscribe('/topic/ib_connection', function(message) {
-                me.reloadUnderlyings();
+                underlyings.reload();
+                me.updateIbConnectionInfo();
             });
 
         }, function() {
@@ -41,16 +44,15 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    reloadUnderlyings: function() {
+    loadUnderlyings: function() {
         var me = this,
             underlyings = me.getStore('underlyings'),
             underlyingGrid = me.lookupReference('underlyingGrid');
 
         underlyings.load(function(records, operation, success) {
             if (success) {
-                console.log('reloaded underlyings');
+                console.log('loaded underlyings');
                 underlyingGrid.setSelection(underlyings.first());
-                me.updateIbConnectionInfo();
             }
         });
     },
