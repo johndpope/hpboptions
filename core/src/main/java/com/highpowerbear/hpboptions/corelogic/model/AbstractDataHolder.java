@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.corelogic.model;
 
+import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.FieldType;
 import net.minidev.json.annotate.JsonIgnore;
 
@@ -42,10 +43,10 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     private void updateChangePct() {
-        Double last = valueMap.get(FieldType.LAST).doubleValue();
-        Double close = valueMap.get(FieldType.CLOSE).doubleValue();
+        double last = valueMap.get(FieldType.LAST).doubleValue();
+        double close = valueMap.get(FieldType.CLOSE).doubleValue();
 
-        if (!last.isNaN() && !close.isNaN()) {
+        if (CoreUtil.isValidPrice(last) && CoreUtil.isValidPrice(close)) {
             double changePct = Double.parseDouble(String.format("%.2f", ((last - close) / close) * 100d));
             valueMap.put(FieldType.CHANGE_PCT, changePct);
         }
@@ -64,38 +65,47 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public abstract String createMessage(FieldType fieldType);
 
+    @Override
     public double getBid() {
         return valueMap.get(FieldType.BID).doubleValue();
     }
 
+    @Override
     public double getAsk() {
         return valueMap.get(FieldType.ASK).doubleValue();
     }
 
+    @Override
     public double getLast() {
         return valueMap.get(FieldType.LAST).doubleValue();
     }
 
+    @Override
     public double getClose() {
         return valueMap.get(FieldType.CLOSE).doubleValue();
     }
 
+    @Override
     public double getChangePct() {
         return valueMap.get(FieldType.CHANGE_PCT).doubleValue();
     }
 
+    @Override
     public int getBidSize() {
         return valueMap.get(FieldType.BID_SIZE).intValue();
     }
 
+    @Override
     public int getAskSize() {
         return valueMap.get(FieldType.ASK_SIZE).intValue();
     }
 
+    @Override
     public int getLastSize() {
         return valueMap.get(FieldType.LAST_SIZE).intValue();
     }
 
+    @Override
     public int getVolume() {
         return valueMap.get(FieldType.VOLUME).intValue();
     }

@@ -36,59 +36,59 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         width: 100,
         dataIndex: 'exchange'
     }, {
-        text: 'BidS',
-        width: 80,
+        text: 'BS',
+        width: 60,
         dataIndex: 'bidSize',
-        tdCls: 'bidSize hop-size',
+        tdCls: 'bidSize hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
         width: 80,
         dataIndex: 'bid',
-        tdCls: 'bid hop-price',
+        tdCls: 'bid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
         width: 80,
         dataIndex: 'ask',
-        tdCls: 'ask hop-price',
+        tdCls: 'ask hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'AskS',
-        width: 80,
+        text: 'AS',
+        width: 60,
         dataIndex: 'askSize',
-        tdCls: 'askSize hop-size',
+        tdCls: 'askSize hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
         width: 80,
         dataIndex: 'last',
-        tdCls: 'last hop-price',
+        tdCls: 'last hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'LastS',
-        width: 80,
+        text: 'LS',
+        width: 60,
         dataIndex: 'lastSize',
-        tdCls: 'lastSize hop-size',
+        tdCls: 'lastSize hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Vol',
-        width: 80,
+        text: 'Volume',
+        width: 90,
         dataIndex: 'volume',
-        tdCls: 'volume hop-size',
+        tdCls: 'volume hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
         text: 'Close',
         width: 80,
         dataIndex: 'close',
-        tdCls: 'close hop-price',
+        tdCls: 'close hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
@@ -130,10 +130,19 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: 'connection info',
+            html: 'IB connection info',
             width: 180,
             margin: '0 0 0 10',
             reference: 'ibConnectionInfo'
+        }, {
+            xtype: 'tbtext',
+            flex: 1
+        }, {
+            xtype: 'tbtext',
+            html: 'WS status',
+            width: 120,
+            margin: '0 0 0 10',
+            reference: 'wsStatus'
         }]
     }]
 });

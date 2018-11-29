@@ -1,46 +1,52 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.corelogic.CoreService;
+import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
+import com.highpowerbear.hpboptions.corelogic.OpenOrderHandler;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
-import com.highpowerbear.hpboptions.corelogic.OpenOrderHandler;
-import com.highpowerbear.hpboptions.corelogic.DataController;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.net.SocketException;
 
-import static com.highpowerbear.hpboptions.common.CoreSettings.*;
+import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_IB_CONNECTION;
+import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 
 /**
  *
  * Created by robertk on 11/5/2018.
  */
 @Component
-@Scope("prototype")
 public class IbListener extends GenericIbListener {
 
     private final CoreDao coreDao;
     private final OpenOrderHandler openOrderHandler;
-    private final IbController ibController;
     private final HeartbeatMonitor heartbeatMonitor;
-    private final DataController dataController;
     private final MessageSender messageSender;
 
+    private IbController ibController; // prevent circular dependency
+    private CoreService coreService; // prevent circular dependency
+
     @Autowired
-    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, IbController ibController, HeartbeatMonitor heartbeatMonitor, DataController dataController, MessageSender messageSender) {
+    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, HeartbeatMonitor heartbeatMonitor, MessageSender messageSender) {
         this.coreDao = coreDao;
         this.openOrderHandler = openOrderHandler;
-        this.ibController = ibController;
         this.heartbeatMonitor = heartbeatMonitor;
-        this.dataController = dataController;
         this.messageSender = messageSender;
+    }
+
+    void setIbController(IbController ibController) {
+        this.ibController = ibController;
+    }
+
+    void setCoreService(CoreService coreService) {
+        this.coreService = coreService;
     }
 
     @Override
@@ -90,6 +96,15 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
+    public void error(int id, int errorCode, String errorMsg) {
+        super.error(id, errorCode, errorMsg);
+        if (errorCode == 507) {
+            ibController.connectionBroken();
+            messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+        }
+    }
+
+    @Override
     public void connectionClosed() {
         super.connectionClosed();
         messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
@@ -102,24 +117,18 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void managedAccounts(String accountsList) {
-        super.managedAccounts(accountsList);
-        ibController.getIbConnection().setAccounts(accountsList);
-    }
-
-    @Override
     public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
-        dataController.updateValue(tickerId, field, price);
+        coreService.updateValue(tickerId, field, price);
     }
 
     @Override
     public void tickSize(int tickerId, int field, int size) {
-        dataController.updateValue(tickerId, field, size);
+        coreService.updateValue(tickerId, field, size);
     }
 
     @Override
     public void tickGeneric(int tickerId, int tickType, double value) {
-        dataController.updateValue(tickerId, tickType, value);
+        coreService.updateValue(tickerId, tickType, value);
     }
 
     @Override

@@ -1,32 +1,38 @@
 package com.highpowerbear.hpboptions.corelogic;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
+import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.corelogic.model.*;
+import com.highpowerbear.hpboptions.corelogic.model.ChainItem;
+import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
+import com.highpowerbear.hpboptions.corelogic.model.Position;
+import com.highpowerbear.hpboptions.corelogic.model.Underlying;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.OptionRoot;
 import com.highpowerbear.hpboptions.enums.FieldType;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by robertk on 11/5/2018.
  */
-@Component
-public class DataController {
-    private static final Logger log = LoggerFactory.getLogger(DataController.class);
+@Service
+public class CoreService {
 
     private final CoreDao coreDao;
-    private final IbController ibController;
     private final MessageSender messageSender;
+
+    private IbController ibController; // prevent circular dependency
 
     private final List<Underlying> underlyings = new ArrayList<>();
     private final List<Position> positions = new ArrayList<>();
@@ -36,24 +42,54 @@ public class DataController {
     private final AtomicInteger ibRequestIdGenerator = new AtomicInteger(0);
 
     @Autowired
-    public DataController(CoreDao coreDao, IbController ibController, MessageSender messageSender) {
+    public CoreService(CoreDao coreDao, MessageSender messageSender) {
         this.coreDao = coreDao;
-        this.ibController = ibController;
         this.messageSender = messageSender;
     }
 
     @PostConstruct
     public void init() {
-        initUnderlyings();
-    }
-
-    public void initUnderlyings() {
-        underlyings.clear();
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
+
         optionRoots.forEach(or -> {
             Underlying underlying = new Underlying(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
             underlyings.add(underlying);
         });
+    }
+
+    public void setIbController(IbController ibController) {
+        this.ibController = ibController;
+    }
+
+    public void connect() {
+        ibController.connect();
+
+        if (isConnected()) {
+            dataMap.keySet().forEach(ibController::cancelMarketData);
+            dataMap.clear();
+            underlyings.forEach(this::requestData);
+        }
+    }
+
+    public void disconnect() {
+        underlyings.forEach(this::cancelData);
+        CoreUtil.waitMilliseconds(1000);
+        ibController.disconnect();
+    }
+
+    public boolean isConnected() {
+        return ibController.isConnected();
+    }
+
+    public String getConnectionInfo() {
+        return ibController.getIbConnectionInfo();
+    }
+
+    @Scheduled(fixedRate = 5000)
+    private void reconnect() {
+        if (!ibController.isConnected() && ibController.isMarkConnected()) {
+            connect();
+        }
     }
 
     public List<Underlying> getUnderlyings() {
@@ -72,29 +108,22 @@ public class DataController {
         dataHolder.updateValue(fieldType, value);
         messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType));
 
-        if (fieldType == FieldType.LAST) {
+        if (fieldType == FieldType.LAST && CoreUtil.isValidPct(dataHolder.getChangePct())) {
             messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(FieldType.CHANGE_PCT));
         }
     }
 
-    public void reset() {
-        dataMap.keySet().forEach(ibController::cancelRealtimeData);
-        dataMap.clear();
-    }
-
     public void requestData(DataHolder dataHolder) {
-        log.info("requesting realtime data for " + dataHolder.getInstrument());
         dataMap.putIfAbsent(dataHolder.getIbRequestId(), dataHolder);
-        ibController.requestRealtimeData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract());
+        ibController.requestMarketData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract());
     }
 
     public void cancelData(DataHolder dataHolder) {
-        log.info("canceling realtime data for " + dataHolder.getInstrument());
-        ibController.cancelRealtimeData(dataHolder.getIbRequestId());
+        ibController.cancelMarketData(dataHolder.getIbRequestId());
         dataMap.remove(dataHolder.getIbRequestId());
     }
 
-    public String getWsTopic(DataHolder dataHolder) {
+    private String getWsTopic(DataHolder dataHolder) {
         if (dataHolder instanceof Underlying) {
             return CoreSettings.WS_TOPIC_UNDERLYING;
         } else if (dataHolder instanceof Position) {

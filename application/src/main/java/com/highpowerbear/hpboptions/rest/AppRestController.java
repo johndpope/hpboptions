@@ -1,8 +1,7 @@
 package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.corelogic.ConnectionController;
-import com.highpowerbear.hpboptions.corelogic.DataController;
+import com.highpowerbear.hpboptions.corelogic.CoreService;
 import com.highpowerbear.hpboptions.corelogic.model.Underlying;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,41 +18,39 @@ import java.util.List;
 @RequestMapping("/")
 public class AppRestController {
 
-    private final ConnectionController connectionController;
-    private final DataController dataController;
+    private final CoreService coreService;
 
     @Autowired
-    public AppRestController(ConnectionController connectionController, DataController dataController) {
-        this.connectionController = connectionController;
-        this.dataController = dataController;
+    public AppRestController(CoreService coreService) {
+        this.coreService = coreService;
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connect")
     public ResponseEntity<?> connect() {
-        if (!connectionController.isConnected()) {
-            connectionController.connect();
+        if (!coreService.isConnected()) {
+            coreService.connect();
         }
 
-        return ResponseEntity.ok("connected=" + connectionController.isConnected());
+        return ResponseEntity.ok("connected=" + coreService.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
     public ResponseEntity<?> disconnect() {
-        if (connectionController.isConnected()) {
-            connectionController.disconnect();
+        if (coreService.isConnected()) {
+            coreService.disconnect();
             CoreUtil.waitMilliseconds(1000);
         }
-        return ResponseEntity.ok("connected=" + connectionController.isConnected());
+        return ResponseEntity.ok("connected=" + coreService.isConnected());
     }
 
     @RequestMapping("connection-info")
     public ResponseEntity<?> getConnectionInfo() {
-        return ResponseEntity.ok(connectionController.getConnectionInfo());
+        return ResponseEntity.ok(coreService.getConnectionInfo());
     }
 
     @RequestMapping("underlyings")
     public ResponseEntity<?> getUnderlyings() {
-        List<Underlying> underlyings = dataController.getUnderlyings();
+        List<Underlying> underlyings = coreService.getUnderlyings();
         return ResponseEntity.ok(new RestList<>(underlyings, (long) underlyings.size()));
     }
 }

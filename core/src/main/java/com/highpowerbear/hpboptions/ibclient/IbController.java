@@ -2,17 +2,14 @@ package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.ib.client.Contract;
-import com.ib.client.EClientSocket;
-import com.ib.client.EJavaSignal;
-import com.ib.client.EReaderSignal;
+import com.highpowerbear.hpboptions.corelogic.CoreService;
+import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Provider;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -21,39 +18,109 @@ import javax.inject.Provider;
 public class IbController {
     private static final Logger log = LoggerFactory.getLogger(IbController.class);
 
-    private final Provider<IbListener> ibListenerProvider;
-    private IbConnection ibConnection;
+    private final String host = CoreSettings.IB_HOST;
+    private final Integer port = CoreSettings.IB_PORT;
+    private final Integer clientId = CoreSettings.IB_CLIENT_ID;
 
-    public IbConnection getIbConnection() {
-        return ibConnection;
-    }
+    private EReaderSignal eReaderSignal;
+    private EClientSocket eClientSocket;
+    private boolean markConnected;
+
+    private final IbListener ibListener;
+    private final CoreService coreService;
 
     @Autowired
-    public IbController(Provider<IbListener> ibListenerProvider) {
-        this.ibListenerProvider = ibListenerProvider;
+    public IbController(IbListener ibListener, CoreService coreService) {
+        this.ibListener = ibListener;
+        this.coreService = coreService;
+    }
+
+    public String getIbConnectionInfo() {
+        return host + ":" + port + ":" + clientId + "," + isConnected();
     }
 
     @PostConstruct
-    private void init() {
-        EReaderSignal eReaderSignal = new EJavaSignal();
-        EClientSocket eClientSocket = new EClientSocket(ibListenerProvider.get(), eReaderSignal);
+    public void init() {
+        coreService.setIbController(this);
+        ibListener.setIbController(this);
+        ibListener.setCoreService(coreService);
 
-        ibConnection = new IbConnection(CoreSettings.IB_HOST, CoreSettings.IB_PORT, CoreSettings.IB_CLIENT_ID, eClientSocket, eReaderSignal);
+        eReaderSignal = new EJavaSignal();
+        eClientSocket = new EClientSocket(ibListener, eReaderSignal);
     }
 
-    public void requestRealtimeData(int reqId, Contract contract) {
+    public void connect() {
+        markConnected = true;
+
+        if (!isConnected()) {
+            log.info("connecting " + getIbConnectionInfo());
+            eClientSocket.eConnect(host, port, clientId);
+            CoreUtil.waitMilliseconds(1000);
+
+            if (isConnected()) {
+                log.info("successfully connected " + getIbConnectionInfo());
+
+                final EReader eReader = new EReader(eClientSocket, eReaderSignal);
+
+                eReader.start();
+                // an additional thread is created in this program design to empty the messaging queue
+                new Thread(() -> {
+                    while (eClientSocket.isConnected()) {
+                        eReaderSignal.waitForSignal();
+                        try {
+                            eReader.processMsgs();
+                        } catch (Exception e) {
+                            log.error("error", e);
+                        }
+                    }
+                }).start();
+            }
+        }
+    }
+
+    public void disconnect() {
+        markConnected = false;
+
+        if (isConnected()) {
+            log.info("disconnecting " + getIbConnectionInfo());
+            eClientSocket.eDisconnect();
+            CoreUtil.waitMilliseconds(1000);
+
+            if (!isConnected()) {
+                log.info("successfully disconnected " + getIbConnectionInfo());
+            }
+        }
+    }
+
+    public Boolean isConnected() {
+        return eClientSocket != null && eClientSocket.isConnected();
+    }
+
+    public boolean isMarkConnected() {
+        return markConnected;
+    }
+
+    public void requestMarketData(int reqId, Contract contract) {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 
-        if (ibConnection.checkConnected()) {
-            ibConnection.getClientSocket().reqMktData(reqId, contract, "", false, null);
+        if (isConnected()) {
+            eClientSocket.reqMktData(reqId, contract, "", false, null);
+        } else {
+            log.info("not connected " + getIbConnectionInfo());
         }
     }
 
-    public void cancelRealtimeData(int reqId) {
+    public void cancelMarketData(int reqId) {
         log.info("canceling realtime data for reqId=" + reqId);
 
-        if (ibConnection.checkConnected()) {
-            ibConnection.getClientSocket().cancelMktData(reqId);
+        if (isConnected()) {
+            eClientSocket.cancelMktData(reqId);
+        } else {
+            log.info("not connected " + getIbConnectionInfo());
         }
+    }
+
+    void connectionBroken() {
+        eClientSocket.eDisconnect();
     }
 }

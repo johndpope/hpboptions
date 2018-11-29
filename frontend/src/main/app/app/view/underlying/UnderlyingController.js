@@ -13,7 +13,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     init: function() {
         var me = this,
-            underlyings = me.getStore('underlyings');
+            underlyings = me.getStore('underlyings'),
+            wsStatusField = me.lookupReference('wsStatus');
 
         me.updateIbConnectionInfo();
 
@@ -27,7 +28,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         stompClient.connect({}, function(frame) {
             console.log("WS underlying connected");
-            // TODO WS status
+            wsStatusField.update("WS connected");
+            wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/underlying', function(message) {
                 me.updateRtData(message.body);
@@ -40,7 +42,9 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         }, function() {
             console.log("WS underlying disconnected");
-            // TODO WS status
+            wsStatusField.update("WS disconnected");
+            wsStatusField.removeCls('hop-connected');
+            wsStatusField.addCls('hop-disconnected');
         });
     },
 
@@ -99,7 +103,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     info = arr[0],
                     connected = arr[1];
 
-                infoField.update(info);
+                infoField.update('IB ' + info);
                 infoField.removeCls('hop-connected');
                 infoField.removeCls('hop-disconnected');
                 infoField.addCls(connected === 'true' ? 'hop-connected' : 'hop-disconnected');
@@ -108,22 +112,43 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     },
 
     priceRenderer: function(val, metadata, record) {
+        var me = this;
+
         metadata.tdCls = ' hop-underlying-' + record.data.ibRequestId;
-        return val === 'NaN' ? '' : Ext.util.Format.number(val, '0.00###');
+        return me.formatPrice(val);
     },
 
     sizeRenderer: function(val, metadata, record) {
+        var me = this;
+
         metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
-        return val === -1 ? '' : val;
+        return me.formatSize(val);
     },
 
     pctRenderer: function(val, metadata, record) {
-        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        var me = this;
+
+        var statusCls = val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged');
+        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId + ' ' + statusCls;
+
+        return me.formatPct(val);
+    },
+
+    formatPrice: function(val) {
+        return val === 'NaN' ? '' : Ext.util.Format.number(val, '0.00###');
+    },
+
+    formatSize: function(val) {
+        return val === -1 ? '' : val;
+    },
+
+    formatPct: function(val) {
         return val === 'NaN' ? '' : Ext.util.Format.number(val, '0.00%');
     },
 
     updateRtData: function(msg) {
-        var arr = msg.split(","),
+        var me = this,
+            arr = msg.split(","),
             ibRequestId = arr[1],
             field = arr[2],
             val = arr[3];
@@ -131,17 +156,46 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         var selector = 'td.hop-underlying-' + ibRequestId + '.' + field;
         var td = Ext.query(selector)[0];
         if (td) {
+            td.classList.remove('hop-uptick');
+            td.classList.remove('hop-downtick');
+            td.classList.remove('hop-unchanged');
+            td.classList.remove('hop-positive');
+            td.classList.remove('hop-negative');
+
             var div = Ext.query('div', true, td)[0];
             if (div) {
-                var formattedValue;
+                var oldValue = div.innerHTML;
+                var newValue;
+
                 if (td.classList.contains('hop-price')) {
-                    formattedValue = Ext.util.Format.number(val, '0.00###');
+                    newValue = me.formatPrice(val);
+                    if (newValue > oldValue) {
+                        td.classList.add('hop-uptick');
+                    } else if (newValue < oldValue) {
+                        td.classList.add('hop-downtick');
+                    } else {
+                        td.classList.add('hop-unchanged');
+                    }
                 } else if (td.classList.contains('hop-pct')) {
-                    formattedValue = Ext.util.Format.number(val, '0.00%');
+                    newValue = me.formatPct(val);
+                    if (val > 0) {
+                        td.classList.add('hop-positive');
+                    } else if (val < 0) {
+                        td.classList.add('hop-negative');
+                    } else {
+                        td.classList.add('hop-unchanged');
+                    }
                 } else {
-                    formattedValue = val;
+                    newValue = me.formatSize(val);
+                    if (newValue > oldValue) {
+                        td.classList.add('hop-uptick');
+                    } else if (newValue < oldValue) {
+                        td.classList.add('hop-downtick');
+                    } else {
+                        td.classList.add('hop-unchanged');
+                    }
                 }
-                div.innerHTML = formattedValue;
+                div.innerHTML = newValue;
             }
         }
     },
