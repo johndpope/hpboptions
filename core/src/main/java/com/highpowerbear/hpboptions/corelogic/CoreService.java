@@ -3,12 +3,10 @@ package com.highpowerbear.hpboptions.corelogic;
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.corelogic.model.ChainItem;
 import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
-import com.highpowerbear.hpboptions.corelogic.model.Position;
-import com.highpowerbear.hpboptions.corelogic.model.Underlying;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.OptionRoot;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.FieldType;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
@@ -31,9 +29,9 @@ public class CoreService {
 
     private IbController ibController; // prevent circular dependency
 
-    private final List<Underlying> underlyings = new ArrayList<>();
-    private final List<Position> positions = new ArrayList<>();
-    private final List<ChainItem> chainItems = new ArrayList<>();
+    private final List<DataHolder> underlyings = new ArrayList<>();
+    private final List<DataHolder> positions = new ArrayList<>();
+    private final List<DataHolder> chainItems = new ArrayList<>();
 
     private final Map<Integer, DataHolder> dataMap = new LinkedHashMap<>(); // ib request id --> dataHolder
     private final AtomicInteger ibRequestIdGenerator = new AtomicInteger(0);
@@ -49,7 +47,7 @@ public class CoreService {
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
 
         optionRoots.forEach(or -> {
-            Underlying underlying = new Underlying(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
+            DataHolder underlying = new DataHolder(DataHolderType.UNDERLYING, or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
             underlyings.add(underlying);
         });
     }
@@ -89,7 +87,7 @@ public class CoreService {
         }
     }
 
-    public List<Underlying> getUnderlyings() {
+    public List<DataHolder> getUnderlyings() {
         return underlyings;
     }
 
@@ -102,9 +100,17 @@ public class CoreService {
         if (fieldTypes == null) {
             return;
         }
-        fieldTypes.stream().filter(FieldType::isBasic).forEach(fieldType -> dataHolder.updateField(fieldType, value));
-        fieldTypes.stream().filter(FieldType::isDerived).forEach(dataHolder::updateField);
-        fieldTypes.forEach(fieldType -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType)));
+        fieldTypes.stream()
+                .filter(FieldType::isBasic)
+                .forEach(fieldType -> dataHolder.updateField(fieldType, value));
+
+        fieldTypes.stream()
+                .filter(FieldType::isDerived)
+                .forEach(dataHolder::calculateField);
+
+        fieldTypes.stream()
+                .filter(FieldType::isCreateMessage)
+                .forEach(fieldType -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType)));
     }
 
     public void requestData(DataHolder dataHolder) {
@@ -118,14 +124,17 @@ public class CoreService {
     }
 
     private String getWsTopic(DataHolder dataHolder) {
-        if (dataHolder instanceof Underlying) {
+        if (dataHolder.getType() == DataHolderType.UNDERLYING) {
             return CoreSettings.WS_TOPIC_UNDERLYING;
-        } else if (dataHolder instanceof Position) {
+
+        } else if (dataHolder.getType() == DataHolderType.POSITION) {
             return CoreSettings.WS_TOPIC_POSITION;
-        } else if (dataHolder instanceof ChainItem) {
+
+        } else if (dataHolder.getType() == DataHolderType.CHAIN) {
             return CoreSettings.WS_TOPIC_CHAIN;
+
         } else {
-            throw new IllegalStateException("unsupported dataHolder type " + dataHolder.getClass().getSimpleName());
+            throw new IllegalStateException("unsupported dataHolder type " + dataHolder.getType());
         }
     }
 }

@@ -19,8 +19,4 @@ public class CoreUtil {
         return c.localSymbol() + ", " + c.symbol() + ", " + c.secType() + ", " + c.lastTradeDateOrContractMonth() +
                 ", " + c.right() + ", " + c.exchange() + ", " + c.currency() + ", " + c.multiplier() + ", " +  c.includeExpired();
     }
-
-    public static boolean isValidPrice(Double value) {
-        return value != null && !value.isNaN() && !value.isInfinite() && value > 0d;
-    }
 }

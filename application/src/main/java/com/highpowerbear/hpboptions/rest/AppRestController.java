@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.corelogic.CoreService;
-import com.highpowerbear.hpboptions.corelogic.model.Underlying;
+import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,7 +50,7 @@ public class AppRestController {
 
     @RequestMapping("underlyings")
     public ResponseEntity<?> getUnderlyings() {
-        List<Underlying> underlyings = coreService.getUnderlyings();
+        List<DataHolder> underlyings = coreService.getUnderlyings();
         return ResponseEntity.ok(new RestList<>(underlyings, (long) underlyings.size()));
     }
 }
