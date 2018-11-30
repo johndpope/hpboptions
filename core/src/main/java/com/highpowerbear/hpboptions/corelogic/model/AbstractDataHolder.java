@@ -13,43 +13,59 @@ import java.util.Map;
 public abstract class AbstractDataHolder implements DataHolder {
 
     private final Instrument instrument;
-    final int ibRequestId;
+    private final int ibRequestId;
     @JsonIgnore
-    final Map<FieldType, Number> valueMap = new HashMap<>();
+    private final Map<FieldType, Number> oldValueMap = new HashMap<>();
+    @JsonIgnore
+    private final Map<FieldType, Number> valueMap = new HashMap<>();
 
     AbstractDataHolder(Instrument instrument, int ibRequestId) {
         this.instrument = instrument;
         this.ibRequestId = ibRequestId;
 
-        valueMap.put(FieldType.BID, Double.NaN);
-        valueMap.put(FieldType.ASK, Double.NaN);
-        valueMap.put(FieldType.LAST, Double.NaN);
-        valueMap.put(FieldType.CLOSE, Double.NaN);
-        valueMap.put(FieldType.CHANGE_PCT, Double.NaN);
-
-        valueMap.put(FieldType.BID_SIZE, -1);
-        valueMap.put(FieldType.ASK_SIZE, -1);
-        valueMap.put(FieldType.LAST_SIZE, -1);
-        valueMap.put(FieldType.VOLUME, -1);
+        initMap(oldValueMap);
+        initMapSpecific(oldValueMap);
+        initMap(valueMap);
+        initMapSpecific(valueMap);
     }
+
+    private void initMap(Map<FieldType, Number> map) {
+        map.put(FieldType.BID, -1.0);
+        map.put(FieldType.ASK, -1.0);
+        map.put(FieldType.LAST, -1.0);
+        map.put(FieldType.CLOSE, -1.0);
+        map.put(FieldType.CHANGE_PCT, Double.NaN);
+
+        map.put(FieldType.BID_SIZE, -1);
+        map.put(FieldType.ASK_SIZE, -1);
+        map.put(FieldType.LAST_SIZE, -1);
+        map.put(FieldType.VOLUME, -1);
+    }
+
+    protected abstract void initMapSpecific(Map<FieldType, Number> map);
+
+    public abstract String getMessagePrefix();
 
     @Override
-    public void updateValue(FieldType fieldType, Number value) {
-        valueMap.put(fieldType, value);
+    public void updateField(FieldType fieldType, Number value) {
+        update(fieldType, value);
+    }
 
-        if (fieldType == FieldType.LAST) {
-            updateChangePct();
+    public void updateField(FieldType fieldType) {
+        if (fieldType == FieldType.CHANGE_PCT) {
+            double last = valueMap.get(FieldType.LAST).doubleValue();
+            double close = valueMap.get(FieldType.CLOSE).doubleValue();
+
+            if (CoreUtil.isValidPrice(last) && CoreUtil.isValidPrice(close)) {
+                double changePct = Double.parseDouble(String.format("%.2f", ((last - close) / close) * 100d));
+                update(FieldType.CHANGE_PCT, changePct);
+            }
         }
     }
 
-    private void updateChangePct() {
-        double last = valueMap.get(FieldType.LAST).doubleValue();
-        double close = valueMap.get(FieldType.CLOSE).doubleValue();
-
-        if (CoreUtil.isValidPrice(last) && CoreUtil.isValidPrice(close)) {
-            double changePct = Double.parseDouble(String.format("%.2f", ((last - close) / close) * 100d));
-            valueMap.put(FieldType.CHANGE_PCT, changePct);
-        }
+    private void update(FieldType fieldType, Number value) {
+        oldValueMap.put(fieldType, valueMap.get(fieldType));
+        valueMap.put(fieldType, value);
     }
 
     @Override
@@ -63,7 +79,9 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     @Override
-    public abstract String createMessage(FieldType fieldType);
+    public String createMessage(FieldType fieldType) {
+        return getMessagePrefix() + "," + ibRequestId + "," + fieldType.toCamelCase() + "," + oldValueMap.get(fieldType) + "," + valueMap.get(fieldType);
+    }
 
     @Override
     public double getBid() {

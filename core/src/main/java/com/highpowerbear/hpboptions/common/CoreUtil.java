@@ -21,14 +21,6 @@ public class CoreUtil {
     }
 
     public static boolean isValidPrice(Double value) {
-        return value != null && !value.isNaN() && value != 0 && !value.isInfinite() && value != -1d;
-    }
-
-    public static boolean isValidPct(Double value) {
-        return value != null && !value.isNaN() && !value.isInfinite();
-    }
-
-    public static boolean isValidSize(Integer value) {
-        return value != null  && value != -1d;
+        return value != null && !value.isNaN() && !value.isInfinite() && value > 0d;
     }
 }

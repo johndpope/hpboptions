@@ -116,6 +116,9 @@
         },
         {
             "path": "https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.js"
+        },
+        {
+            "path": "https://d3js.org/d3-format.v1.min.js"
         }
     ],
 

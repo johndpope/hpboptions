@@ -1,7 +1,8 @@
 package com.highpowerbear.hpboptions.corelogic.model;
 
-import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.FieldType;
+
+import java.util.Map;
 
 /**
  * Created by robertk on 11/26/2018.
@@ -12,21 +13,14 @@ public class Underlying extends AbstractDataHolder {
         super(instrument, ibRequestId);
     }
 
-    @Override
-    public String createMessage(FieldType fieldType) {
-        String value = fieldType == FieldType.VOLUME ?
-                String.valueOf(getVolume()) :
-                valueMap.get(fieldType).toString();
-
-        return "underlying," + ibRequestId + "," + fieldType.toCamelCase() + "," + value;
+    protected void initMapSpecific(Map<FieldType, Number> map) {
+        map.put(FieldType.OPTION_VOLUME, -1);
+        map.put(FieldType.OPTION_AVG_VOLUME, -1);
+        map.put(FieldType.OPTION_OPEN_INTEREST, -1);
     }
 
     @Override
-    public int getVolume() {
-        int volume = valueMap.get(FieldType.VOLUME).intValue();
-        if (CoreUtil.isValidSize(volume)) {
-            volume *= 100;
-        }
-        return volume;
+    public String getMessagePrefix() {
+        return "underlying";
     }
 }

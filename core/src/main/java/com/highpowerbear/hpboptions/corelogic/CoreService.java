@@ -17,10 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -101,16 +98,13 @@ public class CoreService {
         if (dataHolder == null) {
             return;
         }
-        FieldType fieldType = FieldType.getFromTickType(TickType.get(tickTypeIndex));
-        if (fieldType == null) {
+        Set<FieldType> fieldTypes = FieldType.getFieldTypes(TickType.get(tickTypeIndex));
+        if (fieldTypes == null) {
             return;
         }
-        dataHolder.updateValue(fieldType, value);
-        messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType));
-
-        if (fieldType == FieldType.LAST && CoreUtil.isValidPct(dataHolder.getChangePct())) {
-            messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(FieldType.CHANGE_PCT));
-        }
+        fieldTypes.stream().filter(FieldType::isBasic).forEach(fieldType -> dataHolder.updateField(fieldType, value));
+        fieldTypes.stream().filter(FieldType::isDerived).forEach(dataHolder::updateField);
+        fieldTypes.forEach(fieldType -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType)));
     }
 
     public void requestData(DataHolder dataHolder) {

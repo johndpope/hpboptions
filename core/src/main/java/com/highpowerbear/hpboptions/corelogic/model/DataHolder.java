@@ -9,7 +9,8 @@ public interface DataHolder {
 
     Instrument getInstrument();
     int getIbRequestId();
-    void updateValue(FieldType fieldType, Number value);
+    void updateField(FieldType fieldType, Number value);
+    void updateField(FieldType fieldType);
     String createMessage(FieldType fieldType);
 
     double getBid();

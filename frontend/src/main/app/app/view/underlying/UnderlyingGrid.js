@@ -36,7 +36,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         width: 100,
         dataIndex: 'exchange'
     }, {
-        text: 'BS',
+        text: 'Bs',
         width: 60,
         dataIndex: 'bidSize',
         tdCls: 'bidSize hop-size hop-unchanged',
@@ -57,7 +57,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'AS',
+        text: 'As',
         width: 60,
         dataIndex: 'askSize',
         tdCls: 'askSize hop-size hop-unchanged',
@@ -71,7 +71,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'LS',
+        text: 'Ls',
         width: 60,
         dataIndex: 'lastSize',
         tdCls: 'lastSize hop-size hop-unchanged',
@@ -79,11 +79,11 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Volume',
-        width: 90,
+        width: 80,
         dataIndex: 'volume',
-        tdCls: 'volume hop-size hop-unchanged',
+        tdCls: 'volume hop-volume hop-unchanged',
         align: 'right',
-        renderer: 'sizeRenderer'
+        renderer: 'volumeRenderer'
     }, {
         text: 'Close',
         width: 80,

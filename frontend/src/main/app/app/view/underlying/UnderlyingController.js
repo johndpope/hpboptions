@@ -125,6 +125,13 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return me.formatSize(val);
     },
 
+    volumeRenderer: function(val, metadata, record) {
+        var me = this;
+
+        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        return me.formatVolume(val);
+    },
+
     pctRenderer: function(val, metadata, record) {
         var me = this;
 
@@ -135,15 +142,19 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     },
 
     formatPrice: function(val) {
-        return val === 'NaN' ? '' : Ext.util.Format.number(val, '0.00###');
+        return val > 0 ? Ext.util.Format.number(val, '0.00###') : '&nbsp;';
     },
 
     formatSize: function(val) {
-        return val === -1 ? '' : val;
+        return val > 0 ? val : '&nbsp;';
+    },
+
+    formatVolume: function(val) {
+        return val > 0 ? d3.format('.4~s')(val * 100) : '&nbsp;';
     },
 
     formatPct: function(val) {
-        return val === 'NaN' ? '' : Ext.util.Format.number(val, '0.00%');
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0.00%') : '&nbsp;';
     },
 
     updateRtData: function(msg) {
@@ -151,7 +162,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             arr = msg.split(","),
             ibRequestId = arr[1],
             field = arr[2],
-            val = arr[3];
+            oldVal = arr[3],
+            val = arr[4];
 
         var selector = 'td.hop-underlying-' + ibRequestId + '.' + field;
         var td = Ext.query(selector)[0];
@@ -164,40 +176,43 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
             var div = Ext.query('div', true, td)[0];
             if (div) {
-                var oldValue = div.innerHTML;
-                var newValue;
-
-                if (td.classList.contains('hop-price')) {
-                    newValue = me.formatPrice(val);
-                    if (newValue > oldValue) {
-                        td.classList.add('hop-uptick');
-                    } else if (newValue < oldValue) {
-                        td.classList.add('hop-downtick');
-                    } else {
+                if (me.isPrice(td) || me.isSize(td)) {
+                    if (oldVal < 0) {
                         td.classList.add('hop-unchanged');
-                    }
-                } else if (td.classList.contains('hop-pct')) {
-                    newValue = me.formatPct(val);
-                    if (val > 0) {
-                        td.classList.add('hop-positive');
-                    } else if (val < 0) {
-                        td.classList.add('hop-negative');
                     } else {
-                        td.classList.add('hop-unchanged');
+                        td.classList.add(val > oldVal ? 'hop-uptick' : (val < oldVal ? 'hop-downtick' : 'hop-unchanged'));
                     }
-                } else {
-                    newValue = me.formatSize(val);
-                    if (newValue > oldValue) {
-                        td.classList.add('hop-uptick');
-                    } else if (newValue < oldValue) {
-                        td.classList.add('hop-downtick');
-                    } else {
-                        td.classList.add('hop-unchanged');
-                    }
+                } else if (me.isVolume(td)) {
+                    td.classList.add('hop-unchanged');
+                } else if (me.isPct(td)) {
+                    td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
                 }
-                div.innerHTML = newValue;
+
+                if (me.isPrice(td)) {
+                    div.innerHTML = me.formatPrice(val);
+                } else if (me.isPct(td)) {
+                    div.innerHTML = me.formatPct(val);
+                } else {
+                    div.innerHTML = me.isVolume(td) ? me.formatVolume(val) : me.formatSize(val);
+                }
             }
         }
+    },
+
+    isPrice: function(td) {
+        return td.classList.contains('hop-price');
+    },
+
+    isPct: function(td) {
+        return td.classList.contains('hop-pct');
+    },
+
+    isSize: function(td) {
+        return td.classList.contains('hop-size');
+    },
+
+    isVolume: function(td) {
+        return td.classList.contains('hop-volume');
     },
 
     setupChain: function (view, cell, cellIndex, record, row, rowIndex, e) {
