@@ -7,7 +7,7 @@
     <groupId>com.highpowerbear</groupId>
     <artifactId>hpboptions</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <modules>
         <module>application</module>
         <module>core</module>
@@ -17,7 +17,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.1.0.RC1</version>
+        <version>2.1.1.RELEASE</version>
     </parent>
 
     <repositories>

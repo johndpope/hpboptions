@@ -150,7 +150,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     },
 
     formatVolume: function(val) {
-        return val > 0 ? d3.format('.4~s')(val * 100) : '&nbsp;';
+        return val > 0 ? d3.format('.3~s')(val) : '&nbsp;';
     },
 
     formatPct: function(val) {

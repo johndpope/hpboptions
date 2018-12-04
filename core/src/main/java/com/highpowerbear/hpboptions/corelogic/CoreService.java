@@ -4,10 +4,12 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
+import com.highpowerbear.hpboptions.corelogic.model.Underlying;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.OptionRoot;
+import com.highpowerbear.hpboptions.enums.BasicField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.FieldType;
+import com.highpowerbear.hpboptions.enums.DerivedField;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +49,7 @@ public class CoreService {
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
 
         optionRoots.forEach(or -> {
-            DataHolder underlying = new DataHolder(DataHolderType.UNDERLYING, or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
+            Underlying underlying = new Underlying(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
             underlyings.add(underlying);
         });
     }
@@ -96,26 +98,26 @@ public class CoreService {
         if (dataHolder == null) {
             return;
         }
-        Set<FieldType> fieldTypes = FieldType.getFieldTypes(TickType.get(tickTypeIndex));
-        if (fieldTypes == null) {
+        BasicField basicField = BasicField.getBasicField(TickType.get(tickTypeIndex));
+        if (basicField == null) {
             return;
         }
-        fieldTypes.stream()
-                .filter(FieldType::isBasic)
-                .forEach(fieldType -> dataHolder.updateField(fieldType, value));
+        dataHolder.updateField(basicField, value);
+        DerivedField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
 
-        fieldTypes.stream()
-                .filter(FieldType::isDerived)
-                .forEach(dataHolder::calculateField);
+        String wsTopic = getWsTopic(dataHolder);
+        if (dataHolder.isDisplayed(basicField)) {
+            messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(basicField));
+        }
 
-        fieldTypes.stream()
-                .filter(FieldType::isCreateMessage)
-                .forEach(fieldType -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(fieldType)));
+        DerivedField.getDerivedFields(basicField).stream()
+                .filter(dataHolder::isDisplayed)
+                .forEach(derivedField -> messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(derivedField)));
     }
 
     public void requestData(DataHolder dataHolder) {
         dataMap.putIfAbsent(dataHolder.getIbRequestId(), dataHolder);
-        ibController.requestMarketData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract());
+        ibController.requestMarketData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
     }
 
     public void cancelData(DataHolder dataHolder) {

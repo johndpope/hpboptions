@@ -99,6 +99,20 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'pctRenderer'
     }, {
+        text: 'Opt Vol',
+        width: 80,
+        dataIndex: 'optionVolume',
+        tdCls: 'optionVolume hop-volume hop-unchanged',
+        align: 'right',
+        renderer: 'volumeRenderer'
+    }, {
+        text: 'Opt OI',
+        width: 80,
+        dataIndex: 'optionOpenInterest',
+        tdCls: 'optionOpenInterest hop-volume hop-unchanged',
+        align: 'right',
+        renderer: 'volumeRenderer'
+    }, {
         flex: 1
     }],
     dockedItems: [{

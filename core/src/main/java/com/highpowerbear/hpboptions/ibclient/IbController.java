@@ -100,11 +100,11 @@ public class IbController {
         return markConnected;
     }
 
-    public void requestMarketData(int reqId, Contract contract) {
+    public void requestMarketData(int reqId, Contract contract, String genericTicks) {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
 
         if (isConnected()) {
-            eClientSocket.reqMktData(reqId, contract, "", false, null);
+            eClientSocket.reqMktData(reqId, contract, genericTicks, false, null);
         } else {
             log.info("not connected " + getIbConnectionInfo());
         }
