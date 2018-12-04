@@ -5,6 +5,7 @@ Ext.define('HopGui.model.Underlying', {
     extend: 'HopGui.model.DataHolderBase',
 
     fields: [
+        'optionImpliedVol',
         'optionVolume',
         'optionOpenInterest'
     ]

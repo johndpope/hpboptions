@@ -11,16 +11,20 @@ public enum DerivedField implements Field  {
     OPTION_OPEN_INTEREST (-1, BasicField.OPTION_CALL_OPEN_INTEREST, BasicField.OPTION_PUT_OPEN_INTEREST);
 
     private Number initialValue;
-    private BasicField[] dependencies;
+    private Set<BasicField> dependencies;
 
     DerivedField(Number initialValue, BasicField... dependencies) {
         this.initialValue = initialValue;
-        this.dependencies = dependencies;
+        this.dependencies = new HashSet<>(Arrays.asList(dependencies));
     }
 
     @Override
     public Number getInitialValue() {
         return initialValue;
+    }
+
+    public Set<BasicField> getDependencies() {
+        return dependencies;
     }
 
     private static Map<BasicField, Set<DerivedField>> basicDerivedMap = new HashMap<>();

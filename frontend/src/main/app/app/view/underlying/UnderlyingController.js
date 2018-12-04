@@ -132,13 +132,20 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return me.formatVolume(val);
     },
 
-    pctRenderer: function(val, metadata, record) {
+    changePctRenderer: function(val, metadata, record) {
         var me = this;
 
         var statusCls = val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged');
         metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId + ' ' + statusCls;
 
-        return me.formatPct(val);
+        return me.formatChangePct(val);
+    },
+
+    ivRenderer: function(val, metadata, record) {
+        var me = this;
+
+        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        return me.formatIv(val);
     },
 
     formatPrice: function(val) {
@@ -153,8 +160,12 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return val > 0 ? d3.format('.3~s')(val) : '&nbsp;';
     },
 
-    formatPct: function(val) {
+    formatChangePct: function(val) {
         return val !== 'NaN' ? Ext.util.Format.number(val, '0.00%') : '&nbsp;';
+    },
+
+    formatIv: function(val) {
+        return val > 0 ? Ext.util.Format.number(val, '0.0%') : '&nbsp;';
     },
 
     updateRtData: function(msg) {
@@ -176,7 +187,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
             var div = Ext.query('div', true, td)[0];
             if (div) {
-                if (me.isPrice(td) || me.isSize(td)) {
+                if (me.isPrice(td) || me.isSize(td) || me.isIv(td)) {
                     if (oldVal < 0) {
                         td.classList.add('hop-unchanged');
                     } else {
@@ -184,14 +195,16 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     }
                 } else if (me.isVolume(td)) {
                     td.classList.add('hop-unchanged');
-                } else if (me.isPct(td)) {
+                } else if (me.isChangePct(td)) {
                     td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
                 }
 
                 if (me.isPrice(td)) {
                     div.innerHTML = me.formatPrice(val);
-                } else if (me.isPct(td)) {
-                    div.innerHTML = me.formatPct(val);
+                } else if (me.isChangePct(td)) {
+                    div.innerHTML = me.formatChangePct(val);
+                } else if (me.isIv(td)) {
+                    div.innerHTML = me.formatIv(val);
                 } else {
                     div.innerHTML = me.isVolume(td) ? me.formatVolume(val) : me.formatSize(val);
                 }
@@ -203,8 +216,12 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return td.classList.contains('hop-price');
     },
 
-    isPct: function(td) {
-        return td.classList.contains('hop-pct');
+    isChangePct: function(td) {
+        return td.classList.contains('hop-change-pct');
+    },
+
+    isIv: function(td) {
+        return td.classList.contains('hop-iv');
     },
 
     isSize: function(td) {

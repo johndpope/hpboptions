@@ -101,7 +101,7 @@ public class IbController {
     }
 
     public void requestMarketData(int reqId, Contract contract, String genericTicks) {
-        log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract));
+        log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
 
         if (isConnected()) {
             eClientSocket.reqMktData(reqId, contract, genericTicks, false, null);

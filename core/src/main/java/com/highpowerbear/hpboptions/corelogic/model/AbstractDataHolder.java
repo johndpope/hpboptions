@@ -1,12 +1,13 @@
 package com.highpowerbear.hpboptions.corelogic.model;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.enums.*;
-import net.minidev.json.annotate.JsonIgnore;
+import com.highpowerbear.hpboptions.enums.BasicField;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.DerivedField;
+import com.highpowerbear.hpboptions.enums.Field;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by robertk on 11/27/2018.
@@ -16,14 +17,11 @@ public abstract class AbstractDataHolder implements DataHolder {
     private final DataHolderType type;
     private final Instrument instrument;
     private final int ibRequestId;
-    @JsonIgnore
-    final Set<Field> fieldsToDisplay = new HashSet<>();
-    private final String genericTicks;
+    protected final Set<Field> fieldsToDisplay = new HashSet<>();
+    private String genericTicks;
 
-    @JsonIgnore
     private final Map<Field, Number> oldValueMap = new HashMap<>();
-    @JsonIgnore
-    final Map<Field, Number> valueMap = new HashMap<>();
+    protected final Map<Field, Number> valueMap = new HashMap<>();
 
     AbstractDataHolder(DataHolderType type, Instrument instrument, int ibRequestId) {
         this.type = type;
@@ -32,20 +30,30 @@ public abstract class AbstractDataHolder implements DataHolder {
 
         Arrays.asList(BasicField.values()).forEach(field -> update(field, field.getInitialValue()));
         Arrays.asList(DerivedField.values()).forEach(field -> update(field, field.getInitialValue()));
+    }
 
-        genericTicks = StringUtils.join(Arrays.stream(BasicField.values())
+    protected void determineGenericTicks() {
+        Set<Integer> genericTicksSet = new HashSet<>();
+
+        Arrays.stream(BasicField.values())
+                .filter(fieldsToDisplay::contains)
                 .map(BasicField::getGenericTick)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet()), ",");
+                .forEach(genericTicksSet::add);
+
+        Arrays.stream(DerivedField.values())
+                .filter(fieldsToDisplay::contains)
+                .flatMap(derivedField -> derivedField.getDependencies().stream())
+                .map(BasicField::getGenericTick)
+                .filter(Objects::nonNull)
+                .forEach(genericTicksSet::add);
+
+        genericTicks = StringUtils.join(genericTicksSet, ",");
     }
 
     @Override
     public void updateField(BasicField field, Number value) {
-        if (type == DataHolderType.UNDERLYING && field == BasicField.VOLUME) {
-            update(field, value.intValue() * 100);
-        } else {
-            update(field, value);
-        }
+        update(field, convert(field, value));
     }
 
     @Override
@@ -74,6 +82,17 @@ public abstract class AbstractDataHolder implements DataHolder {
                 update(field, o + p);
             }
         }
+    }
+
+    private Number convert(BasicField field, Number value) {
+        if (type == DataHolderType.UNDERLYING && field == BasicField.VOLUME && isValidSize(value.intValue())) {
+            return value.intValue() * 100;
+
+        } else if (type == DataHolderType.UNDERLYING && field == BasicField.OPTION_IMPLIED_VOL && isValidPrice(value.doubleValue())) {
+            return Double.parseDouble(String.format("%.1f", value.doubleValue() * 100d));
+        }
+
+        return value;
     }
 
     private void update(Field field, Number value) {

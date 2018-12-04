@@ -36,7 +36,6 @@ public class IbOrderEvent implements Serializable {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
     private Double price;
-    @JsonIgnore
     @ManyToOne
     private IbOrder ibOrder;
 
@@ -92,6 +91,7 @@ public class IbOrderEvent implements Serializable {
         this.price = price;
     }
 
+    @JsonIgnore
     public IbOrder getIbOrder() {
         return ibOrder;
     }

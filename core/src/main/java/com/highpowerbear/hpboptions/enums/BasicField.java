@@ -18,6 +18,7 @@ public enum BasicField implements Field {
     ASK_SIZE (TickType.ASK_SIZE, null),
     LAST_SIZE (TickType.LAST_SIZE, null),
     VOLUME (TickType.VOLUME, null),
+    OPTION_IMPLIED_VOL (TickType.OPTION_IMPLIED_VOL, 106),
     OPTION_CALL_VOLUME (TickType.OPTION_CALL_VOLUME, 100),
     OPTION_PUT_VOLUME (TickType.OPTION_PUT_VOLUME, 100),
     OPTION_CALL_OPEN_INTEREST (TickType.OPTION_CALL_OPEN_INTEREST, 101),

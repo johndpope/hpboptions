@@ -95,9 +95,16 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         text: 'Chg%',
         width: 80,
         dataIndex: 'changePct',
-        tdCls: 'changePct hop-pct',
+        tdCls: 'changePct hop-change-pct',
         align: 'right',
-        renderer: 'pctRenderer'
+        renderer: 'changePctRenderer'
+    }, {
+        text: 'Opt IV',
+        width: 80,
+        dataIndex: 'optionImpliedVol',
+        tdCls: 'optionImpliedVol hop-iv hop-unchanged',
+        align: 'right',
+        renderer: 'ivRenderer'
     }, {
         text: 'Opt Vol',
         width: 80,
