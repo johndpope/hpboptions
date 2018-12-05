@@ -8,7 +8,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         'Ext.grid.column.Date',
         'Ext.toolbar.Paging'
     ],
-    bind: '{chains}',
+    bind: '{chainDataHolders}',
     listeners: {
         'cellclick': 'placeOrder'
     },
@@ -22,7 +22,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',
-        bind: '{chains}',
+        bind: '{chainDataHolders}',
         dock: 'bottom',
         displayInfo: true
     }]

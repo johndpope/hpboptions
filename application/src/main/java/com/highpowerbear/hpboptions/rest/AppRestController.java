@@ -48,9 +48,9 @@ public class AppRestController {
         return ResponseEntity.ok(coreService.getConnectionInfo());
     }
 
-    @RequestMapping("underlyings")
-    public ResponseEntity<?> getUnderlyings() {
-        List<DataHolder> underlyings = coreService.getUnderlyings();
-        return ResponseEntity.ok(new RestList<>(underlyings, (long) underlyings.size()));
+    @RequestMapping("underlying-data-holders")
+    public ResponseEntity<?> getUnderlyingDataHolders() {
+        List<DataHolder> underlyingDataHolders = coreService.getUnderlyingDataHolders();
+        return ResponseEntity.ok(new RestList<>(underlyingDataHolders, (long) underlyingDataHolders.size()));
     }
 }

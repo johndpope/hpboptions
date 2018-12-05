@@ -4,14 +4,14 @@
 Ext.define('HopGui.view.underlying.UnderlyingModel', {
     extend: 'Ext.app.ViewModel',
     requires: [
-        'HopGui.model.Underlying'
+        'HopGui.model.UnderlyingDataHolder'
     ],
 
     alias: 'viewmodel.hop-underlying',
 
     stores: {
-        underlyings: {
-            model: 'HopGui.model.Underlying',
+        underlyingDataHolders: {
+            model: 'HopGui.model.UnderlyingDataHolder',
             autoload: true
         }
     }

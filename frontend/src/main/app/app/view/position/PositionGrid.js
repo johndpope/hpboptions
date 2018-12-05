@@ -8,7 +8,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
         'Ext.grid.column.Date',
         'Ext.toolbar.Paging'
     ],
-    bind: '{positions}',
+    bind: '{positionDataHolders}',
     listeners: {
         'cellclick': 'placeOrder'
     },
@@ -22,7 +22,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',
-        bind: '{positions}',
+        bind: '{positionDataHolders}',
         dock: 'bottom',
         displayInfo: true
     }]

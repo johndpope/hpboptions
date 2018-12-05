@@ -4,32 +4,22 @@ import com.highpowerbear.hpboptions.enums.BasicField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedField;
 
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Created by robertk on 12/3/2018.
  */
-public class Underlying extends AbstractDataHolder {
+public class UnderlyingDataHolder extends AbstractDataHolder {
 
-    public Underlying(Instrument instrument, int ibRequestId) {
+    public UnderlyingDataHolder(Instrument instrument, int ibRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibRequestId);
 
-        Stream.of(
-                BasicField.BID,
-                BasicField.ASK,
-                BasicField.LAST,
-                BasicField.CLOSE,
-                BasicField.BID_SIZE,
-                BasicField.ASK_SIZE,
-                BasicField.LAST_SIZE,
-                BasicField.VOLUME,
+        addFieldsToDisplay(Stream.of(
                 BasicField.OPTION_IMPLIED_VOL,
-                DerivedField.CHANGE_PCT,
                 DerivedField.OPTION_VOLUME,
                 DerivedField.OPTION_OPEN_INTEREST
-        ).forEach(fieldsToDisplay::add);
-
-        determineGenericTicks();
+        ).collect(Collectors.toSet()));
     }
 
     public double getOptionImpliedVol() {

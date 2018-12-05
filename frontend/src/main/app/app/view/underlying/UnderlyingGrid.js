@@ -8,7 +8,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         'Ext.grid.column.Date',
         'Ext.toolbar.Paging'
     ],
-    bind: '{underlyings}',
+    bind: '{underlyingDataHolders}',
     listeners: {
         'cellclick': 'setupChain'
     },
@@ -124,7 +124,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',
-        bind: '{underlyings}',
+        bind: '{underlyingDataHolders}',
         dock: 'bottom',
         displayInfo: true
     }, {

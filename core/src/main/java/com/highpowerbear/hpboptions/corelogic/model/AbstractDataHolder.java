@@ -8,6 +8,7 @@ import com.highpowerbear.hpboptions.enums.Field;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Created by robertk on 11/27/2018.
@@ -17,7 +18,7 @@ public abstract class AbstractDataHolder implements DataHolder {
     private final DataHolderType type;
     private final Instrument instrument;
     private final int ibRequestId;
-    protected final Set<Field> fieldsToDisplay = new HashSet<>();
+    private final Set<Field> fieldsToDisplay = new HashSet<>();
     private String genericTicks;
 
     private final Map<Field, Number> oldValueMap = new HashMap<>();
@@ -30,9 +31,28 @@ public abstract class AbstractDataHolder implements DataHolder {
 
         Arrays.asList(BasicField.values()).forEach(field -> update(field, field.getInitialValue()));
         Arrays.asList(DerivedField.values()).forEach(field -> update(field, field.getInitialValue()));
+
+        Stream.of(
+                BasicField.BID,
+                BasicField.ASK,
+                BasicField.LAST,
+                BasicField.CLOSE,
+                BasicField.BID_SIZE,
+                BasicField.ASK_SIZE,
+                BasicField.LAST_SIZE,
+                BasicField.VOLUME,
+                DerivedField.CHANGE_PCT
+        ).forEach(fieldsToDisplay::add);
+
+        determineGenericTicks();
     }
 
-    protected void determineGenericTicks() {
+    protected void addFieldsToDisplay(Set<Field> fieldsToDisplay) {
+        this.fieldsToDisplay.addAll(fieldsToDisplay);
+        determineGenericTicks();
+    }
+
+    private void determineGenericTicks() {
         Set<Integer> genericTicksSet = new HashSet<>();
 
         Arrays.stream(BasicField.values())

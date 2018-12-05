@@ -4,7 +4,7 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
-import com.highpowerbear.hpboptions.corelogic.model.Underlying;
+import com.highpowerbear.hpboptions.corelogic.model.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.highpowerbear.hpboptions.entity.OptionRoot;
 import com.highpowerbear.hpboptions.enums.BasicField;
@@ -31,9 +31,9 @@ public class CoreService {
 
     private IbController ibController; // prevent circular dependency
 
-    private final List<DataHolder> underlyings = new ArrayList<>();
-    private final List<DataHolder> positions = new ArrayList<>();
-    private final List<DataHolder> chainItems = new ArrayList<>();
+    private final List<DataHolder> underlyingDataHolders = new ArrayList<>();
+    private final List<DataHolder> positionDataHolders = new ArrayList<>();
+    private final List<DataHolder> chainDataHolders = new ArrayList<>();
 
     private final Map<Integer, DataHolder> dataMap = new LinkedHashMap<>(); // ib request id --> dataHolder
     private final AtomicInteger ibRequestIdGenerator = new AtomicInteger(0);
@@ -49,8 +49,8 @@ public class CoreService {
         List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
 
         optionRoots.forEach(or -> {
-            Underlying underlying = new Underlying(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
-            underlyings.add(underlying);
+            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
+            underlyingDataHolders.add(underlyingDataHolder);
         });
     }
 
@@ -64,12 +64,12 @@ public class CoreService {
         if (isConnected()) {
             dataMap.keySet().forEach(ibController::cancelMarketData);
             dataMap.clear();
-            underlyings.forEach(this::requestData);
+            underlyingDataHolders.forEach(this::requestData);
         }
     }
 
     public void disconnect() {
-        underlyings.forEach(this::cancelData);
+        underlyingDataHolders.forEach(this::cancelData);
         CoreUtil.waitMilliseconds(1000);
         ibController.disconnect();
     }
@@ -89,8 +89,16 @@ public class CoreService {
         }
     }
 
-    public List<DataHolder> getUnderlyings() {
-        return underlyings;
+    public List<DataHolder> getUnderlyingDataHolders() {
+        return underlyingDataHolders;
+    }
+
+    public List<DataHolder> getPositionDataHolders() {
+        return positionDataHolders;
+    }
+
+    public List<DataHolder> getChainDataHolders() {
+        return chainDataHolders;
     }
 
     public void updateValue(int requestId, int tickTypeIndex, Number value) {

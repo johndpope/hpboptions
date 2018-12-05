@@ -4,14 +4,14 @@
 Ext.define('HopGui.view.position.PositionModel', {
     extend: 'Ext.app.ViewModel',
     requires: [
-        'HopGui.model.Position'
+        'HopGui.model.PositionDataHolder'
     ],
 
     alias: 'viewmodel.hop-position',
 
     stores: {
-        positions: {
-            model: 'HopGui.model.Position',
+        positionDataHolders: {
+            model: 'HopGui.model.PositionDataHolder',
             autoload: true
         }
     }

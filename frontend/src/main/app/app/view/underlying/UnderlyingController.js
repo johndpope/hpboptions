@@ -13,14 +13,14 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     init: function() {
         var me = this,
-            underlyings = me.getStore('underlyings'),
+            underlyingDataHolders = me.getStore('underlyingDataHolders'),
             wsStatusField = me.lookupReference('wsStatus');
 
         me.updateIbConnectionInfo();
 
-        if (underlyings) {
-            underlyings.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlyings');
-            me.loadUnderlyings();
+        if (underlyingDataHolders) {
+            underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying-data-holders');
+            me.loadUnderlyingDataHolders();
         }
 
         var socket  = new SockJS('/websocket');
@@ -36,7 +36,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             });
 
             stompClient.subscribe('/topic/ib_connection', function(message) {
-                underlyings.reload();
+                underlyingDataHolders.reload();
                 me.updateIbConnectionInfo();
             });
 
@@ -48,15 +48,15 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    loadUnderlyings: function() {
+    loadUnderlyingDataHolders: function() {
         var me = this,
-            underlyings = me.getStore('underlyings'),
+            underlyingDataHolders = me.getStore('underlyingDataHolders'),
             underlyingGrid = me.lookupReference('underlyingGrid');
 
-        underlyings.load(function(records, operation, success) {
+        underlyingDataHolders.load(function(records, operation, success) {
             if (success) {
-                console.log('loaded underlyings');
-                underlyingGrid.setSelection(underlyings.first());
+                console.log('loaded underlyingDataHolders');
+                underlyingGrid.setSelection(underlyingDataHolders.first());
             }
         });
     },
