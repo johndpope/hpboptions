@@ -117,18 +117,23 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void tickPrice(int tickerId, int field, double price, int canAutoExecute) {
-        coreService.updateValue(tickerId, field, price);
+    public void tickPrice(int requestId, int tickType, double price, int canAutoExecute) {
+        coreService.updateValue(requestId, tickType, price);
     }
 
     @Override
-    public void tickSize(int tickerId, int field, int size) {
-        coreService.updateValue(tickerId, field, size);
+    public void tickSize(int requestId, int tickType, int size) {
+        coreService.updateValue(requestId, tickType, size);
     }
 
     @Override
-    public void tickGeneric(int tickerId, int tickType, double value) {
-        coreService.updateValue(tickerId, tickType, value);
+    public void tickGeneric(int requestId, int tickType, double value) {
+        coreService.updateValue(requestId, tickType, value);
+    }
+
+    @Override
+    public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
+        coreService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override

@@ -10,36 +10,39 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.time.LocalTime;
 import java.util.Objects;
 
 /**
  * Created by robertk on 11/20/2018.
  */
 @Entity
-@Table(name = "option_root", schema = "hpboptions", catalog = "hpboptions")
-public class OptionRoot {
+@Table(name = "underlying", schema = "hpboptions", catalog = "hpboptions")
+public class Underlying {
     private static final long serialVersionUID = 1162498913826827666L;
 
     @Id
     private Long id;
     @Enumerated(EnumType.STRING)
     private Types.SecType secType;
+    private String symbol;
     @Enumerated(EnumType.STRING)
     private Currency currency;
     @Enumerated(EnumType.STRING)
     private Exchange exchange;
-    private Integer multiplier;
     @Enumerated(EnumType.STRING)
-    private Types.SecType undlSecType;
-    private String undlSymbol;
-    @Enumerated(EnumType.STRING)
-    private Exchange undlExchange;
-    @Enumerated(EnumType.STRING)
-    private Exchange undlPrimaryExchange;
+    private Exchange primaryExchange;
+    private Integer optionMultiplier;
+    private LocalTime marketOpen;
+    private LocalTime marketClose;
     private Boolean active;
 
-    public Instrument getUnderlyingInstrument() {
-        return new Instrument(undlSecType, undlSymbol, undlSymbol, currency, undlExchange, undlPrimaryExchange);
+    public Instrument createInstrument() {
+        return new Instrument(secType, symbol, symbol, currency, exchange, primaryExchange);
+    }
+
+    public String getDescriptor() {
+        return secType + "-" + symbol + "-" + currency + "-" + exchange;
     }
 
     @Override
@@ -47,7 +50,7 @@ public class OptionRoot {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        OptionRoot that = (OptionRoot) o;
+        Underlying that = (Underlying) o;
 
         return Objects.equals(id, that.id);
     }
@@ -73,6 +76,14 @@ public class OptionRoot {
         this.secType = secType;
     }
 
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
     public Currency getCurrency() {
         return currency;
     }
@@ -89,44 +100,36 @@ public class OptionRoot {
         this.exchange = exchange;
     }
 
-    public Integer getMultiplier() {
-        return multiplier;
+    public Exchange getPrimaryExchange() {
+        return primaryExchange;
     }
 
-    public void setMultiplier(Integer multiplier) {
-        this.multiplier = multiplier;
+    public void setPrimaryExchange(Exchange primaryExchange) {
+        this.primaryExchange = primaryExchange;
     }
 
-    public Types.SecType getUndlSecType() {
-        return undlSecType;
+    public Integer getOptionMultiplier() {
+        return optionMultiplier;
     }
 
-    public void setUndlSecType(Types.SecType undlSecType) {
-        this.undlSecType = undlSecType;
+    public void setOptionMultiplier(Integer optionMultiplier) {
+        this.optionMultiplier = optionMultiplier;
     }
 
-    public String getUndlSymbol() {
-        return undlSymbol;
+    public LocalTime getMarketOpen() {
+        return marketOpen;
     }
 
-    public void setUndlSymbol(String undlSymbol) {
-        this.undlSymbol = undlSymbol;
+    public void setMarketOpen(LocalTime marketOpen) {
+        this.marketOpen = marketOpen;
     }
 
-    public Exchange getUndlExchange() {
-        return undlExchange;
+    public LocalTime getMarketClose() {
+        return marketClose;
     }
 
-    public void setUndlExchange(Exchange undlExchange) {
-        this.undlExchange = undlExchange;
-    }
-
-    public Exchange getUndlPrimaryExchange() {
-        return undlPrimaryExchange;
-    }
-
-    public void setUndlPrimaryExchange(Exchange undlPrimaryExchange) {
-        this.undlPrimaryExchange = undlPrimaryExchange;
+    public void setMarketClose(LocalTime marketClose) {
+        this.marketClose = marketClose;
     }
 
     public Boolean getActive() {

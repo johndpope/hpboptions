@@ -1,7 +1,8 @@
 package com.highpowerbear.hpboptions.dao;
 
 import com.highpowerbear.hpboptions.entity.IbOrder;
-import com.highpowerbear.hpboptions.entity.OptionRoot;
+import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.entity.ImpliedVolatility;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,8 +61,28 @@ public class CoreDaoImpl implements CoreDao {
     }
 
     @Override
-    public List<OptionRoot> getActiveOptionRoots() {
-        TypedQuery<OptionRoot> q = em.createQuery("SELECT oRoot FROM OptionRoot oRoot WHERE oRoot.active = TRUE ORDER BY oRoot.id", OptionRoot.class);
+    public List<Underlying> getActiveUnderlyings() {
+        TypedQuery<Underlying> q = em.createQuery("SELECT u FROM Underlying u WHERE u.active = TRUE ORDER BY u.id", Underlying.class);
         return q.getResultList();
+    }
+
+    @Override
+    public List<ImpliedVolatility> getImpliedVolatilities(LocalDate date) {
+        TypedQuery<ImpliedVolatility> q = em.createQuery("SELECT iv FROM ImpliedVolatility iv WHERE iv.date = :date", ImpliedVolatility.class);
+        q.setParameter("date", date);
+
+        return q.getResultList();
+    }
+
+    @Transactional
+    @Override
+    public void createImpliedVolatility(ImpliedVolatility iv) {
+        em.persist(iv);
+    }
+
+    @Transactional
+    @Override
+    public void updateImpliedVolatility(ImpliedVolatility iv) {
+        em.merge(iv);
     }
 }

@@ -4,8 +4,9 @@
 Ext.define('HopGui.model.DataHolderBase', {
     extend: 'Ext.data.Model',
 
-    idProperty: 'ibRequestId',
+    idProperty: 'id',
     fields: [
+        'id',
         'instrument',
         {name: 'secType', mapping: 'instrument.secType'},
         {name: 'symbol', mapping: 'instrument.symbol'},

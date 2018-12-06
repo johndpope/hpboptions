@@ -1,8 +1,10 @@
 package com.highpowerbear.hpboptions.dao;
 
 import com.highpowerbear.hpboptions.entity.IbOrder;
-import com.highpowerbear.hpboptions.entity.OptionRoot;
+import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.entity.ImpliedVolatility;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -13,5 +15,8 @@ public interface CoreDao {
     void createIbOrder(IbOrder ibOrder);
     void updateIbOrder(IbOrder ibOrder);
     IbOrder getIbOrderByPermId(long permId);
-    List<OptionRoot> getActiveOptionRoots();
+    List<Underlying> getActiveUnderlyings();
+    List<ImpliedVolatility> getImpliedVolatilities(LocalDate date);
+    void createImpliedVolatility(ImpliedVolatility iv);
+    void updateImpliedVolatility(ImpliedVolatility iv);
 }

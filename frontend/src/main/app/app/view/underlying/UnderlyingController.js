@@ -114,21 +114,21 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     priceRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = ' hop-underlying-' + record.data.ibRequestId;
+        metadata.tdCls = record.data.id;
         return me.formatPrice(val);
     },
 
     sizeRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        metadata.tdCls = record.data.id;
         return me.formatSize(val);
     },
 
     volumeRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        metadata.tdCls = record.data.id;
         return me.formatVolume(val);
     },
 
@@ -136,7 +136,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         var me = this;
 
         var statusCls = val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged');
-        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId + ' ' + statusCls;
+        metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatChangePct(val);
     },
@@ -144,7 +144,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     ivRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = 'hop-underlying-' + record.data.ibRequestId;
+        metadata.tdCls = record.data.id;
         return me.formatIv(val);
     },
 

@@ -4,12 +4,13 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
+import com.highpowerbear.hpboptions.corelogic.model.OptionDataHolder;
 import com.highpowerbear.hpboptions.corelogic.model.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.dao.CoreDao;
-import com.highpowerbear.hpboptions.entity.OptionRoot;
-import com.highpowerbear.hpboptions.enums.BasicField;
+import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedField;
+import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.ib.client.TickType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,10 +47,10 @@ public class CoreService {
 
     @PostConstruct
     public void init() {
-        List<OptionRoot> optionRoots = coreDao.getActiveOptionRoots();
+        List<Underlying> underlyings = coreDao.getActiveUnderlyings();
 
-        optionRoots.forEach(or -> {
-            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(or.getUnderlyingInstrument(), ibRequestIdGenerator.incrementAndGet());
+        underlyings.forEach(underlying -> {
+            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(underlying.createInstrument(), ibRequestIdGenerator.incrementAndGet());
             underlyingDataHolders.add(underlyingDataHolder);
         });
     }
@@ -89,6 +90,11 @@ public class CoreService {
         }
     }
 
+    @Scheduled(cron="0 0 * * * MON-FRI")
+    private void saveImpliedVolatility() {
+        // TODO take into account underlying market open
+    }
+
     public List<DataHolder> getUnderlyingDataHolders() {
         return underlyingDataHolders;
     }
@@ -101,26 +107,32 @@ public class CoreService {
         return chainDataHolders;
     }
 
-    public void updateValue(int requestId, int tickTypeIndex, Number value) {
+    public void updateValue(int requestId, int tickType, Number value) {
         DataHolder dataHolder = dataMap.get(requestId);
-        if (dataHolder == null) {
-            return;
-        }
-        BasicField basicField = BasicField.getBasicField(TickType.get(tickTypeIndex));
+
+        BasicMktDataField basicField = BasicMktDataField.getBasicField(TickType.get(tickType));
         if (basicField == null) {
             return;
         }
         dataHolder.updateField(basicField, value);
-        DerivedField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
+        DerivedMktDataField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
 
         String wsTopic = getWsTopic(dataHolder);
         if (dataHolder.isDisplayed(basicField)) {
             messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(basicField));
         }
 
-        DerivedField.getDerivedFields(basicField).stream()
+        DerivedMktDataField.getDerivedFields(basicField).stream()
                 .filter(dataHolder::isDisplayed)
                 .forEach(derivedField -> messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(derivedField)));
+    }
+
+    public void updateOptionData(int requestId, int tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
+        DataHolder dataHolder = dataMap.get(requestId);
+        OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
+
+        optionDataHolder.updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        messageSender.sendWsMessage(getWsTopic(dataHolder), optionDataHolder.createOptionDataMessage());
     }
 
     public void requestData(DataHolder dataHolder) {

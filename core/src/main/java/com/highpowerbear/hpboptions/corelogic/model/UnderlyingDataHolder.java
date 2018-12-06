@@ -1,8 +1,8 @@
 package com.highpowerbear.hpboptions.corelogic.model;
 
-import com.highpowerbear.hpboptions.enums.BasicField;
+import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedField;
+import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,26 +12,41 @@ import java.util.stream.Stream;
  */
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
+    private double timeValue;
+    private double delta;
+    private double gamma;
+
     public UnderlyingDataHolder(Instrument instrument, int ibRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibRequestId);
 
         addFieldsToDisplay(Stream.of(
-                BasicField.OPTION_IMPLIED_VOL,
-                DerivedField.OPTION_VOLUME,
-                DerivedField.OPTION_OPEN_INTEREST
+                BasicMktDataField.OPTION_IMPLIED_VOL,
+                DerivedMktDataField.OPTION_VOLUME,
+                DerivedMktDataField.OPTION_OPEN_INTEREST
         ).collect(Collectors.toSet()));
     }
 
     public double getOptionImpliedVol() {
-        return valueMap.get(BasicField.OPTION_IMPLIED_VOL).doubleValue();
+        return valueMap.get(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
     }
 
     public int getOptionVolume() {
-        return valueMap.get(DerivedField.OPTION_VOLUME).intValue();
+        return valueMap.get(DerivedMktDataField.OPTION_VOLUME).intValue();
     }
 
     public int getOptionOpenInterest() {
-        return valueMap.get(DerivedField.OPTION_OPEN_INTEREST).intValue();
+        return valueMap.get(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
+    public double getTimeValue() {
+        return timeValue;
+    }
+
+    public double getDelta() {
+        return delta;
+    }
+
+    public double getGamma() {
+        return gamma;
+    }
 }

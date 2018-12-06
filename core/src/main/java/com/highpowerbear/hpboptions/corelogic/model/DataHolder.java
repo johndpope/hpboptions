@@ -6,12 +6,13 @@ import com.highpowerbear.hpboptions.enums.*;
  * Created by robertk on 12/3/2018.
  */
 public interface DataHolder {
-    void updateField(BasicField field, Number value);
-    void calculateField(DerivedField field);
+    String getId();
+    void updateField(BasicMktDataField field, Number value);
+    void calculateField(DerivedMktDataField field);
     DataHolderType getType();
     Instrument getInstrument();
     int getIbRequestId();
-    String createMessage(Field field);
-    boolean isDisplayed(Field field);
+    String createMessage(MktDataField mktDataField);
+    boolean isDisplayed(MktDataField mktDataField);
     String getGenericTicks();
 }

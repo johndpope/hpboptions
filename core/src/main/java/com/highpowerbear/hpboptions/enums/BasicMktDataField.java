@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Created by robertk on 12/3/2018.
  */
-public enum BasicField implements Field {
+public enum BasicMktDataField implements MktDataField {
     BID (TickType.BID, null),
     ASK (TickType.ASK, null),
     LAST (TickType.LAST, null),
@@ -27,7 +27,7 @@ public enum BasicField implements Field {
     private TickType tickType;
     private Integer genericTick;
 
-    BasicField(TickType tickType, Integer genericTick) {
+    BasicMktDataField(TickType tickType, Integer genericTick) {
         this.tickType = tickType;
         this.genericTick = genericTick;
     }
@@ -45,9 +45,10 @@ public enum BasicField implements Field {
         return -1;
     }
 
-    private static final Map<TickType, BasicField> tickFieldMap = Arrays.stream(BasicField.values()).collect(Collectors.toMap(BasicField::getTickType, bf -> bf));
+    private static final Map<TickType, BasicMktDataField> tickFieldMap = Arrays.stream(BasicMktDataField.values())
+            .collect(Collectors.toMap(BasicMktDataField::getTickType, bf -> bf));
 
-    public static BasicField getBasicField(TickType tickType) {
+    public static BasicMktDataField getBasicField(TickType tickType) {
         return tickFieldMap.get(tickType);
     }
 }

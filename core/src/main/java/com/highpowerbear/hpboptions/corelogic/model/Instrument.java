@@ -31,7 +31,7 @@ public class Instrument {
 
         contract.localSymbol(symbol);
         contract.symbol(underlying);
-        contract.primaryExch("ARCA");
+        contract.primaryExch(primaryExchange.name());
         contract.secType(secType);
         contract.exchange(exchange.name());
         contract.currency(currency.name());
@@ -57,10 +57,5 @@ public class Instrument {
 
     public Exchange getExchange() {
         return exchange;
-    }
-
-    @Override
-    public String toString() {
-        return secType + "-" + symbol + "-" + underlying + "-" + currency + "-" + exchange + "-" + primaryExchange;
     }
 }
