@@ -10,6 +10,7 @@ import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import com.ib.client.OrderState;
+import com.ib.client.TickAttrib;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -56,8 +57,8 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld) {
-        super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld);
+    public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
+        super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
 
         if (!(  OrderStatus.SUBMITTED.getIbStatus().equals(status) ||
                 OrderStatus.PRESUBMITTED.getIbStatus().equals(status) ||
@@ -117,7 +118,7 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void tickPrice(int requestId, int tickType, double price, int canAutoExecute) {
+    public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
         coreService.updateValue(requestId, tickType, price);
     }
 

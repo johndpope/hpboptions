@@ -104,7 +104,7 @@ public class IbController {
         log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
 
         if (isConnected()) {
-            eClientSocket.reqMktData(reqId, contract, genericTicks, false, null);
+            eClientSocket.reqMktData(reqId, contract, genericTicks, false, false, null);
         } else {
             log.info("not connected " + getIbConnectionInfo());
         }

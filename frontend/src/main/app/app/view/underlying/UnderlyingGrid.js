@@ -16,10 +16,6 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         stripeRows: true
     },
     columns: [{
-        text: 'ReqID',
-        width: 70,
-        dataIndex: 'ibRequestId'
-    }, {
         text: 'Sec',
         width: 60,
         dataIndex: 'secType'

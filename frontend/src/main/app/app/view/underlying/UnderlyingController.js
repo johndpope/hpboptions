@@ -171,12 +171,12 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     updateRtData: function(msg) {
         var me = this,
             arr = msg.split(","),
-            ibRequestId = arr[1],
-            field = arr[2],
-            oldVal = arr[3],
-            val = arr[4];
+            id = arr[0],
+            field = arr[1],
+            oldVal = arr[2],
+            val = arr[3];
 
-        var selector = 'td.hop-underlying-' + ibRequestId + '.' + field;
+        var selector = 'td.' + id + '.' + field;
         var td = Ext.query(selector)[0];
         if (td) {
             td.classList.remove('hop-uptick');
