@@ -1,6 +1,6 @@
 package com.highpowerbear.hpboptions.entity;
 
-import com.highpowerbear.hpboptions.corelogic.model.Instrument;
+import com.highpowerbear.hpboptions.model.Instrument;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Types;
@@ -39,10 +39,6 @@ public class Underlying {
 
     public Instrument createInstrument() {
         return new Instrument(secType, symbol, symbol, currency, exchange, primaryExchange);
-    }
-
-    public String getDescriptor() {
-        return secType + "-" + symbol + "-" + currency + "-" + exchange;
     }
 
     @Override

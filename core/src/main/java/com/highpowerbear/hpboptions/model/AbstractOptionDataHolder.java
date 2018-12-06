@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.corelogic.model;
+package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 
@@ -7,12 +7,11 @@ import com.highpowerbear.hpboptions.enums.DataHolderType;
  */
 public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
 
-    private OptionData optionData;
+    private OptionData optionData = new OptionData();
     private int daysToExpiration = -1;
 
     public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibRequestId) {
         super(type, instrument, ibRequestId);
-        optionData = new OptionData();
     }
 
     @Override

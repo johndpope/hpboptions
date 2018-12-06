@@ -53,8 +53,8 @@
             <version>1</version>
         </dependency>
         <dependency>
-            <groupId>com.highpowerbear</groupId>
-            <artifactId>ibapiclient</artifactId>
+            <groupId>com.interactivebrokers</groupId>
+            <artifactId>tws-api</artifactId>
             <version>9.74.01</version>
         </dependency>
         <dependency>

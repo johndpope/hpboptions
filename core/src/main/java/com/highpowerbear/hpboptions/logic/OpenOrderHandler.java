@@ -1,6 +1,5 @@
-package com.highpowerbear.hpboptions.corelogic;
+package com.highpowerbear.hpboptions.logic;
 
-import com.highpowerbear.hpboptions.dao.CoreDao;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import org.slf4j.Logger;

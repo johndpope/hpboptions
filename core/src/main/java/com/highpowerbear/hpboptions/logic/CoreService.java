@@ -1,12 +1,11 @@
-package com.highpowerbear.hpboptions.corelogic;
+package com.highpowerbear.hpboptions.logic;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
-import com.highpowerbear.hpboptions.corelogic.model.OptionDataHolder;
-import com.highpowerbear.hpboptions.corelogic.model.UnderlyingDataHolder;
-import com.highpowerbear.hpboptions.dao.CoreDao;
+import com.highpowerbear.hpboptions.model.DataHolder;
+import com.highpowerbear.hpboptions.model.OptionDataHolder;
+import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
@@ -88,11 +87,6 @@ public class CoreService {
         if (!ibController.isConnected() && ibController.isMarkConnected()) {
             connect();
         }
-    }
-
-    @Scheduled(cron="0 0 * * * MON-FRI")
-    private void saveImpliedVolatility() {
-        // TODO take into account underlying market open
     }
 
     public List<DataHolder> getUnderlyingDataHolders() {

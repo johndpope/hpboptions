@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.corelogic.CoreService;
+import com.highpowerbear.hpboptions.logic.CoreService;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

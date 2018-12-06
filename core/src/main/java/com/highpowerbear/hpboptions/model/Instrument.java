@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.corelogic.model;
+package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
@@ -12,15 +12,15 @@ public class Instrument {
 
     private final Types.SecType secType;
     private final String symbol;
-    private final String underlying;
+    private final String underlyingSymbol;
     private final Currency currency;
     private final Exchange exchange;
     private final Exchange primaryExchange;
 
-    public Instrument(Types.SecType secType, String symbol, String underlying, Currency currency, Exchange exchange, Exchange primaryExchange) {
+    public Instrument(Types.SecType secType, String symbol, String underlyingSymbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
         this.secType = secType;
         this.symbol = symbol;
-        this.underlying = underlying;
+        this.underlyingSymbol = underlyingSymbol;
         this.currency = currency;
         this.exchange = exchange;
         this.primaryExchange = primaryExchange;
@@ -30,7 +30,7 @@ public class Instrument {
         Contract contract = new Contract();
 
         contract.localSymbol(symbol);
-        contract.symbol(underlying);
+        contract.symbol(underlyingSymbol);
         contract.primaryExch(primaryExchange.name());
         contract.secType(secType);
         contract.exchange(exchange.name());
@@ -47,8 +47,8 @@ public class Instrument {
         return symbol;
     }
 
-    public String getUnderlying() {
-        return underlying;
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
     }
 
     public Currency getCurrency() {

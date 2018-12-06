@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.corelogic.model;
+package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 

@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.corelogic.model;
+package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
@@ -12,9 +12,8 @@ import java.util.stream.Stream;
  */
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
-    private double timeValue;
-    private double delta;
-    private double gamma;
+    private CumulativeOptionData cumulativeOptionData = new CumulativeOptionData();
+    private double cumulativeUnrealizedPl;
 
     public UnderlyingDataHolder(Instrument instrument, int ibRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibRequestId);
@@ -24,6 +23,14 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST
         ).collect(Collectors.toSet()));
+    }
+
+    public void updateCumulativeOptionData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue) {
+        cumulativeOptionData.update(delta, gamma, vega, theta, deltaDollars, timeValue);
+    }
+
+    public void updateCumulativeUnrealizedPl(double pl) {
+        cumulativeUnrealizedPl = pl;
     }
 
     public double getOptionImpliedVol() {
@@ -38,15 +45,11 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return valueMap.get(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
-    public double getTimeValue() {
-        return timeValue;
+    public CumulativeOptionData getCumulativeOptionData() {
+        return cumulativeOptionData;
     }
 
-    public double getDelta() {
-        return delta;
-    }
-
-    public double getGamma() {
-        return gamma;
+    public double getCumulativeUnrealizedPl() {
+        return cumulativeUnrealizedPl;
     }
 }

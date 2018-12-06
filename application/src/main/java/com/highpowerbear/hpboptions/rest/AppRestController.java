@@ -1,8 +1,8 @@
 package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.corelogic.CoreService;
-import com.highpowerbear.hpboptions.corelogic.model.DataHolder;
+import com.highpowerbear.hpboptions.logic.CoreService;
+import com.highpowerbear.hpboptions.model.DataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;

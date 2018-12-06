@@ -1,10 +1,10 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.corelogic.CoreService;
-import com.highpowerbear.hpboptions.corelogic.HeartbeatMonitor;
-import com.highpowerbear.hpboptions.corelogic.OpenOrderHandler;
-import com.highpowerbear.hpboptions.dao.CoreDao;
+import com.highpowerbear.hpboptions.logic.CoreService;
+import com.highpowerbear.hpboptions.logic.HeartbeatMonitor;
+import com.highpowerbear.hpboptions.logic.OpenOrderHandler;
+import com.highpowerbear.hpboptions.logic.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.ib.client.Contract;

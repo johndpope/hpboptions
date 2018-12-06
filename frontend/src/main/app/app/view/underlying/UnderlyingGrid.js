@@ -102,7 +102,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'ivRenderer'
     }, {
-        text: 'Opt Vol',
+        text: 'Opt Vlm',
         width: 80,
         dataIndex: 'optionVolume',
         tdCls: 'optionVolume hop-volume hop-unchanged',
