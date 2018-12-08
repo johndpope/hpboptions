@@ -5,6 +5,8 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
     extend: 'HopGui.model.DataHolderBase',
 
     fields: [
+        'ibHistDataRequestId',
+        'ivRank',
         'optionImpliedVol',
         'optionVolume',
         'optionOpenInterest'

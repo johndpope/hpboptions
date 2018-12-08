@@ -136,7 +136,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void historicalData(int requestId, Bar bar) {
-        super.historicalData(requestId, bar);
+        //super.historicalData(requestId, bar);
         coreService.historicalDataReceived(requestId, bar);
     }
 

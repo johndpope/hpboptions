@@ -4,7 +4,6 @@ import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.ib.client.Bar;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -20,11 +19,10 @@ import java.util.stream.Stream;
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
     private final int ibHistDataRequestId;
-    private final SortedMap<LocalDate, Double> impliedVolatilityHistoryMap = new TreeMap<>();
-    private double impliedVolatilityRank = Double.NaN;
+    private double ivRank = Double.NaN, ivRankOld = Double.NaN;
+    private CumulativeData cumulativeData = new CumulativeData();
 
-    private CumulativeOptionData cumulativeOptionData = new CumulativeOptionData();
-    private double cumulativeUnrealizedPl;
+    private final SortedMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
 
     public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
@@ -37,27 +35,20 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         ).collect(Collectors.toSet()));
     }
 
-    public int getIbHistDataRequestId() {
-        return ibHistDataRequestId;
+    public void addImpliedVolatilityHistoricValue(LocalDate date, double impliedVolatility) {
+        ivHistoryMap.putIfAbsent(date, impliedVolatility);
     }
 
-    public void addImpliedVolatilityHistoricValue(Bar bar) {
-        LocalDate date = CoreUtil.toLocalDate(Long.valueOf(bar.time()));
-        double impliedVolatility = bar.close();
-
-        impliedVolatilityHistoryMap.putIfAbsent(date, impliedVolatility);
-    }
-
-    public void calculateImpliedVolatilityRank() {
+    public void updateIvRank() {
         LocalDate now = LocalDate.now();
         LocalDate yearAgo = now.minusYears(1);
 
-        OptionalDouble ivYearLowOptional = impliedVolatilityHistoryMap.entrySet().stream()
+        OptionalDouble ivYearLowOptional = ivHistoryMap.entrySet().stream()
                 .filter(entry -> entry.getKey().isAfter(yearAgo))
                 .mapToDouble(Map.Entry::getValue)
                 .min();
 
-        OptionalDouble ivYearHighOptional = impliedVolatilityHistoryMap.entrySet().stream()
+        OptionalDouble ivYearHighOptional = ivHistoryMap.entrySet().stream()
                 .filter(entry -> entry.getKey().isAfter(yearAgo))
                 .mapToDouble(Map.Entry::getValue)
                 .max();
@@ -71,21 +62,30 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivYearHigh = ivYearHighOptional.getAsDouble();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
-            double rank = (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow);
-            impliedVolatilityRank = Double.parseDouble(String.format("%.1f", rank * 100d));
+            double value = 100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow);
+            ivRankOld = ivRank;
+            ivRank = CoreUtil.round(value, 1);
         }
     }
 
-    public void updateCumulativeOptionData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue) {
-        cumulativeOptionData.update(delta, gamma, vega, theta, deltaDollars, timeValue);
+    public void updateCumulativeData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue, double unrealizedPl) {
+        cumulativeData.update(delta, gamma, vega, theta, deltaDollars, timeValue, unrealizedPl);
     }
 
-    public double getImpliedVolatilityRank() {
-        return impliedVolatilityRank;
+    public String createIvRankMessage() {
+        return id + ",ivRank," + ivRankOld + "," + ivRank;
     }
 
-    public void updateCumulativeUnrealizedPl(double pl) {
-        cumulativeUnrealizedPl = pl;
+    public String createCumulativeDataMessage() {
+        return id + "," + cumulativeData.toCsvString();
+    }
+
+    public int getIbHistDataRequestId() {
+        return ibHistDataRequestId;
+    }
+
+    public double getIvRank() {
+        return ivRank;
     }
 
     public double getOptionImpliedVol() {
@@ -100,11 +100,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return valueMap.get(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
-    public CumulativeOptionData getCumulativeOptionData() {
-        return cumulativeOptionData;
-    }
-
-    public double getCumulativeUnrealizedPl() {
-        return cumulativeUnrealizedPl;
+    public CumulativeData getCumulativeData() {
+        return cumulativeData;
     }
 }

@@ -32,4 +32,13 @@ public class CoreUtil {
     public static LocalDate toLocalDate(long epochMillis) {
         return Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate();
     }
+
+    public static double round(double number, int decimalPlaces) {
+        double modifier = Math.pow(10.0, decimalPlaces);
+        return Math.round(number * modifier) / modifier;
+    }
+
+    public static double round2(double number) {
+        return round(number, 2);
+    }
 }

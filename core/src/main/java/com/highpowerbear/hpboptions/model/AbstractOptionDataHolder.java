@@ -25,7 +25,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     @Override
     public String createOptionDataMessage() {
-        return id + ",optionData," + optionData.getDelta() + "," + optionData.getGamma() + "," + optionData.getImpliedVolatility() + "," + optionData.getUnderlyingPrice();
+        return id + "," + optionData.toCsvString();
     }
 
     @Override

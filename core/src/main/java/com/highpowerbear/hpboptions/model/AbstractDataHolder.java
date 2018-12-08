@@ -90,7 +90,8 @@ public abstract class AbstractDataHolder implements DataHolder {
             double c = valueMap.get(BasicMktDataField.CLOSE).doubleValue();
 
             if (isValidPrice(l) && isValidPrice(c)) {
-                update(field, Double.parseDouble(String.format("%.2f", ((l - c) / c) * 100d)));
+                double value = ((l - c) / c) * 100d;
+                update(field, CoreUtil.round2(value));
             }
 
         } else if (field == DerivedMktDataField.OPTION_VOLUME) {
@@ -98,7 +99,8 @@ public abstract class AbstractDataHolder implements DataHolder {
             int p = valueMap.get(BasicMktDataField.OPTION_PUT_VOLUME).intValue();
 
             if (isValidSize(o) && isValidSize(p)) {
-                update(field, o + p);
+                int value = o + p;
+                update(field, value);
             }
 
         } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
@@ -106,7 +108,8 @@ public abstract class AbstractDataHolder implements DataHolder {
             int p = valueMap.get(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
 
             if (isValidSize(o) && isValidSize(p)) {
-                update(field, o + p);
+                int value = o + p;
+                update(field, value);
             }
         }
     }
@@ -114,9 +117,6 @@ public abstract class AbstractDataHolder implements DataHolder {
     private Number convert(BasicMktDataField field, Number value) {
         if (type == DataHolderType.UNDERLYING && field == BasicMktDataField.VOLUME && isValidSize(value.intValue())) {
             return value.intValue() * 100;
-
-        } else if (type == DataHolderType.UNDERLYING && field == BasicMktDataField.OPTION_IMPLIED_VOL && isValidPrice(value.doubleValue())) {
-            return Double.parseDouble(String.format("%.1f", value.doubleValue() * 100d));
         }
 
         return value;

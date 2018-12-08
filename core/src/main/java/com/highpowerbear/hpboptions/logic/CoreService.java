@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -119,7 +120,7 @@ public class CoreService {
         ibController.requestHistData(
                 underlyingDataHolder.getIbHistDataRequestId(),
                 underlyingDataHolder.getInstrument().toIbContract(),
-                LocalDate.now().format(CoreSettings.IB_HIST_DATA_DATE_FORMATTER),
+                LocalDateTime.now().format(CoreSettings.IB_HIST_DATA_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
                 IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
@@ -159,12 +160,16 @@ public class CoreService {
 
     public void historicalDataReceived(int requestId, Bar bar) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
-        underlyingDataHolder.addImpliedVolatilityHistoricValue(bar);
+
+        LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_HIST_DATA_DATE_FORMATTER);
+        double value = bar.close();
+        underlyingDataHolder.addImpliedVolatilityHistoricValue(date, value);
     }
 
     public void historicalDataEnd(int requestId) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
-        underlyingDataHolder.calculateImpliedVolatilityRank();
+        underlyingDataHolder.updateIvRank();
+        messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createIvRankMessage());
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {

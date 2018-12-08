@@ -32,7 +32,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/underlying', function(message) {
-                me.updateRtData(message.body);
+                me.updateData(message.body);
             });
 
             stompClient.subscribe('/topic/ib_connection', function(message) {
@@ -148,6 +148,13 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return me.formatIv(val);
     },
 
+    ivRankRenderer: function(val, metadata, record) {
+        var me = this;
+
+        metadata.tdCls = record.data.id;
+        return me.formatIvRank(val);
+    },
+
     formatPrice: function(val) {
         return val > 0 ? Ext.util.Format.number(val, '0.00###') : '&nbsp;';
     },
@@ -165,10 +172,14 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
     },
 
     formatIv: function(val) {
-        return val > 0 ? Ext.util.Format.number(val, '0.0%') : '&nbsp;';
+        return val > 0 ? Ext.util.Format.number(val * 100, '0.0%') : '&nbsp;';
     },
 
-    updateRtData: function(msg) {
+    formatIvRank: function(val) {
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0.0') : '&nbsp;';
+    },
+
+    updateData: function(msg) {
         var me = this,
             arr = msg.split(","),
             id = arr[0],
@@ -187,8 +198,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
             var div = Ext.query('div', true, td)[0];
             if (div) {
-                if (me.isPrice(td) || me.isSize(td) || me.isIv(td)) {
-                    if (oldVal < 0) {
+                if (me.isPrice(td) || me.isSize(td) || me.isIv(td) || me.isIvRank(td)) {
+                    if (oldVal < 0 || oldVal === 'NaN') {
                         td.classList.add('hop-unchanged');
                     } else {
                         td.classList.add(val > oldVal ? 'hop-uptick' : (val < oldVal ? 'hop-downtick' : 'hop-unchanged'));
@@ -205,6 +216,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     div.innerHTML = me.formatChangePct(val);
                 } else if (me.isIv(td)) {
                     div.innerHTML = me.formatIv(val);
+                } else if (me.isIvRank(td)) {
+                    div.innerHTML = me.formatIvRank(val);
                 } else {
                     div.innerHTML = me.isVolume(td) ? me.formatVolume(val) : me.formatSize(val);
                 }
@@ -222,6 +235,10 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     isIv: function(td) {
         return td.classList.contains('hop-iv');
+    },
+
+    isIvRank: function(td) {
+        return td.classList.contains('hop-iv-rank');
     },
 
     isSize: function(td) {

@@ -64,4 +64,8 @@ public class OptionData {
     public double getTimeValuePct() {
         return timeValuePct;
     }
+
+    public String toCsvString() {
+        return "optionData," + delta + "," + gamma + "," + vega + "," + theta + "," + impliedVolatility + "," + optionPrice + "," + underlyingPrice;
+    }
 }

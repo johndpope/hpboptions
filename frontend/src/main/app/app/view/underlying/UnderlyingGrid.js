@@ -102,6 +102,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'ivRenderer'
     }, {
+        text: 'IV Rank',
+        width: 80,
+        dataIndex: 'ivRank',
+        tdCls: 'ivRank hop-iv-rank hop-unchanged',
+        align: 'right',
+        renderer: 'ivRankRenderer'
+    }, {
         text: 'Opt Vlm',
         width: 80,
         dataIndex: 'optionVolume',

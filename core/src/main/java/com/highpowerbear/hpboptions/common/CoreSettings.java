@@ -11,6 +11,7 @@ public class CoreSettings {
     public static final Integer IB_CLIENT_ID = 1;
     public static final Integer MAX_ORDER_HEARTBEAT_FAILS = 5;
     public static final String JSON_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final DateTimeFormatter IB_HIST_DATA_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss");
     public static final DateTimeFormatter IB_HIST_DATA_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
