@@ -56,6 +56,16 @@ public class GenericIbListener implements EWrapper {
     }
 
     @Override
+    public void historicalDataEnd(int reqId, String startDateStr, String endDateStr) {
+        log.info(EWrapperMsgGenerator.historicalDataEnd(reqId, startDateStr, endDateStr));
+    }
+
+    @Override
+    public void historicalDataUpdate(int reqId, Bar bar) {
+        log.info(EWrapperMsgGenerator.historicalData(reqId, bar.time(), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume(), bar.count(), bar.wap()));
+    }
+
+    @Override
     public void managedAccounts(String accountsList) {
         log.info(EWrapperMsgGenerator.managedAccounts(accountsList));
     }
@@ -311,11 +321,6 @@ public class GenericIbListener implements EWrapper {
     }
 
     @Override
-    public void historicalDataEnd(int reqId, String startDateStr, String endDateStr) {
-        log.info(EWrapperMsgGenerator.historicalDataEnd(reqId, startDateStr, endDateStr));
-    }
-
-    @Override
     public void mktDepthExchanges(DepthMktDataDescription[] depthMktDataDescriptions) {
         log.info(EWrapperMsgGenerator.mktDepthExchanges(depthMktDataDescriptions));
     }
@@ -363,11 +368,6 @@ public class GenericIbListener implements EWrapper {
     @Override
     public void histogramData(int reqId, List<HistogramEntry> items) {
         log.info(EWrapperMsgGenerator.histogramData(reqId, items));
-    }
-
-    @Override
-    public void historicalDataUpdate(int reqId, Bar bar) {
-        log.info(EWrapperMsgGenerator.historicalData(reqId, bar.time(), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume(), bar.count(), bar.wap()));
     }
 
     @Override

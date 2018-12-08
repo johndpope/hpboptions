@@ -10,8 +10,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     private OptionData optionData = new OptionData();
     private int daysToExpiration = -1;
 
-    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibRequestId) {
-        super(type, instrument, ibRequestId);
+    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
+        super(type, instrument, ibMktDataRequestId);
     }
 
     @Override

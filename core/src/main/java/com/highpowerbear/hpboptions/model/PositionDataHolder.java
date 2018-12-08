@@ -10,8 +10,8 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
     private int position;
     private double unrealizedPl;
 
-    public PositionDataHolder(Instrument instrument, int ibRequestId) {
-        super(DataHolderType.POSITION, instrument, ibRequestId);
+    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId) {
+        super(DataHolderType.POSITION, instrument, ibMktDataRequestId);
     }
 
     public void updatePosition(int position) {

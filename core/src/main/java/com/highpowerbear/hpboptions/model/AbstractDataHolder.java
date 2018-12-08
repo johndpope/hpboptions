@@ -18,17 +18,17 @@ public abstract class AbstractDataHolder implements DataHolder {
     protected final String id;
     private final DataHolderType type;
     private final Instrument instrument;
-    private final int ibRequestId;
+    private final int ibMktDataRequestId;
     private final Set<MktDataField> fieldsToDisplay = new HashSet<>();
     private String genericTicks;
 
     private final Map<MktDataField, Number> oldValueMap = new HashMap<>();
     protected final Map<MktDataField, Number> valueMap = new HashMap<>();
 
-    AbstractDataHolder(DataHolderType type, Instrument instrument, int ibRequestId) {
+    AbstractDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
         this.type = type;
         this.instrument = instrument;
-        this.ibRequestId = ibRequestId;
+        this.ibMktDataRequestId = ibMktDataRequestId;
         id = type.name().toLowerCase() + "-" + instrument.getSymbol();
 
         Arrays.asList(BasicMktDataField.values()).forEach(field -> update(field, field.getInitialValue()));
@@ -127,11 +127,11 @@ public abstract class AbstractDataHolder implements DataHolder {
         valueMap.put(mktDataField, value);
     }
 
-    private boolean isValidPrice(double d) {
+    protected boolean isValidPrice(double d) {
         return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0d;
     }
 
-    private boolean isValidSize(int i) {
+    protected boolean isValidSize(int i) {
         return i > 0;
     }
 
@@ -146,8 +146,8 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     @Override
-    public int getIbRequestId() {
-        return ibRequestId;
+    public int getIbMktDataRequestId() {
+        return ibMktDataRequestId;
     }
 
     @Override

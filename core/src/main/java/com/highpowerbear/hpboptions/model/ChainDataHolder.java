@@ -7,7 +7,7 @@ import com.highpowerbear.hpboptions.enums.DataHolderType;
  */
 public class ChainDataHolder extends AbstractOptionDataHolder {
 
-    public ChainDataHolder(Instrument instrument, int ibRequestId) {
-        super(DataHolderType.CHAIN, instrument, ibRequestId);
+    public ChainDataHolder(Instrument instrument, int ibMktDataRequestId) {
+        super(DataHolderType.CHAIN, instrument, ibMktDataRequestId);
     }
 }

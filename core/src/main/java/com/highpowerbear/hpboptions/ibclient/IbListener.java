@@ -7,10 +7,7 @@ import com.highpowerbear.hpboptions.logic.OpenOrderHandler;
 import com.highpowerbear.hpboptions.logic.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.ib.client.Contract;
-import com.ib.client.Order;
-import com.ib.client.OrderState;
-import com.ib.client.TickAttrib;
+import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -119,22 +116,34 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
-        coreService.updateValue(requestId, tickType, price);
+        coreService.updateMktData(requestId, tickType, price);
     }
 
     @Override
     public void tickSize(int requestId, int tickType, int size) {
-        coreService.updateValue(requestId, tickType, size);
+        coreService.updateMktData(requestId, tickType, size);
     }
 
     @Override
     public void tickGeneric(int requestId, int tickType, double value) {
-        coreService.updateValue(requestId, tickType, value);
+        coreService.updateMktData(requestId, tickType, value);
     }
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         coreService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+    }
+
+    @Override
+    public void historicalData(int requestId, Bar bar) {
+        super.historicalData(requestId, bar);
+        coreService.historicalDataReceived(requestId, bar);
+    }
+
+    @Override
+    public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
+        super.historicalDataEnd(requestId, startDateStr, endDateStr);
+        coreService.historicalDataEnd(requestId);
     }
 
     @Override

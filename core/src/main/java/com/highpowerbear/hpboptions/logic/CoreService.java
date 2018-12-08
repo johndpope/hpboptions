@@ -3,21 +3,22 @@ package com.highpowerbear.hpboptions.logic;
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.model.DataHolder;
-import com.highpowerbear.hpboptions.model.OptionDataHolder;
-import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.entity.Underlying;
-import com.highpowerbear.hpboptions.enums.BasicMktDataField;
-import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
+import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.ibclient.IbController;
+import com.highpowerbear.hpboptions.model.*;
+import com.ib.client.Bar;
 import com.ib.client.TickType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -31,12 +32,15 @@ public class CoreService {
 
     private IbController ibController; // prevent circular dependency
 
-    private final List<DataHolder> underlyingDataHolders = new ArrayList<>();
-    private final List<DataHolder> positionDataHolders = new ArrayList<>();
-    private final List<DataHolder> chainDataHolders = new ArrayList<>();
+    private final List<UnderlyingDataHolder> underlyingDataHolders = new ArrayList<>();
+    private final List<PositionDataHolder> positionDataHolders = new ArrayList<>();
+    private final List<ChainDataHolder> chainDataHolders = new ArrayList<>();
 
-    private final Map<Integer, DataHolder> dataMap = new LinkedHashMap<>(); // ib request id --> dataHolder
-    private final AtomicInteger ibRequestIdGenerator = new AtomicInteger(0);
+    private final Map<Integer, DataHolder> mktDataRequestMap = new LinkedHashMap<>(); // ib request id --> dataHolder
+    private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new LinkedHashMap<>(); // ib request id --> underlyingDataHolder
+
+    private final AtomicInteger ibMktDataRequestIdGen = new AtomicInteger(0);
+    private final AtomicInteger ibHistDataRequestIdGen = new AtomicInteger(1000000);
 
     @Autowired
     public CoreService(CoreDao coreDao, MessageSender messageSender) {
@@ -48,10 +52,14 @@ public class CoreService {
     public void init() {
         List<Underlying> underlyings = coreDao.getActiveUnderlyings();
 
-        underlyings.forEach(underlying -> {
-            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(underlying.createInstrument(), ibRequestIdGenerator.incrementAndGet());
+        for (Underlying underlying : underlyings) {
+            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(
+                    underlying.createInstrument(),
+                    ibMktDataRequestIdGen.incrementAndGet(),
+                    ibHistDataRequestIdGen.incrementAndGet());
+
             underlyingDataHolders.add(underlyingDataHolder);
-        });
+        }
     }
 
     public void setIbController(IbController ibController) {
@@ -62,14 +70,15 @@ public class CoreService {
         ibController.connect();
 
         if (isConnected()) {
-            dataMap.keySet().forEach(ibController::cancelMarketData);
-            dataMap.clear();
-            underlyingDataHolders.forEach(this::requestData);
+            mktDataRequestMap.keySet().forEach(ibController::cancelMktData);
+            mktDataRequestMap.clear();
+            underlyingDataHolders.forEach(this::requestMktData);
+            underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
         }
     }
 
     public void disconnect() {
-        underlyingDataHolders.forEach(this::cancelData);
+        underlyingDataHolders.forEach(this::cancelMktData);
         CoreUtil.waitMilliseconds(1000);
         ibController.disconnect();
     }
@@ -89,20 +98,36 @@ public class CoreService {
         }
     }
 
-    public List<DataHolder> getUnderlyingDataHolders() {
-        return underlyingDataHolders;
+    @Scheduled(cron="0 0 6 * * MON-FRI")
+    private void performStartOfDayTasks() {
+        underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
     }
 
-    public List<DataHolder> getPositionDataHolders() {
-        return positionDataHolders;
+    private void requestMktData(DataHolder dataHolder) {
+        mktDataRequestMap.putIfAbsent(dataHolder.getIbMktDataRequestId(), dataHolder);
+        ibController.requestMktData(dataHolder.getIbMktDataRequestId(), dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
     }
 
-    public List<DataHolder> getChainDataHolders() {
-        return chainDataHolders;
+    private void cancelMktData(DataHolder dataHolder) {
+        ibController.cancelMktData(dataHolder.getIbMktDataRequestId());
+        mktDataRequestMap.remove(dataHolder.getIbMktDataRequestId());
     }
 
-    public void updateValue(int requestId, int tickType, Number value) {
-        DataHolder dataHolder = dataMap.get(requestId);
+    private void requestImpliedVolatilityHistory(UnderlyingDataHolder underlyingDataHolder) {
+        histDataRequestMap.putIfAbsent(underlyingDataHolder.getIbHistDataRequestId(), underlyingDataHolder);
+
+        ibController.requestHistData(
+                underlyingDataHolder.getIbHistDataRequestId(),
+                underlyingDataHolder.getInstrument().toIbContract(),
+                LocalDate.now().format(CoreSettings.IB_HIST_DATA_DATE_FORMATTER),
+                IbDurationUnit.YEAR_1.getValue(),
+                IbBarSize.DAY_1.getValue(),
+                IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
+                IbTradingHours.REGULAR.getValue());
+    }
+
+    public void updateMktData(int requestId, int tickType, Number value) {
+        DataHolder dataHolder = mktDataRequestMap.get(requestId);
 
         BasicMktDataField basicField = BasicMktDataField.getBasicField(TickType.get(tickType));
         if (basicField == null) {
@@ -122,21 +147,36 @@ public class CoreService {
     }
 
     public void updateOptionData(int requestId, int tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
-        DataHolder dataHolder = dataMap.get(requestId);
+        if (tickType != TickType.LAST_OPTION.index()) {
+            return;
+        }
+        DataHolder dataHolder = mktDataRequestMap.get(requestId);
         OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
 
         optionDataHolder.updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
         messageSender.sendWsMessage(getWsTopic(dataHolder), optionDataHolder.createOptionDataMessage());
     }
 
-    public void requestData(DataHolder dataHolder) {
-        dataMap.putIfAbsent(dataHolder.getIbRequestId(), dataHolder);
-        ibController.requestMarketData(dataHolder.getIbRequestId(), dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
+    public void historicalDataReceived(int requestId, Bar bar) {
+        UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
+        underlyingDataHolder.addImpliedVolatilityHistoricValue(bar);
     }
 
-    public void cancelData(DataHolder dataHolder) {
-        ibController.cancelMarketData(dataHolder.getIbRequestId());
-        dataMap.remove(dataHolder.getIbRequestId());
+    public void historicalDataEnd(int requestId) {
+        UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
+        underlyingDataHolder.calculateImpliedVolatilityRank();
+    }
+
+    public List<UnderlyingDataHolder> getUnderlyingDataHolders() {
+        return underlyingDataHolders;
+    }
+
+    public List<PositionDataHolder> getPositionDataHolders() {
+        return positionDataHolders;
+    }
+
+    public List<ChainDataHolder> getChainDataHolders() {
+        return chainDataHolders;
     }
 
     private String getWsTopic(DataHolder dataHolder) {

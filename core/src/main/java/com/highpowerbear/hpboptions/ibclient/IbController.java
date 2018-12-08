@@ -100,27 +100,41 @@ public class IbController {
         return markConnected;
     }
 
-    public void requestMarketData(int reqId, Contract contract, String genericTicks) {
-        log.info("requesting realtime data, reqId=" + reqId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
+    public void requestMktData(int requestId, Contract contract, String genericTicks) {
+        log.info("requesting market data, requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
 
-        if (isConnected()) {
-            eClientSocket.reqMktData(reqId, contract, genericTicks, false, false, null);
-        } else {
-            log.info("not connected " + getIbConnectionInfo());
+        if (checkConnected()) {
+            eClientSocket.reqMktData(requestId, contract, genericTicks, false, false, null);
         }
     }
 
-    public void cancelMarketData(int reqId) {
-        log.info("canceling realtime data for reqId=" + reqId);
+    public void cancelMktData(int requestId) {
+        log.info("canceling realtime data for requestId=" + requestId);
 
-        if (isConnected()) {
-            eClientSocket.cancelMktData(reqId);
-        } else {
-            log.info("not connected " + getIbConnectionInfo());
+        if (checkConnected()) {
+            eClientSocket.cancelMktData(requestId);
+        }
+    }
+
+    public void requestHistData(int requestId, Contract contract, String endDateTime, String durationString, String barSizeSetting, String whatToShow, int useRTH) {
+        log.info("requesting historical data, requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) +
+                ", endDateTime=" + endDateTime + ", durationString=" + durationString + ", barSizeSetting=" + barSizeSetting +
+                ", whatToShow=" + whatToShow + ", useRTH=" + useRTH);
+
+        if (checkConnected()) {
+            eClientSocket.reqHistoricalData(requestId, contract, endDateTime, durationString, barSizeSetting, whatToShow, useRTH, 1, false, null);
         }
     }
 
     void connectionBroken() {
         eClientSocket.eDisconnect();
+    }
+
+    private boolean checkConnected() {
+        if (!isConnected()) {
+            log.info("not connected " + getIbConnectionInfo());
+            return false;
+        }
+        return true;
     }
 }

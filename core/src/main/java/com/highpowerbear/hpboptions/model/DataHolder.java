@@ -11,7 +11,7 @@ public interface DataHolder {
     void calculateField(DerivedMktDataField field);
     DataHolderType getType();
     Instrument getInstrument();
-    int getIbRequestId();
+    int getIbMktDataRequestId();
     String createMessage(MktDataField mktDataField);
     boolean isDisplayed(MktDataField mktDataField);
     String getGenericTicks();

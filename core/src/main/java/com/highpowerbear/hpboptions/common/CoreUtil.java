@@ -3,6 +3,10 @@ package com.highpowerbear.hpboptions.common;
 import com.ib.client.Contract;
 import org.apache.commons.text.CaseUtils;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 /**
  * Created by robertk on 10/28/2018.
  */
@@ -23,5 +27,9 @@ public class CoreUtil {
 
     public static String toCamelCase(String name) {
         return CaseUtils.toCamelCase(name, false, '_');
+    }
+
+    public static LocalDate toLocalDate(long epochMillis) {
+        return Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate();
     }
 }

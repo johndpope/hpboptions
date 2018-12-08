@@ -13,7 +13,7 @@ Ext.define('HopGui.model.DataHolderBase', {
         {name: 'underlying', mapping: 'instrument.underlying'},
         {name: 'currency', mapping: 'instrument.currency'},
         {name: 'exchange', mapping: 'instrument.exchange'},
-        'ibRequestId',
+        'ibMktDataRequestId',
         'bid',
         'ask',
         'last',
