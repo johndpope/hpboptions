@@ -102,6 +102,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'ivRenderer'
     }, {
+        text: 'IV C%',
+        width: 80,
+        dataIndex: 'ivChangePct',
+        tdCls: 'ivChangePct hop-change-pct',
+        align: 'right',
+        renderer: 'changePctRenderer'
+    }, {
         text: 'IV Rank',
         width: 80,
         dataIndex: 'ivRank',

@@ -7,7 +7,7 @@ import java.util.List;
  * Created by robertk on 12/9/2018.
  */
 public enum UnderlyingDataField implements DataField {
-    IV_RANK,
+    IV_CLOSE,
     DELTA_CUMULATIVE,
     GAMMA_CUMULATIVE,
     VEGA_CUMULATIVE,

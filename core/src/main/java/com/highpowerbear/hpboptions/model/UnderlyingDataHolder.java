@@ -1,16 +1,11 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.enums.BasicMktDataField;
-import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.highpowerbear.hpboptions.enums.UnderlyingDataField;
+import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +15,9 @@ import java.util.stream.Stream;
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
     private final int ibHistDataRequestId;
-    private final SortedMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
+    private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
+    @JsonIgnore
+    private final Set<DataField> ivHistoryDependentFields;
 
     public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
@@ -30,22 +27,88 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
         addFieldsToDisplay(Stream.of(
                 BasicMktDataField.OPTION_IMPLIED_VOL,
+                DerivedMktDataField.IV_CHANGE_PCT,
+                DerivedMktDataField.IV_RANK,
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
-                UnderlyingDataField.IV_RANK,
+                UnderlyingDataField.IV_CLOSE,
                 UnderlyingDataField.DELTA_CUMULATIVE,
                 UnderlyingDataField.GAMMA_CUMULATIVE,
                 UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE,
                 UnderlyingDataField.TIME_VALUE_CUMULATIVE,
                 UnderlyingDataField.UNREALIZED_PL_CUMULATIVE
         ).collect(Collectors.toSet()));
+
+        ivHistoryDependentFields = Stream.of(
+                UnderlyingDataField.IV_CLOSE,
+                DerivedMktDataField.IV_CHANGE_PCT,
+                DerivedMktDataField.IV_RANK
+        ).collect(Collectors.toSet());
+    }
+
+    @Override
+    public void calculateField(DerivedMktDataField field) {
+        super.calculateField(field);
+
+        if (field == DerivedMktDataField.IV_CHANGE_PCT) {
+            updateIvChangePct();
+
+        } else if (field == DerivedMktDataField.IV_RANK) {
+            updateIvRank();
+
+        } else if (field == DerivedMktDataField.OPTION_VOLUME) {
+            int o = getCurrent(BasicMktDataField.OPTION_CALL_VOLUME).intValue();
+            int p = getCurrent(BasicMktDataField.OPTION_PUT_VOLUME).intValue();
+
+            if (isValidSize(o) && isValidSize(p)) {
+                int value = o + p;
+                update(field, value);
+            }
+
+        } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
+            int o = getCurrent(BasicMktDataField.OPTION_CALL_OPEN_INTEREST).intValue();
+            int p = getCurrent(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
+
+            if (isValidSize(o) && isValidSize(p)) {
+                int value = o + p;
+                update(field, value);
+            }
+        }
     }
 
     public void addImpliedVolatility(LocalDate date, double impliedVolatility) {
         ivHistoryMap.putIfAbsent(date, impliedVolatility);
     }
 
-    public void updateIvRank() {
+    public void impliedVolatilityHistoryCompleted() {
+        if (!ivHistoryMap.isEmpty()) {
+            update(UnderlyingDataField.IV_CLOSE, ivHistoryMap.lastEntry().getValue());
+
+            updateIvChangePct();
+            updateIvRank();
+        }
+    }
+
+    private void updateIvChangePct() {
+        if (ivHistoryMap.isEmpty()) {
+            return;
+        }
+        double ivCurrent = getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
+        double ivClose = ivHistoryMap.lastEntry().getValue();
+
+        if (isValidPrice(ivCurrent) && isValidPrice(ivClose)) {
+            ivCurrent = CoreUtil.round(ivCurrent, 4);
+            ivClose = CoreUtil.round(ivClose, 8);
+
+            double value = ((ivCurrent - ivClose) / ivClose) * 100d;
+            update(DerivedMktDataField.IV_CHANGE_PCT, CoreUtil.round2(value));
+        }
+    }
+
+    private void updateIvRank() {
+        if (ivHistoryMap.isEmpty()) {
+            return;
+        }
         LocalDate now = LocalDate.now();
         LocalDate yearAgo = now.minusYears(1);
 
@@ -69,7 +132,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
             double ivRank = CoreUtil.round(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow), 1);
-            update(UnderlyingDataField.IV_RANK, ivRank);
+            update(DerivedMktDataField.IV_RANK, ivRank);
         }
     }
 
@@ -83,6 +146,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.UNREALIZED_PL_CUMULATIVE, unrealizedPl);
     }
 
+    public Set<DataField> getIvHistoryDependentFields() {
+        return ivHistoryDependentFields;
+    }
+
     public int getIbHistDataRequestId() {
         return ibHistDataRequestId;
     }
@@ -91,16 +158,24 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
     }
 
+    public double getIvClose() {
+        return getCurrent(UnderlyingDataField.IV_CLOSE).doubleValue();
+    }
+
+    public double getIvChangePct() {
+        return getCurrent(DerivedMktDataField.IV_CHANGE_PCT).doubleValue();
+    }
+
+    public double getIvRank() {
+        return getCurrent(DerivedMktDataField.IV_RANK).doubleValue();
+    }
+
     public int getOptionVolume() {
         return getCurrent(DerivedMktDataField.OPTION_VOLUME).intValue();
     }
 
     public int getOptionOpenInterest() {
         return getCurrent(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
-    }
-
-    public double getIvRank() {
-        return getCurrent(UnderlyingDataField.IV_RANK).doubleValue();
     }
 
     public double getDeltaCumulative() {

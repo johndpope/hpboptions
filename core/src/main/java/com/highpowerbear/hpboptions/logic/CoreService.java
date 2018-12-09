@@ -135,12 +135,12 @@ public class CoreService {
         DerivedMktDataField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
 
         String wsTopic = getWsTopic(dataHolder);
-        if (dataHolder.isDisplayed(basicField)) {
+        if (dataHolder.isSendMessage(basicField)) {
             messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(basicField));
         }
 
         DerivedMktDataField.getDerivedFields(basicField).stream()
-                .filter(dataHolder::isDisplayed)
+                .filter(dataHolder::isSendMessage)
                 .forEach(derivedField -> messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(derivedField)));
     }
 
@@ -153,7 +153,7 @@ public class CoreService {
         optionDataHolder.updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
 
         OptionDataField.getValues().stream()
-                .filter(dataHolder::isDisplayed)
+                .filter(dataHolder::isSendMessage)
                 .forEach(field -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(field)));
     }
 
@@ -167,8 +167,10 @@ public class CoreService {
 
     public void historicalDataEnd(int requestId) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
-        underlyingDataHolder.updateIvRank();
-        messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createMessage(UnderlyingDataField.IV_RANK));
+        underlyingDataHolder.impliedVolatilityHistoryCompleted();
+
+        underlyingDataHolder.getIvHistoryDependentFields()
+                .forEach(field -> messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createMessage(field)));
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {

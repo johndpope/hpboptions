@@ -90,24 +90,6 @@ public abstract class AbstractDataHolder implements DataHolder {
                 double value = ((l - c) / c) * 100d;
                 update(field, CoreUtil.round2(value));
             }
-
-        } else if (field == DerivedMktDataField.OPTION_VOLUME) {
-            int o = getCurrent(BasicMktDataField.OPTION_CALL_VOLUME).intValue();
-            int p = getCurrent(BasicMktDataField.OPTION_PUT_VOLUME).intValue();
-
-            if (isValidSize(o) && isValidSize(p)) {
-                int value = o + p;
-                update(field, value);
-            }
-
-        } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
-            int o = getCurrent(BasicMktDataField.OPTION_CALL_OPEN_INTEREST).intValue();
-            int p = getCurrent(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
-
-            if (isValidSize(o) && isValidSize(p)) {
-                int value = o + p;
-                update(field, value);
-            }
         }
     }
 
@@ -168,7 +150,7 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     @Override
-    public boolean isDisplayed(DataField dataField) {
+    public boolean isSendMessage(DataField dataField) {
         return fieldsToDisplay.contains(dataField);
     }
 

@@ -13,6 +13,6 @@ public interface DataHolder {
     Instrument getInstrument();
     int getIbMktDataRequestId();
     String createMessage(DataField dataField);
-    boolean isDisplayed(DataField dataField);
+    boolean isSendMessage(DataField dataField);
     String getGenericTicks();
 }
