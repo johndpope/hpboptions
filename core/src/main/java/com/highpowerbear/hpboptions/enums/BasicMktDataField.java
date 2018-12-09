@@ -3,13 +3,14 @@ package com.highpowerbear.hpboptions.enums;
 import com.ib.client.TickType;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Created by robertk on 12/3/2018.
  */
-public enum BasicMktDataField implements MktDataField {
+public enum BasicMktDataField implements DataField {
     BID (TickType.BID, null),
     ASK (TickType.ASK, null),
     LAST (TickType.LAST, null),
@@ -50,6 +51,11 @@ public enum BasicMktDataField implements MktDataField {
 
     public static BasicMktDataField getBasicField(TickType tickType) {
         return tickFieldMap.get(tickType);
+    }
+
+    private static List<BasicMktDataField> values = Arrays.asList(BasicMktDataField.values());
+    public static List<BasicMktDataField> getValues() {
+        return values;
     }
 }
 

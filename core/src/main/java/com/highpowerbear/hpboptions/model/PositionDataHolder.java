@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.OptionDataField;
 
 /**
  * Created by robertk on 12/5/2018.
@@ -12,6 +13,8 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
 
     public PositionDataHolder(Instrument instrument, int ibMktDataRequestId) {
         super(DataHolderType.POSITION, instrument, ibMktDataRequestId);
+
+        OptionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
     }
 
     public void updatePosition(int position) {

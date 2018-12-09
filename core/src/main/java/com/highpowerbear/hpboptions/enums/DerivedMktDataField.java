@@ -5,7 +5,7 @@ import java.util.*;
 /**
  * Created by robertk on 12/3/2018.
  */
-public enum DerivedMktDataField implements MktDataField {
+public enum DerivedMktDataField implements DataField {
     CHANGE_PCT (Double.NaN, BasicMktDataField.LAST, BasicMktDataField.CLOSE),
     OPTION_VOLUME (-1, BasicMktDataField.OPTION_CALL_VOLUME, BasicMktDataField.OPTION_PUT_VOLUME),
     OPTION_OPEN_INTEREST (-1, BasicMktDataField.OPTION_CALL_OPEN_INTEREST, BasicMktDataField.OPTION_PUT_OPEN_INTEREST);
@@ -39,5 +39,10 @@ public enum DerivedMktDataField implements MktDataField {
 
     public static Set<DerivedMktDataField> getDerivedFields(BasicMktDataField basicField) {
         return basicDerivedMap.get(basicField);
+    }
+
+    private static List<DerivedMktDataField> values = Arrays.asList(DerivedMktDataField.values());
+    public static List<DerivedMktDataField> getValues() {
+        return values;
     }
 }

@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -153,9 +150,11 @@ public class CoreService {
         }
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
         OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
-
         optionDataHolder.updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-        messageSender.sendWsMessage(getWsTopic(dataHolder), optionDataHolder.createOptionDataMessage());
+
+        OptionDataField.getValues().stream()
+                .filter(dataHolder::isDisplayed)
+                .forEach(field -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(field)));
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
@@ -163,13 +162,13 @@ public class CoreService {
 
         LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_HIST_DATA_DATE_FORMATTER);
         double value = bar.close();
-        underlyingDataHolder.addImpliedVolatilityHistoricValue(date, value);
+        underlyingDataHolder.addImpliedVolatility(date, value);
     }
 
     public void historicalDataEnd(int requestId) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
         underlyingDataHolder.updateIvRank();
-        messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createIvRankMessage());
+        messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createMessage(UnderlyingDataField.IV_RANK));
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {
