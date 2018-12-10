@@ -23,6 +23,7 @@ public class Underlying {
 
     @Id
     private Long id;
+    private String conId;
     @Enumerated(EnumType.STRING)
     private Types.SecType secType;
     private String symbol;
@@ -38,7 +39,7 @@ public class Underlying {
     private Boolean active;
 
     public Instrument createInstrument() {
-        return new Instrument(secType, symbol, symbol, currency, exchange, primaryExchange);
+        return new Instrument(conId, secType, symbol, symbol, currency, exchange, primaryExchange);
     }
 
     @Override
@@ -62,6 +63,14 @@ public class Underlying {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getConId() {
+        return conId;
+    }
+
+    public void setConId(String conId) {
+        this.conId = conId;
     }
 
     public Types.SecType getSecType() {

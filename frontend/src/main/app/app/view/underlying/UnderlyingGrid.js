@@ -88,7 +88,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'Chg%',
+        text: 'Change',
         width: 80,
         dataIndex: 'changePct',
         tdCls: 'changePct hop-change-pct',
@@ -102,7 +102,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'ivRenderer'
     }, {
-        text: 'IV C%',
+        text: 'IV Chg',
         width: 80,
         dataIndex: 'ivChangePct',
         tdCls: 'ivChangePct hop-change-pct',

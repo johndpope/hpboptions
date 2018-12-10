@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.logic.CoreService;
+import com.highpowerbear.hpboptions.logic.DataService;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,12 @@ public class IbController {
     private boolean markConnected;
 
     private final IbListener ibListener;
-    private final CoreService coreService;
+    private final DataService dataService;
 
     @Autowired
-    public IbController(IbListener ibListener, CoreService coreService) {
+    public IbController(IbListener ibListener, DataService dataService) {
         this.ibListener = ibListener;
-        this.coreService = coreService;
+        this.dataService = dataService;
     }
 
     public String getIbConnectionInfo() {
@@ -41,9 +41,9 @@ public class IbController {
 
     @PostConstruct
     public void init() {
-        coreService.setIbController(this);
+        dataService.setIbController(this);
         ibListener.setIbController(this);
-        ibListener.setCoreService(coreService);
+        ibListener.setDataService(dataService);
 
         eReaderSignal = new EJavaSignal();
         eClientSocket = new EClientSocket(ibListener, eReaderSignal);
@@ -123,6 +123,22 @@ public class IbController {
 
         if (checkConnected()) {
             eClientSocket.reqHistoricalData(requestId, contract, endDateTime, durationString, barSizeSetting, whatToShow, useRTH, 1, false, null);
+        }
+    }
+
+    public void requestPositions() {
+        log.info("requesting positions");
+
+        if (checkConnected()) {
+            eClientSocket.reqPositions();
+        }
+    }
+
+    public void cancelPositions() {
+        log.info("cancelling positions");
+
+        if (checkConnected()) {
+            eClientSocket.cancelPositions();
         }
     }
 

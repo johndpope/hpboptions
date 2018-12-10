@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.logic.CoreService;
+import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.HeartbeatMonitor;
 import com.highpowerbear.hpboptions.logic.OpenOrderHandler;
 import com.highpowerbear.hpboptions.logic.CoreDao;
@@ -29,7 +29,7 @@ public class IbListener extends GenericIbListener {
     private final MessageSender messageSender;
 
     private IbController ibController; // prevent circular dependency
-    private CoreService coreService; // prevent circular dependency
+    private DataService dataService; // prevent circular dependency
 
     @Autowired
     public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, HeartbeatMonitor heartbeatMonitor, MessageSender messageSender) {
@@ -43,8 +43,8 @@ public class IbListener extends GenericIbListener {
         this.ibController = ibController;
     }
 
-    void setCoreService(CoreService coreService) {
-        this.coreService = coreService;
+    void setDataService(DataService dataService) {
+        this.dataService = dataService;
     }
 
     @Override
@@ -116,34 +116,34 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
-        coreService.updateMktData(requestId, tickType, price);
+        dataService.updateMktData(requestId, tickType, price);
     }
 
     @Override
     public void tickSize(int requestId, int tickType, int size) {
-        coreService.updateMktData(requestId, tickType, size);
+        dataService.updateMktData(requestId, tickType, size);
     }
 
     @Override
     public void tickGeneric(int requestId, int tickType, double value) {
-        coreService.updateMktData(requestId, tickType, value);
+        dataService.updateMktData(requestId, tickType, value);
     }
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
-        coreService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+        dataService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override
     public void historicalData(int requestId, Bar bar) {
         //super.historicalData(requestId, bar);
-        coreService.historicalDataReceived(requestId, bar);
+        dataService.historicalDataReceived(requestId, bar);
     }
 
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        coreService.historicalDataEnd(requestId);
+        dataService.historicalDataEnd(requestId);
     }
 
     @Override

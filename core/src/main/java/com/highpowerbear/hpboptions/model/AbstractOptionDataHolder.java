@@ -13,6 +13,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
         super(type, instrument, ibMktDataRequestId);
+        OptionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 OptionDataField.DAYS_TO_EXPIRATION,

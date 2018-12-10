@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by robertk on 11/5/2018.
  */
 @Service
-public class CoreService {
+public class DataService {
 
     private final CoreDao coreDao;
     private final MessageSender messageSender;
@@ -40,10 +40,18 @@ public class CoreService {
     private final AtomicInteger ibMktDataRequestIdGen = new AtomicInteger(0);
     private final AtomicInteger ibHistDataRequestIdGen = new AtomicInteger(1000000);
 
+    private final Map<String, List<PositionDataHolder>> underlyingPositionMap = new LinkedHashMap<>(); // underlying instrument id -> positionDataHolder
+
+    private final Map<DataHolderType, String> wsTopicMap = new HashMap<>();
+
     @Autowired
-    public CoreService(CoreDao coreDao, MessageSender messageSender) {
+    public DataService(CoreDao coreDao, MessageSender messageSender) {
         this.coreDao = coreDao;
         this.messageSender = messageSender;
+
+        wsTopicMap.put(DataHolderType.UNDERLYING, CoreSettings.WS_TOPIC_UNDERLYING);
+        wsTopicMap.put(DataHolderType.POSITION, CoreSettings.WS_TOPIC_POSITION);
+        wsTopicMap.put(DataHolderType.CHAIN, CoreSettings.WS_TOPIC_CHAIN);
     }
 
     @PostConstruct
@@ -68,16 +76,20 @@ public class CoreService {
         ibController.connect();
 
         if (isConnected()) {
-            mktDataRequestMap.keySet().forEach(ibController::cancelMktData);
-            mktDataRequestMap.clear();
+            cancelAllMktData();
+
             underlyingDataHolders.forEach(this::requestMktData);
             underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
+            positionDataHolders.forEach(this::requestMktData);
+            requestPositions();
         }
     }
 
     public void disconnect() {
-        underlyingDataHolders.forEach(this::cancelMktData);
+        cancelAllMktData();
+        ibController.cancelPositions();
         CoreUtil.waitMilliseconds(1000);
+
         ibController.disconnect();
     }
 
@@ -102,13 +114,18 @@ public class CoreService {
     }
 
     private void requestMktData(DataHolder dataHolder) {
-        mktDataRequestMap.putIfAbsent(dataHolder.getIbMktDataRequestId(), dataHolder);
+        mktDataRequestMap.put(dataHolder.getIbMktDataRequestId(), dataHolder);
         ibController.requestMktData(dataHolder.getIbMktDataRequestId(), dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
     }
 
     private void cancelMktData(DataHolder dataHolder) {
         ibController.cancelMktData(dataHolder.getIbMktDataRequestId());
         mktDataRequestMap.remove(dataHolder.getIbMktDataRequestId());
+    }
+
+    private void cancelAllMktData() {
+        mktDataRequestMap.keySet().forEach(ibController::cancelMktData);
+        mktDataRequestMap.clear();
     }
 
     private void requestImpliedVolatilityHistory(UnderlyingDataHolder underlyingDataHolder) {
@@ -124,6 +141,11 @@ public class CoreService {
                 IbTradingHours.REGULAR.getValue());
     }
 
+    private void requestPositions() {
+        // TODO
+        ibController.requestPositions();
+    }
+
     public void updateMktData(int requestId, int tickType, Number value) {
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
 
@@ -134,7 +156,7 @@ public class CoreService {
         dataHolder.updateField(basicField, value);
         DerivedMktDataField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
 
-        String wsTopic = getWsTopic(dataHolder);
+        String wsTopic = wsTopicMap.get(dataHolder.getType());
         if (dataHolder.isSendMessage(basicField)) {
             messageSender.sendWsMessage(wsTopic, dataHolder.createMessage(basicField));
         }
@@ -154,7 +176,7 @@ public class CoreService {
 
         OptionDataField.getValues().stream()
                 .filter(dataHolder::isSendMessage)
-                .forEach(field -> messageSender.sendWsMessage(getWsTopic(dataHolder), dataHolder.createMessage(field)));
+                .forEach(field -> messageSender.sendWsMessage(wsTopicMap.get(dataHolder.getType()), dataHolder.createMessage(field)));
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
@@ -170,7 +192,7 @@ public class CoreService {
         underlyingDataHolder.impliedVolatilityHistoryCompleted();
 
         underlyingDataHolder.getIvHistoryDependentFields()
-                .forEach(field -> messageSender.sendWsMessage(getWsTopic(underlyingDataHolder), underlyingDataHolder.createMessage(field)));
+                .forEach(field -> messageSender.sendWsMessage(wsTopicMap.get(underlyingDataHolder.getType()), underlyingDataHolder.createMessage(field)));
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {
@@ -183,20 +205,5 @@ public class CoreService {
 
     public List<ChainDataHolder> getChainDataHolders() {
         return chainDataHolders;
-    }
-
-    private String getWsTopic(DataHolder dataHolder) {
-        if (dataHolder.getType() == DataHolderType.UNDERLYING) {
-            return CoreSettings.WS_TOPIC_UNDERLYING;
-
-        } else if (dataHolder.getType() == DataHolderType.POSITION) {
-            return CoreSettings.WS_TOPIC_POSITION;
-
-        } else if (dataHolder.getType() == DataHolderType.CHAIN) {
-            return CoreSettings.WS_TOPIC_CHAIN;
-
-        } else {
-            throw new IllegalStateException("unsupported dataHolder type " + dataHolder.getType());
-        }
     }
 }

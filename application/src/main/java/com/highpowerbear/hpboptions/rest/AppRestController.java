@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.logic.CoreService;
+import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,39 +18,39 @@ import java.util.List;
 @RequestMapping("/")
 public class AppRestController {
 
-    private final CoreService coreService;
+    private final DataService dataService;
 
     @Autowired
-    public AppRestController(CoreService coreService) {
-        this.coreService = coreService;
+    public AppRestController(DataService dataService) {
+        this.dataService = dataService;
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connect")
     public ResponseEntity<?> connect() {
-        if (!coreService.isConnected()) {
-            coreService.connect();
+        if (!dataService.isConnected()) {
+            dataService.connect();
         }
 
-        return ResponseEntity.ok("connected=" + coreService.isConnected());
+        return ResponseEntity.ok("connected=" + dataService.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
     public ResponseEntity<?> disconnect() {
-        if (coreService.isConnected()) {
-            coreService.disconnect();
+        if (dataService.isConnected()) {
+            dataService.disconnect();
             CoreUtil.waitMilliseconds(1000);
         }
-        return ResponseEntity.ok("connected=" + coreService.isConnected());
+        return ResponseEntity.ok("connected=" + dataService.isConnected());
     }
 
     @RequestMapping("connection-info")
     public ResponseEntity<?> getConnectionInfo() {
-        return ResponseEntity.ok(coreService.getConnectionInfo());
+        return ResponseEntity.ok(dataService.getConnectionInfo());
     }
 
     @RequestMapping("underlying-data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<UnderlyingDataHolder> underlyingDataHolders = coreService.getUnderlyingDataHolders();
+        List<UnderlyingDataHolder> underlyingDataHolders = dataService.getUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, (long) underlyingDataHolders.size()));
     }
 }
