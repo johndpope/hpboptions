@@ -148,6 +148,15 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         return me.formatIv(val);
     },
 
+    ivChangePctRenderer: function(val, metadata, record) {
+        var me = this;
+
+        var statusCls = val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged');
+        metadata.tdCls = record.data.id + ' ' + statusCls;
+
+        return me.formatIvChangePct(val);
+    },
+
     ivRankRenderer: function(val, metadata, record) {
         var me = this;
 
@@ -173,6 +182,10 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     formatIv: function(val) {
         return val > 0 ? Ext.util.Format.number(val * 100, '0.0%') : '&nbsp;';
+    },
+
+    formatIvChangePct: function(val) {
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0.0%') : '&nbsp;';
     },
 
     formatIvRank: function(val) {
@@ -206,7 +219,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     }
                 } else if (me.isVolume(td)) {
                     td.classList.add('hop-unchanged');
-                } else if (me.isChangePct(td)) {
+                } else if (me.isChangePct(td) || me.isIvChangePct(td)) {
                     td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
                 }
 
@@ -216,6 +229,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     div.innerHTML = me.formatChangePct(val);
                 } else if (me.isIv(td)) {
                     div.innerHTML = me.formatIv(val);
+                } else if (me.isIvChangePct(td)) {
+                    div.innerHTML = me.formatIvChangePct(val);
                 } else if (me.isIvRank(td)) {
                     div.innerHTML = me.formatIvRank(val);
                 } else {
@@ -235,6 +250,10 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     isIv: function(td) {
         return td.classList.contains('hop-iv');
+    },
+
+    isIvChangePct: function(td) {
+        return td.classList.contains('hop-iv-change-pct');
     },
 
     isIvRank: function(td) {

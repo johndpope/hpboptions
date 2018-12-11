@@ -97,7 +97,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivClose = ivHistoryMap.lastEntry().getValue();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivClose)) {
-            ivCurrent = CoreUtil.round(ivCurrent, 4);
+            ivCurrent = CoreUtil.round(ivCurrent, 8);
             ivClose = CoreUtil.round(ivClose, 8);
 
             double value = ((ivCurrent - ivClose) / ivClose) * 100d;
@@ -131,7 +131,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivYearHigh = ivYearHighOptional.getAsDouble();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
-            double ivRank = CoreUtil.round(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow), 1);
+            double ivRank = CoreUtil.round2(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow));
             update(DerivedMktDataField.IV_RANK, ivRank);
         }
     }

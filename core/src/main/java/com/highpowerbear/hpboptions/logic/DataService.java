@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -134,7 +133,7 @@ public class DataService {
         ibController.requestHistData(
                 underlyingDataHolder.getIbHistDataRequestId(),
                 underlyingDataHolder.getInstrument().toIbContract(),
-                LocalDateTime.now().format(CoreSettings.IB_HIST_DATA_DATETIME_FORMATTER),
+                LocalDate.now().atStartOfDay().format(CoreSettings.IB_HIST_DATA_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
                 IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
