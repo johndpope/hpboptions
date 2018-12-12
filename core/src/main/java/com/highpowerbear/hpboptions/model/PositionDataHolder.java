@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.*;
+import com.ib.client.Types;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -10,18 +11,24 @@ import java.util.stream.Stream;
  */
 public class PositionDataHolder extends AbstractOptionDataHolder {
 
-    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId) {
-        super(DataHolderType.POSITION, instrument, ibMktDataRequestId);
+    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, int positionSize) {
+        super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike);
         PositionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 PositionDataField.POSITION_SIZE,
                 PositionDataField.UNREALIZED_PL
         ).collect(Collectors.toSet()));
+
+        updatePositionSize(positionSize);
     }
 
-    public void updatePosition(int position) {
-        update(PositionDataField.POSITION_SIZE, position);
+    public String getUnderlyingSymbol() {
+        return getInstrument().getUnderlyingSymbol();
+    }
+
+    public void updatePositionSize(int positionSize) {
+        update(PositionDataField.POSITION_SIZE, positionSize);
     }
 
     public void updateUnrelaizedPl(double unrealizedPl) {

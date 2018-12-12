@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by robertk on 4/6/2015.
@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HeartbeatMonitor {
 
     private final CoreDao coreDao;
-    private final Map<IbOrder, Integer> openOrderHeartbeatMap = new ConcurrentHashMap<>(); // ibOrder --> number of failed heartbeats left before UNKNOWN
+    private final Map<IbOrder, Integer> openOrderHeartbeatMap = new HashMap<>(); // ibOrder -> number of failed heartbeats left before UNKNOWN
 
     @Autowired
     public HeartbeatMonitor(CoreDao coreDao) {

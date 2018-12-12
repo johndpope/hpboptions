@@ -1,12 +1,15 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.HeartbeatMonitor;
 import com.highpowerbear.hpboptions.logic.OpenOrderHandler;
 import com.highpowerbear.hpboptions.logic.CoreDao;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
+import com.highpowerbear.hpboptions.model.Instrument;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -148,11 +151,21 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void position(String account, Contract contract, double pos, double avgCost) {
-        //TODO
-    }
+        if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
+            return;
+        }
 
-    @Override
-    public void positionEnd() {
-        // TODO
+        int conid = contract.conid();
+        Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+        String underlyingSymbol = contract.symbol();
+        String symbol = contract.localSymbol();
+        Currency currency = Currency.valueOf(contract.currency());
+        Exchange exchange = contract.exchange() != null ? Exchange.valueOf(contract.exchange()) : Exchange.defaultExchange();
+        Exchange primaryExchange = contract.primaryExch() != null ? Exchange.valueOf(contract.primaryExch()) : Exchange.defaultExchange();
+        Types.Right right = contract.right();
+        double strike = contract.strike();
+
+        Instrument instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency, exchange, primaryExchange);
+        dataService.optionPositionChanged(instrument, right, strike, (int) pos);
     }
 }

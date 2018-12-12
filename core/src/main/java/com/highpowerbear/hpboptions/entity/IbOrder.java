@@ -48,8 +48,8 @@ public class IbOrder implements Serializable {
     private Integer quantity;
     @Enumerated(EnumType.STRING)
     private Types.SecType secType;
+    private String underlyingSymbol;
     private String symbol;
-    private String underlying;
     @Enumerated(EnumType.STRING)
     private Currency currency;
     @Enumerated(EnumType.STRING)
@@ -168,16 +168,16 @@ public class IbOrder implements Serializable {
         return symbol;
     }
 
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
+    }
+
+    public void setUnderlyingSymbol(String underlyingSymbol) {
+        this.underlyingSymbol = underlyingSymbol;
+    }
+
     public void setSymbol(String symbol) {
         this.symbol = symbol;
-    }
-
-    public String getUnderlying() {
-        return underlying;
-    }
-
-    public void setUnderlying(String underlying) {
-        this.underlying = underlying;
     }
 
     public Currency getCurrency() {

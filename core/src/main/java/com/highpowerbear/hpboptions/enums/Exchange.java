@@ -21,4 +21,8 @@ public enum Exchange {
     public String getCode() {
         return name().replace("_", ".");
     }
+
+    public static Exchange defaultExchange() {
+        return SMART;
+    }
 }

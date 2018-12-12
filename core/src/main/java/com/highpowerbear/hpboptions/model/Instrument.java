@@ -11,24 +11,24 @@ import com.ib.client.Types;
 public class Instrument {
 
     private final String id;
-    private final String conId;
+    private final int conid;
     private final Types.SecType secType;
-    private final String symbol;
     private final String underlyingSymbol;
+    private final String symbol;
     private final Currency currency;
     private final Exchange exchange;
     private final Exchange primaryExchange;
 
-    public Instrument(String conId, Types.SecType secType, String symbol, String underlyingSymbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
-        this.conId = conId;
+    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
+        this.conid = conid;
         this.secType = secType;
-        this.symbol = symbol;
         this.underlyingSymbol = underlyingSymbol;
+        this.symbol = symbol;
         this.currency = currency;
         this.exchange = exchange;
         this.primaryExchange = primaryExchange;
 
-        id = symbol.toLowerCase() + "-" + conId;
+        id = symbol.toLowerCase().replaceAll("\\s+","") + "-" + conid;
     }
 
     public Contract toIbContract() {
@@ -48,20 +48,20 @@ public class Instrument {
         return id;
     }
 
-    public String getConId() {
-        return conId;
+    public int getConid() {
+        return conid;
     }
 
     public Types.SecType getSecType() {
         return secType;
     }
 
-    public String getSymbol() {
-        return symbol;
-    }
-
     public String getUnderlyingSymbol() {
         return underlyingSymbol;
+    }
+
+    public String getSymbol() {
+        return symbol;
     }
 
     public Currency getCurrency() {

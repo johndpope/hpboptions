@@ -35,10 +35,6 @@ public class IbController {
         this.dataService = dataService;
     }
 
-    public String getIbConnectionInfo() {
-        return host + ":" + port + ":" + clientId + "," + isConnected();
-    }
-
     @PostConstruct
     public void init() {
         dataService.setIbController(this);
@@ -140,6 +136,10 @@ public class IbController {
         if (checkConnected()) {
             eClientSocket.cancelPositions();
         }
+    }
+
+    public String getIbConnectionInfo() {
+        return host + ":" + port + ":" + clientId + "," + isConnected();
     }
 
     void connectionBroken() {

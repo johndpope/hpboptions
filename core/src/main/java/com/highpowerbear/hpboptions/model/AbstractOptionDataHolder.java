@@ -2,6 +2,7 @@ package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
+import com.ib.client.Types;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -11,8 +12,14 @@ import java.util.stream.Stream;
  */
 public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
 
-    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
+    private Types.Right right;
+    private double strike;
+
+    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike) {
         super(type, instrument, ibMktDataRequestId);
+        this.right = right;
+        this.strike = strike;
+
         OptionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
@@ -46,6 +53,14 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
         update(OptionDataField.TIME_VALUE, timeValue);
         update(OptionDataField.TIME_VALUE_PCT, timeValuePct);
+    }
+
+    public Types.Right getRight() {
+        return right;
+    }
+
+    public double getStrike() {
+        return strike;
     }
 
     public int getDaysToExpiration() {
