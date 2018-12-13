@@ -3,6 +3,7 @@ package com.highpowerbear.hpboptions.model;
 import com.highpowerbear.hpboptions.enums.*;
 import com.ib.client.Types;
 
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -11,8 +12,9 @@ import java.util.stream.Stream;
  */
 public class PositionDataHolder extends AbstractOptionDataHolder {
 
-    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, int positionSize) {
-        super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike);
+    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate, int positionSize) {
+        super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike, expirationDate);
+
         PositionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
@@ -35,7 +37,7 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
         update(PositionDataField.UNREALIZED_PL, unrealizedPl);
     }
 
-    public int getPosition() {
+    public int getPositionSize() {
         return getCurrent(PositionDataField.POSITION_SIZE).intValue();
     }
 

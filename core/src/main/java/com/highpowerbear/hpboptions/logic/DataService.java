@@ -5,11 +5,10 @@ import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.*;
+import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.highpowerbear.hpboptions.model.*;
-import com.ib.client.Bar;
-import com.ib.client.TickType;
-import com.ib.client.Types;
+import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -19,6 +18,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -31,14 +31,17 @@ public class DataService {
 
     private IbController ibController; // prevent circular dependency
 
+    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final List<UnderlyingDataHolder> underlyingDataHolders = new ArrayList<>();
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
+    private final ReentrantLock positionLock = new ReentrantLock();
 
-    private final Map<Integer, DataHolder> mktDataRequestMap = new HashMap<>(); // ib request id -> dataHolder
+    private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
 
     private final AtomicInteger ibMktDataRequestIdGen = new AtomicInteger(0);
     private final AtomicInteger ibHistDataRequestIdGen = new AtomicInteger(1000000);
+    private final AtomicInteger ibContractDetailsRequestIdGen = new AtomicInteger(2000000);
 
     private final Comparator<PositionDataHolder> positionDataHolderComparator;
 
@@ -64,6 +67,7 @@ public class DataService {
                     ibMktDataRequestIdGen.incrementAndGet(),
                     ibHistDataRequestIdGen.incrementAndGet());
 
+            underlyingMap.put(underlying.getConid(), underlyingDataHolder);
             underlyingDataHolders.add(underlyingDataHolder);
         }
     }
@@ -111,6 +115,7 @@ public class DataService {
     @Scheduled(cron="0 0 6 * * MON-FRI")
     private void performStartOfDayTasks() {
         underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
+        sendReloadRequestMessage(DataHolderType.POSITION);
     }
 
     private void requestMktData(DataHolder dataHolder) {
@@ -129,16 +134,25 @@ public class DataService {
     }
 
     private void requestImpliedVolatilityHistory(UnderlyingDataHolder underlyingDataHolder) {
-        histDataRequestMap.put(underlyingDataHolder.getIbHistDataRequestId(), underlyingDataHolder);
+        histDataRequestMap.putIfAbsent(underlyingDataHolder.getIbHistDataRequestId(), underlyingDataHolder);
 
         ibController.requestHistData(
                 underlyingDataHolder.getIbHistDataRequestId(),
                 underlyingDataHolder.getInstrument().toIbContract(),
-                LocalDate.now().atStartOfDay().format(CoreSettings.IB_HIST_DATA_DATETIME_FORMATTER),
+                LocalDate.now().atStartOfDay().format(CoreSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
                 IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
                 IbTradingHours.REGULAR.getValue());
+    }
+
+    private void sendReloadRequestMessage(DataHolderType type) {
+        messageSender.sendWsMessage(type, "reload request");
+    }
+
+    private void recalculateCumulativeData(int underlyingConid) {
+        UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
+        // TODO
     }
 
     public void updateMktData(int requestId, int tickType, Number value) {
@@ -170,18 +184,21 @@ public class DataService {
         if (dataHolder == null) {
             return;
         }
-        OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
-        optionDataHolder.updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        ((OptionDataHolder) dataHolder).updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
 
         OptionDataField.getValues().stream()
                 .filter(dataHolder::isSendMessage)
                 .forEach(field -> messageSender.sendWsMessage(dataHolder.getType(), dataHolder.createMessage(field)));
+
+        if (dataHolder.getType() == DataHolderType.POSITION) {
+            recalculateCumulativeData(dataHolder.getInstrument().getUnderlyingConid());
+        }
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
 
-        LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_HIST_DATA_DATE_FORMATTER);
+        LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_DATE_FORMATTER);
         double value = bar.close();
         underlyingDataHolder.addImpliedVolatility(date, value);
     }
@@ -194,34 +211,73 @@ public class DataService {
                 .forEach(field -> messageSender.sendWsMessage(underlyingDataHolder.getType(), underlyingDataHolder.createMessage(field)));
     }
 
-    public void optionPositionChanged(Instrument instrument, Types.Right right, double strike, int positionSize) {
-        int conid = instrument.getConid();
-        PositionDataHolder positionDataHolder = positionMap.get(conid);
+    public void optionPositionChanged(Contract contract, int positionSize) {
+        positionLock.lock();
+        try {
+            int conid = contract.conid();
+            PositionDataHolder positionDataHolder = positionMap.get(contract.conid());
 
-        if (positionDataHolder == null) {
-            if (positionSize != 0) {
-                positionDataHolder = new PositionDataHolder(instrument, ibMktDataRequestIdGen.incrementAndGet(), right, strike, positionSize);
-                positionMap.put(conid, positionDataHolder);
+            if (positionDataHolder == null) {
+                if (positionSize != 0) {
+                    Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+                    String symbol = contract.localSymbol();
+                    Currency currency = Currency.valueOf(contract.currency());
+                    Instrument instrument = new Instrument(conid, secType, symbol, currency);
 
-                requestMktData(positionDataHolder);
+                    Types.Right right = contract.right();
+                    double strike = contract.strike();
+                    LocalDate expirationDate = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
+
+                    positionDataHolder = new PositionDataHolder(instrument, ibMktDataRequestIdGen.incrementAndGet(), right, strike, expirationDate, positionSize);
+                    positionMap.put(conid, positionDataHolder);
+
+                    ibController.requestContractDetails(ibContractDetailsRequestIdGen.incrementAndGet(), contract);
+                }
+            } else if (positionSize != 0) {
+                if (positionSize != positionDataHolder.getPositionSize()) {
+                    positionDataHolder.updatePositionSize(positionSize);
+                    messageSender.sendWsMessage(positionDataHolder.getType(), "position changed " + positionDataHolder.getInstrument().getSymbol());
+                    recalculateCumulativeData(positionDataHolder.getInstrument().getUnderlyingConid());
+                }
             } else {
-                return;
+                cancelMktData(positionDataHolder);
+                positionMap.remove(contract.conid());
+                sendReloadRequestMessage(DataHolderType.POSITION);
             }
-        } else if (positionSize != 0) {
-            positionDataHolder.updatePositionSize(positionSize);
-        } else {
-            cancelMktData(positionDataHolder);
-            positionMap.remove(conid);
+        } finally {
+            positionLock.unlock();
         }
+    }
 
-        messageSender.sendWsMessage(positionDataHolder.getType(), "position changed " + instrument.getSymbol());
+    public void optionPositionContractDetailsReceived(ContractDetails contractDetails) {
+        Contract contract = contractDetails.contract();
+
+        int conid = contract.conid();
+        PositionDataHolder positionDataHolder = positionMap.get(conid);
+        Instrument instrument = positionDataHolder.getInstrument();
+
+        Exchange exchange = Exchange.valueOf(contract.exchange());
+        Exchange primaryExchange = contract.primaryExch() != null ? Exchange.valueOf(contract.primaryExch()) : null;
+
+        int underlyingConid = contractDetails.underConid();
+        Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
+        String underlyingSymbol = contractDetails.underSymbol();
+
+        instrument.setExchange(exchange);
+        instrument.setPrimaryExchange(primaryExchange);
+        instrument.setUnderlyingConid(underlyingConid);
+        instrument.setUnderlyingSecType(underlyingSecType);
+        instrument.setUnderlyingSymbol(underlyingSymbol);
+
+        sendReloadRequestMessage(DataHolderType.POSITION);
+        requestMktData(positionDataHolder);
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {
         return underlyingDataHolders;
     }
 
-    public List<PositionDataHolder> getPositionDataHolders() {
+    public List<PositionDataHolder> getSortedPositionDataHolders() {
         List<PositionDataHolder> positionDataHolders = new ArrayList<>(positionMap.values());
         positionDataHolders.sort(positionDataHolderComparator);
 

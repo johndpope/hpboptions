@@ -1,15 +1,8 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.enums.Currency;
-import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.logic.DataService;
-import com.highpowerbear.hpboptions.logic.HeartbeatMonitor;
-import com.highpowerbear.hpboptions.logic.OpenOrderHandler;
-import com.highpowerbear.hpboptions.logic.CoreDao;
-import com.highpowerbear.hpboptions.entity.IbOrder;
-import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.highpowerbear.hpboptions.model.Instrument;
+import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -17,7 +10,6 @@ import org.springframework.stereotype.Component;
 import java.net.SocketException;
 
 import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_IB_CONNECTION;
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 
 /**
  *
@@ -26,19 +18,15 @@ import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 @Component
 public class IbListener extends GenericIbListener {
 
-    private final CoreDao coreDao;
-    private final OpenOrderHandler openOrderHandler;
-    private final HeartbeatMonitor heartbeatMonitor;
+    private final OrderService orderService;
     private final MessageSender messageSender;
 
     private IbController ibController; // prevent circular dependency
     private DataService dataService; // prevent circular dependency
 
     @Autowired
-    public IbListener(CoreDao coreDao, OpenOrderHandler openOrderHandler, HeartbeatMonitor heartbeatMonitor, MessageSender messageSender) {
-        this.coreDao = coreDao;
-        this.openOrderHandler = openOrderHandler;
-        this.heartbeatMonitor = heartbeatMonitor;
+    public IbListener(OrderService orderService, MessageSender messageSender) {
+        this.orderService = orderService;
         this.messageSender = messageSender;
     }
 
@@ -53,39 +41,13 @@ public class IbListener extends GenericIbListener {
     @Override
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
         super.openOrder(orderId, contract, order, orderState);
-        openOrderHandler.handleOpenOrder(orderId, contract, order);
+        orderService.handleOpenOrder(orderId, contract, order);
     }
 
     @Override
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
         super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
-
-        if (!(  OrderStatus.SUBMITTED.getIbStatus().equals(status) ||
-                OrderStatus.PRESUBMITTED.getIbStatus().equals(status) ||
-                OrderStatus.CANCELLED.getIbStatus().equals(status) ||
-                OrderStatus.FILLED.getIbStatus().equals(status))) {
-            return;
-        }
-
-        IbOrder ibOrder = coreDao.getIbOrderByPermId((long) permId);
-        if (ibOrder == null) {
-            return;
-        }
-
-        if ((OrderStatus.SUBMITTED.getIbStatus().equals(status) || OrderStatus.PRESUBMITTED.getIbStatus().equals(status)) && OrderStatus.SUBMITTED.equals(ibOrder.getStatus())) {
-            heartbeatMonitor.initHeartbeat(ibOrder);
-
-        } else if (OrderStatus.FILLED.getIbStatus().equals(status) && remaining == 0 && !OrderStatus.FILLED.equals(ibOrder.getStatus())) {
-            ibOrder.addEvent(OrderStatus.FILLED, avgFillPrice);
-            coreDao.updateIbOrder(ibOrder);
-            heartbeatMonitor.removeHeartbeat(ibOrder);
-
-        } else if (OrderStatus.CANCELLED.getIbStatus().equals(status) && !OrderStatus.CANCELLED.equals(ibOrder.getStatus())) {
-            ibOrder.addEvent(OrderStatus.CANCELLED, null);
-            coreDao.updateIbOrder(ibOrder);
-            heartbeatMonitor.removeHeartbeat(ibOrder);
-        }
-        messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");
+        orderService.handleOrderStatus(status, remaining, avgFillPrice, permId);
     }
 
     @Override
@@ -151,21 +113,19 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void position(String account, Contract contract, double pos, double avgCost) {
+        super.position(account, contract, pos, avgCost);
         if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
             return;
         }
+        dataService.optionPositionChanged(contract, (int) pos);
+    }
 
-        int conid = contract.conid();
-        Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
-        String underlyingSymbol = contract.symbol();
-        String symbol = contract.localSymbol();
-        Currency currency = Currency.valueOf(contract.currency());
-        Exchange exchange = contract.exchange() != null ? Exchange.valueOf(contract.exchange()) : Exchange.defaultExchange();
-        Exchange primaryExchange = contract.primaryExch() != null ? Exchange.valueOf(contract.primaryExch()) : Exchange.defaultExchange();
-        Types.Right right = contract.right();
-        double strike = contract.strike();
-
-        Instrument instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency, exchange, primaryExchange);
-        dataService.optionPositionChanged(instrument, right, strike, (int) pos);
+    @Override
+    public void contractDetails(int reqId, ContractDetails contractDetails) {
+        super.contractDetails(reqId, contractDetails);
+        if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
+            return;
+        }
+        dataService.optionPositionContractDetailsReceived(contractDetails);
     }
 }

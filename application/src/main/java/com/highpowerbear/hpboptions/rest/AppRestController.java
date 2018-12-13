@@ -57,7 +57,7 @@ public class AppRestController {
 
     @RequestMapping("position-data-holders")
     public ResponseEntity<?> getPositionDataHolders() {
-        List<PositionDataHolder> positionDataHolders = dataService.getPositionDataHolders();
+        List<PositionDataHolder> positionDataHolders = dataService.getSortedPositionDataHolders();
         return ResponseEntity.ok(new RestList<>(positionDataHolders, (long) positionDataHolders.size()));
     }
 }

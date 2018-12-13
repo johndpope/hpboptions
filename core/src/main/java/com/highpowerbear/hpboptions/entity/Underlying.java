@@ -39,7 +39,7 @@ public class Underlying {
     private Boolean active;
 
     public Instrument createInstrument() {
-        return new Instrument(conid, secType, symbol, symbol, currency, exchange, primaryExchange);
+        return new Instrument(conid, secType, symbol, currency, exchange, primaryExchange);
     }
 
     @Override

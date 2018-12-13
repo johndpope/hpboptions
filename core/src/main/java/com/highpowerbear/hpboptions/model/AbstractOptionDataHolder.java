@@ -4,6 +4,8 @@ import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
 import com.ib.client.Types;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,27 +16,23 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     private Types.Right right;
     private double strike;
+    private LocalDate expirationDate;
 
-    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike) {
+    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate) {
         super(type, instrument, ibMktDataRequestId);
         this.right = right;
         this.strike = strike;
+        this.expirationDate = expirationDate;
 
         OptionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
-                OptionDataField.DAYS_TO_EXPIRATION,
                 OptionDataField.DELTA,
                 OptionDataField.GAMMA,
                 OptionDataField.IMPLIED_VOL,
                 OptionDataField.TIME_VALUE,
                 OptionDataField.TIME_VALUE_PCT
         ).collect(Collectors.toSet()));
-    }
-
-    @Override
-    public void updateDaysToExpiration(int daysToExpiration) {
-        update(OptionDataField.DAYS_TO_EXPIRATION, daysToExpiration);
     }
 
     @Override
@@ -63,8 +61,12 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         return strike;
     }
 
-    public int getDaysToExpiration() {
-        return getCurrent(OptionDataField.DAYS_TO_EXPIRATION).intValue();
+    public LocalDate getExpirationDate() {
+        return expirationDate;
+    }
+
+    public long getDaysToExpiration() {
+        return ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
     }
 
     public double getDelta() {

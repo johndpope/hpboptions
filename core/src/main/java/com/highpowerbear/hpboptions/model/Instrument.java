@@ -9,20 +9,28 @@ import com.ib.client.Types;
  * Created by robertk on 11/21/2018.
  */
 public class Instrument {
-
     private final String id;
+
     private final int conid;
+
     private final Types.SecType secType;
-    private final String underlyingSymbol;
     private final String symbol;
     private final Currency currency;
-    private final Exchange exchange;
-    private final Exchange primaryExchange;
 
-    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
+    private Exchange exchange;
+    private Exchange primaryExchange;
+
+    private Integer underlyingConid;
+    private Types.SecType underlyingSecType;
+    private String underlyingSymbol;
+
+    public Instrument(int conid, Types.SecType secType, String symbol, Currency currency) {
+        this(conid, secType, symbol, currency, null, null);
+    }
+
+    public Instrument(int conid, Types.SecType secType, String symbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
         this.conid = conid;
         this.secType = secType;
-        this.underlyingSymbol = underlyingSymbol;
         this.symbol = symbol;
         this.currency = currency;
         this.exchange = exchange;
@@ -34,12 +42,14 @@ public class Instrument {
     public Contract toIbContract() {
         Contract contract = new Contract();
 
-        contract.localSymbol(symbol);
-        contract.symbol(underlyingSymbol);
-        contract.primaryExch(primaryExchange.name());
+        contract.conid(conid);
         contract.secType(secType);
-        contract.exchange(exchange.name());
+        contract.localSymbol(symbol);
         contract.currency(currency.name());
+
+        contract.exchange(exchange != null ? exchange.name() : null);
+        contract.primaryExch(primaryExchange != null ? primaryExchange.name() : null);
+        contract.symbol(underlyingSymbol);
 
         return contract;
     }
@@ -56,10 +66,6 @@ public class Instrument {
         return secType;
     }
 
-    public String getUnderlyingSymbol() {
-        return underlyingSymbol;
-    }
-
     public String getSymbol() {
         return symbol;
     }
@@ -72,7 +78,39 @@ public class Instrument {
         return exchange;
     }
 
+    public void setExchange(Exchange exchange) {
+        this.exchange = exchange;
+    }
+
     public Exchange getPrimaryExchange() {
         return primaryExchange;
+    }
+
+    public void setPrimaryExchange(Exchange primaryExchange) {
+        this.primaryExchange = primaryExchange;
+    }
+
+    public Integer getUnderlyingConid() {
+        return underlyingConid;
+    }
+
+    public void setUnderlyingConid(Integer underlyingConid) {
+        this.underlyingConid = underlyingConid;
+    }
+
+    public Types.SecType getUnderlyingSecType() {
+        return underlyingSecType;
+    }
+
+    public void setUnderlyingSecType(Types.SecType underlyingSecType) {
+        this.underlyingSecType = underlyingSecType;
+    }
+
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
+    }
+
+    public void setUnderlyingSymbol(String underlyingSymbol) {
+        this.underlyingSymbol = underlyingSymbol;
     }
 }

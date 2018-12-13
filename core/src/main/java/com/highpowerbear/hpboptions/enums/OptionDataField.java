@@ -7,12 +7,6 @@ import java.util.List;
  * Created by robertk on 12/9/2018.
  */
 public enum OptionDataField implements DataField {
-    DAYS_TO_EXPIRATION {
-        @Override
-        public Number getInitialValue() {
-            return -1;
-        }
-    },
     DELTA,
     GAMMA,
     VEGA,

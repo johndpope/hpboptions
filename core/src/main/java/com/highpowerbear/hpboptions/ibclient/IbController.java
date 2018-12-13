@@ -138,6 +138,14 @@ public class IbController {
         }
     }
 
+    public void requestContractDetails(int requestId, Contract contract) {
+        log.info("requesting contract details for " + contract.localSymbol());
+
+        if (checkConnected()) {
+            eClientSocket.reqContractDetails(requestId, contract);
+        }
+    }
+
     public String getIbConnectionInfo() {
         return host + ":" + port + ":" + clientId + "," + isConnected();
     }
