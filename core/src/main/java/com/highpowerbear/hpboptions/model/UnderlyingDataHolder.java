@@ -60,19 +60,8 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
             int o = getCurrent(BasicMktDataField.OPTION_CALL_VOLUME).intValue();
             int p = getCurrent(BasicMktDataField.OPTION_PUT_VOLUME).intValue();
 
-            if (isValidSize(o) && isValidSize(p)) {
-                int value = o + p;
-                update(field, value);
-            }
-
-        } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
-            int o = getCurrent(BasicMktDataField.OPTION_CALL_OPEN_INTEREST).intValue();
-            int p = getCurrent(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
-
-            if (isValidSize(o) && isValidSize(p)) {
-                int value = o + p;
-                update(field, value);
-            }
+            int value = (isValidSize(o) ? o : 0) + (isValidSize(p) ? p : 0);
+            update(field, value);
         }
     }
 

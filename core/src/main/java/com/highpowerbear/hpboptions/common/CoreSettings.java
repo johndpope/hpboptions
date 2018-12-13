@@ -10,7 +10,7 @@ public class CoreSettings {
     public static final int IB_PORT = 4001;
     public static final Integer IB_CLIENT_ID = 1;
     public static final Integer MAX_ORDER_HEARTBEAT_FAILS = 5;
-    public static final String JSON_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final String JSON_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     public static final DateTimeFormatter IB_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss");
     public static final DateTimeFormatter IB_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";

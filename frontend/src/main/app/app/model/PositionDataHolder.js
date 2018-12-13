@@ -2,5 +2,20 @@
  * Created by robertk on 11/26/2018.
  */
 Ext.define('HopGui.model.PositionDataHolder', {
-    extend: 'HopGui.model.DataHolderBase'
+    extend: 'HopGui.model.DataHolderBase',
+
+    fields: [
+        'right',
+        'strike',
+        {name: 'expirationDate', type: 'date', dateFormat: 'Y-m-d'},
+        'daysToExpiration',
+        'positionSize',
+        'unrealizedPl',
+        'timeValue',
+        'timeValuePct',
+        'delta',
+        'gamma',
+        'impliedVol',
+        'optionOpenInterest'
+    ]
 });

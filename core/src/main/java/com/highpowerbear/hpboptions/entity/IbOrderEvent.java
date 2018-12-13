@@ -31,7 +31,7 @@ public class IbOrderEvent implements Serializable {
     @SequenceGenerator(name="ib_order_event_generator", sequenceName = "ib_order_event_seq", schema = "hpboptions", catalog = "hpboptions", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ib_order_event_generator")
     private Long id;
-    @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
+    @JsonFormat(pattern = CoreSettings.JSON_DATETIME_FORMAT)
     private LocalDateTime eventDate;
     @Enumerated(EnumType.STRING)
     private OrderStatus status;

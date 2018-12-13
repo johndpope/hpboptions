@@ -56,10 +56,10 @@ public class IbOrder implements Serializable {
     private Exchange exchange;
     @Enumerated(EnumType.STRING)
     private OrderType orderType;
-    @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
+    @JsonFormat(pattern = CoreSettings.JSON_DATETIME_FORMAT)
     private LocalDateTime submitDate;
     private Double orderPrice;
-    @JsonFormat(pattern = CoreSettings.JSON_DATE_FORMAT)
+    @JsonFormat(pattern = CoreSettings.JSON_DATETIME_FORMAT)
     private LocalDateTime statusDate;
     private Double fillPrice;
     @Enumerated(EnumType.STRING)

@@ -90,6 +90,13 @@ public abstract class AbstractDataHolder implements DataHolder {
                 double value = ((l - c) / c) * 100d;
                 update(field, CoreUtil.round2(value));
             }
+
+        } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
+            int o = getCurrent(BasicMktDataField.OPTION_CALL_OPEN_INTEREST).intValue();
+            int p = getCurrent(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
+
+            int value = (isValidSize(o) ? o : 0) + (isValidSize(p) ? p : 0);
+            update(field, value);
         }
     }
 

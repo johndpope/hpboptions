@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
 import com.ib.client.Types;
 
@@ -27,6 +28,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         OptionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
+                DerivedMktDataField.OPTION_OPEN_INTEREST,
                 OptionDataField.DELTA,
                 OptionDataField.GAMMA,
                 OptionDataField.IMPLIED_VOL,
@@ -38,8 +40,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     @Override
     public void updateOptionData(double delta, double gamma, double vega, double theta, double impliedVol, double optionPrice, double underlyingPrice) {
         // TODO calculate timeValue and timeValuePct
-        double timeValue = 0;
-        double timeValuePct = 0;
+        double timeValue = Double.NaN;
+        double timeValuePct = Double.NaN;
 
         update(OptionDataField.DELTA, delta);
         update(OptionDataField.GAMMA, gamma);
@@ -67,6 +69,10 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     public long getDaysToExpiration() {
         return ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
+    }
+
+    public int getOptionOpenInterest() {
+        return getCurrent(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
     public double getDelta() {

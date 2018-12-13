@@ -43,18 +43,10 @@ public class DataService {
     private final AtomicInteger ibHistDataRequestIdGen = new AtomicInteger(1000000);
     private final AtomicInteger ibContractDetailsRequestIdGen = new AtomicInteger(2000000);
 
-    private final Comparator<PositionDataHolder> positionDataHolderComparator;
-
     @Autowired
     public DataService(CoreDao coreDao, MessageSender messageSender) {
         this.coreDao = coreDao;
         this.messageSender = messageSender;
-
-        positionDataHolderComparator = Comparator
-                .comparing(PositionDataHolder::getDaysToExpiration)
-                .thenComparing(PositionDataHolder::getUnderlyingSymbol)
-                .thenComparing(Comparator.comparing(PositionDataHolder::getRight).reversed()) // Put, Call
-                .thenComparingDouble(PositionDataHolder::getStrike);
     }
 
     @PostConstruct
@@ -236,7 +228,8 @@ public class DataService {
             } else if (positionSize != 0) {
                 if (positionSize != positionDataHolder.getPositionSize()) {
                     positionDataHolder.updatePositionSize(positionSize);
-                    messageSender.sendWsMessage(positionDataHolder.getType(), "position changed " + positionDataHolder.getInstrument().getSymbol());
+
+                    messageSender.sendWsMessage(positionDataHolder.getType(), positionDataHolder.createMessage(PositionDataField.POSITION_SIZE));
                     recalculateCumulativeData(positionDataHolder.getInstrument().getUnderlyingConid());
                 }
             } else {
@@ -279,7 +272,12 @@ public class DataService {
 
     public List<PositionDataHolder> getSortedPositionDataHolders() {
         List<PositionDataHolder> positionDataHolders = new ArrayList<>(positionMap.values());
-        positionDataHolders.sort(positionDataHolderComparator);
+
+        positionDataHolders.sort(Comparator
+                .comparing(PositionDataHolder::getDaysToExpiration)
+                .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                .thenComparing(PositionDataHolder::getRight)
+                .thenComparingDouble(PositionDataHolder::getStrike));
 
         return positionDataHolders;
     }
