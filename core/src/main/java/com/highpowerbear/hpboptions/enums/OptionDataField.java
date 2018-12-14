@@ -12,8 +12,6 @@ public enum OptionDataField implements DataField {
     VEGA,
     THETA,
     IMPLIED_VOL,
-    OPTION_PRICE,
-    UNDERLYING_PRICE,
     TIME_VALUE,
     TIME_VALUE_PCT;
 

@@ -14,6 +14,7 @@ public class Instrument {
     private final int conid;
 
     private final Types.SecType secType;
+    private final String underlyingSymbol;
     private final String symbol;
     private final Currency currency;
 
@@ -22,15 +23,11 @@ public class Instrument {
 
     private Integer underlyingConid;
     private Types.SecType underlyingSecType;
-    private String underlyingSymbol;
 
-    public Instrument(int conid, Types.SecType secType, String symbol, Currency currency) {
-        this(conid, secType, symbol, currency, null, null);
-    }
-
-    public Instrument(int conid, Types.SecType secType, String symbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
+    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency, Exchange exchange, Exchange primaryExchange) {
         this.conid = conid;
         this.secType = secType;
+        this.underlyingSymbol = underlyingSymbol;
         this.symbol = symbol;
         this.currency = currency;
         this.exchange = exchange;
@@ -64,6 +61,10 @@ public class Instrument {
 
     public Types.SecType getSecType() {
         return secType;
+    }
+
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
     }
 
     public String getSymbol() {
@@ -104,13 +105,5 @@ public class Instrument {
 
     public void setUnderlyingSecType(Types.SecType underlyingSecType) {
         this.underlyingSecType = underlyingSecType;
-    }
-
-    public String getUnderlyingSymbol() {
-        return underlyingSymbol;
-    }
-
-    public void setUnderlyingSymbol(String underlyingSymbol) {
-        this.underlyingSymbol = underlyingSymbol;
     }
 }

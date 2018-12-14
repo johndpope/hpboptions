@@ -169,14 +169,11 @@ public class DataService {
     }
 
     public void updateOptionData(int requestId, int tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
-        if (tickType != TickType.LAST_OPTION.index()) {
-            return;
-        }
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
         if (dataHolder == null) {
             return;
         }
-        ((OptionDataHolder) dataHolder).updateOptionData(delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        ((OptionDataHolder) dataHolder).updateOptionData(TickType.get(tickType), delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
 
         OptionDataField.getValues().stream()
                 .filter(dataHolder::isSendMessage)
@@ -212,9 +209,10 @@ public class DataService {
             if (positionDataHolder == null) {
                 if (positionSize != 0) {
                     Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+                    String underlyingSymbol = contract.symbol();
                     String symbol = contract.localSymbol();
                     Currency currency = Currency.valueOf(contract.currency());
-                    Instrument instrument = new Instrument(conid, secType, symbol, currency);
+                    Instrument instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency, null, null);
 
                     Types.Right right = contract.right();
                     double strike = contract.strike();
@@ -254,13 +252,11 @@ public class DataService {
 
         int underlyingConid = contractDetails.underConid();
         Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
-        String underlyingSymbol = contractDetails.underSymbol();
 
         instrument.setExchange(exchange);
         instrument.setPrimaryExchange(primaryExchange);
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
-        instrument.setUnderlyingSymbol(underlyingSymbol);
 
         sendReloadRequestMessage(DataHolderType.POSITION);
         requestMktData(positionDataHolder);
