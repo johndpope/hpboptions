@@ -97,7 +97,7 @@ public class IbController {
     }
 
     public void requestMktData(int requestId, Contract contract, String genericTicks) {
-        log.info("requesting market data, requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
+        log.info("requesting market data for requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
 
         if (checkConnected()) {
             eClientSocket.reqMktData(requestId, contract, genericTicks, false, false, null);
@@ -131,7 +131,7 @@ public class IbController {
     }
 
     public void cancelPositions() {
-        log.info("cancelling positions");
+        log.info("canceling positions");
 
         if (checkConnected()) {
             eClientSocket.cancelPositions();
@@ -139,10 +139,26 @@ public class IbController {
     }
 
     public void requestContractDetails(int requestId, Contract contract) {
-        log.info("requesting contract details for " + contract.localSymbol());
+        log.info("requesting contract details for requestId=" + requestId + ", symbol=" + contract.localSymbol());
 
         if (checkConnected()) {
             eClientSocket.reqContractDetails(requestId, contract);
+        }
+    }
+
+    public void requestPnlSingle(int requestId, int conid) {
+        log.info("requesting pnl single for requestId=" + requestId + ", conId=" + conid);
+
+        if (checkConnected()) {
+            eClientSocket.reqPnLSingle(requestId, "U1884205", "", conid);
+        }
+    }
+
+    public void cancelPnlSingle(int requestId) {
+        log.info("canceling pnl single for requestId=" + requestId);
+
+        if (checkConnected()) {
+            eClientSocket.cancelPnLSingle(requestId);
         }
     }
 

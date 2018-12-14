@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.*;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -129,11 +130,11 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     protected boolean isValidPrice(double d) {
-        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0d;
+        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0d && d != Double.MAX_VALUE;
     }
 
     protected boolean isValidSize(int i) {
-        return i > 0;
+        return i > 0 && i != Integer.MAX_VALUE;
     }
 
     @Override
@@ -157,8 +158,9 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     @Override
-    public boolean isSendMessage(DataField dataField) {
-        return fieldsToDisplay.contains(dataField);
+    public boolean isSendMessage(DataField field) {
+        return fieldsToDisplay.contains(field) &&
+                (Math.abs(getCurrent(field).doubleValue() - getOld(field).doubleValue()) > CoreSettings.DATA_FIELD_MIN_CHANGE_TO_SEND);
     }
 
     @Override

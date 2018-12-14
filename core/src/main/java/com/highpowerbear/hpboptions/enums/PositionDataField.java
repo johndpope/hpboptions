@@ -13,7 +13,7 @@ public enum PositionDataField implements DataField {
             return 0;
         }
     },
-    UNREALIZED_PL;
+    UNREALIZED_PNL;
 
     @Override
     public Number getInitialValue() {

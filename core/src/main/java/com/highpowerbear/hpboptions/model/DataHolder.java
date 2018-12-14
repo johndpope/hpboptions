@@ -1,6 +1,9 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.enums.*;
+import com.highpowerbear.hpboptions.enums.BasicMktDataField;
+import com.highpowerbear.hpboptions.enums.DataField;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 
 /**
  * Created by robertk on 12/3/2018.

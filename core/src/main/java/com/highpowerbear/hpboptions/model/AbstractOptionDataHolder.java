@@ -76,8 +76,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         double timeValue = timeValue(interpolate(Computation.optionPrice), interpolate(Computation.underlyingPrice));
         double timeValuePct = timeValuePct(timeValue);
 
-        update(OptionDataField.TIME_VALUE, timeValue);
-        update(OptionDataField.TIME_VALUE_PCT, timeValuePct);
+        update(OptionDataField.TIME_VALUE, CoreUtil.round2(timeValue));
+        update(OptionDataField.TIME_VALUE_PCT, CoreUtil.round2(timeValuePct));
     }
 
     private double timeValue(double optionPrice, double underlyingPrice) {
@@ -90,8 +90,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     private double timeValuePct(double timeValue) {
         if (valid(timeValue)) {
-            double value = (timeValue / strike) * (365 / (double) getDaysToExpiration()) * 100d;
-            return CoreUtil.round2(value);
+            return (timeValue / strike) * (365 / (double) getDaysToExpiration()) * 100d;
         } else {
             return Double.NaN;
         }

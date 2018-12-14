@@ -65,30 +65,36 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     positionRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = val > 0 ? 'hop-positive-pos' : (val < 0 ? 'hop-negative-pos' : 'hop-positive-pos');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        metadata.tdCls = record.data.id + ' ' + statusCls;
+
         return me.formatPosition(val);
     },
 
-    plRenderer: function(val, metadata, record) {
+    pnlRenderer: function(val, metadata, record) {
         var me = this;
 
         var statusCls = val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
-        return me.formatPl(val);
+        return me.formatPnl(val);
     },
 
     decimalRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = record.data.id;
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        metadata.tdCls = record.data.id + ' ' + statusCls;
+
         return me.formatDecimal(val);
     },
 
     decimalPctRenderer: function(val, metadata, record) {
         var me = this;
 
-        metadata.tdCls = record.data.id;
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        metadata.tdCls = record.data.id + ' ' + statusCls;
+
         return me.formatDecimalPct(val);
     },
 
@@ -124,8 +130,8 @@ Ext.define('HopGui.view.common.DataControllerBase', {
         return val;
     },
 
-    formatPl: function(val) {
-        return val !== 'NaN' ? Ext.util.Format.number(val, '0.00') : '&nbsp;';
+    formatPnl: function(val) {
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0') : '&nbsp;';
     },
 
     formatDecimal: function(val) {
@@ -133,7 +139,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     },
 
     formatDecimalPct: function(val) {
-        return val !== 'NaN' ? Ext.util.Format.number(val, '0.00%') : '&nbsp;';
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0.0%') : '&nbsp;';
     },
 
     updateData: function(msg) {
@@ -152,22 +158,22 @@ Ext.define('HopGui.view.common.DataControllerBase', {
             td.classList.remove('hop-unchanged');
             td.classList.remove('hop-positive');
             td.classList.remove('hop-negative');
-            td.classList.remove('hop-positive-pos');
-            td.classList.remove('hop-negative-pos');
+            td.classList.remove('hop-positive-alt');
+            td.classList.remove('hop-negative-alt');
 
             var div = Ext.query('div', true, td)[0];
             if (div) {
-                if (me.isPrice(td) || me.isSize(td) || me.isIv(td) || me.isIvRank(td) || me.isDecimal(td) || me.isDecimalPct(td)) {
-                    if (oldVal < 0 || oldVal === 'NaN') {
+                if (me.isPrice(td) || me.isSize(td) || me.isIv(td) || me.isIvRank(td)) {
+                    if (oldVal === 'NaN') {
                         td.classList.add('hop-unchanged');
                     } else {
                         td.classList.add(val > oldVal ? 'hop-uptick' : (val < oldVal ? 'hop-downtick' : 'hop-unchanged'));
                     }
                 } else if (me.isVolume(td)) {
                     td.classList.add('hop-unchanged');
-                } else if (me.isPosition(td)) {
-                    td.classList.add(val > 0 ? 'hop-positive-pos' : (val < 0 ? 'hop-negative-pos' : 'hop-positive-pos'));
-                } else if (me.isChangePct(td) || me.isIvChangePct(td) || me.isPl(td)) {
+                } else if (me.isPosition(td)|| me.isDecimal(td) || me.isDecimalPct(td)) {
+                    td.classList.add(val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt'));
+                } else if (me.isChangePct(td) || me.isIvChangePct(td) || me.isPnl(td)) {
                     td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
                 }
 
@@ -183,8 +189,8 @@ Ext.define('HopGui.view.common.DataControllerBase', {
                     div.innerHTML = me.formatIvRank(val);
                 } else if (me.isPosition(td)) {
                     div.innerHTML = me.formatPosition(val);
-                } else if (me.isPl(td)) {
-                    div.innerHTML = me.formatPl(val);
+                } else if (me.isPnl(td)) {
+                    div.innerHTML = me.formatPnl(val);
                 } else if (me.isDecimal(td)) {
                     div.innerHTML = me.formatDecimal(val);
                 } else if (me.isDecimalPct(td)) {
@@ -230,8 +236,8 @@ Ext.define('HopGui.view.common.DataControllerBase', {
         return td.classList.contains('hop-position');
     },
 
-    isPl: function(td) {
-        return td.classList.contains('hop-pl');
+    isPnl: function(td) {
+        return td.classList.contains('hop-pnl');
     },
 
     isDecimal: function(td) {

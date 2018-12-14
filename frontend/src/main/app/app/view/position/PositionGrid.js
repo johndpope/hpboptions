@@ -58,12 +58,12 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'positionRenderer'
     }, {
-        text: 'Unr PL',
-        width: 80,
-        dataIndex: 'unrealizedPl',
-        tdCls: 'unrealizedPl hop-pl hop-unchanged',
+        text: 'PnL',
+        width: 60,
+        dataIndex: 'unrealizedPnl',
+        tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
         align: 'right',
-        renderer: 'plRenderer'
+        renderer: 'pnlRenderer'
     }, {
         text: 'Tv',
         width: 60,
@@ -72,8 +72,8 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'decimalRenderer'
     }, {
-        text: 'T Pct',
-        width: 80,
+        text: 'TPct',
+        width: 70,
         dataIndex: 'timeValuePct',
         tdCls: 'timeValuePct hop-decimal-pct hop-unchanged',
         align: 'right',

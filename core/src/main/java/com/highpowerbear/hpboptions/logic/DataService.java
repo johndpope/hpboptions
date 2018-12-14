@@ -38,10 +38,9 @@ public class DataService {
 
     private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
+    private final Map<Integer, PositionDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> positionDataHolder
 
-    private final AtomicInteger ibMktDataRequestIdGen = new AtomicInteger(0);
-    private final AtomicInteger ibHistDataRequestIdGen = new AtomicInteger(1000000);
-    private final AtomicInteger ibContractDetailsRequestIdGen = new AtomicInteger(2000000);
+    private final AtomicInteger ibRequestIdGen = new AtomicInteger();
 
     @Autowired
     public DataService(CoreDao coreDao, MessageSender messageSender) {
@@ -56,8 +55,8 @@ public class DataService {
         for (Underlying underlying : underlyings) {
             UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(
                     underlying.createInstrument(),
-                    ibMktDataRequestIdGen.incrementAndGet(),
-                    ibHistDataRequestIdGen.incrementAndGet());
+                    ibRequestIdGen.incrementAndGet(),
+                    ibRequestIdGen.incrementAndGet());
 
             underlyingMap.put(underlying.getConid(), underlyingDataHolder);
             underlyingDataHolders.add(underlyingDataHolder);
@@ -111,13 +110,17 @@ public class DataService {
     }
 
     private void requestMktData(DataHolder dataHolder) {
-        mktDataRequestMap.put(dataHolder.getIbMktDataRequestId(), dataHolder);
-        ibController.requestMktData(dataHolder.getIbMktDataRequestId(), dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
+        int requestId = dataHolder.getIbMktDataRequestId();
+
+        mktDataRequestMap.put(requestId, dataHolder);
+        ibController.requestMktData(requestId, dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
     }
 
     private void cancelMktData(DataHolder dataHolder) {
-        ibController.cancelMktData(dataHolder.getIbMktDataRequestId());
-        mktDataRequestMap.remove(dataHolder.getIbMktDataRequestId());
+        int requestId = dataHolder.getIbMktDataRequestId();
+
+        ibController.cancelMktData(requestId);
+        mktDataRequestMap.remove(requestId);
     }
 
     private void cancelAllMktData() {
@@ -136,6 +139,20 @@ public class DataService {
                 IbBarSize.DAY_1.getValue(),
                 IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
                 IbTradingHours.REGULAR.getValue());
+    }
+
+    private void requestPnlSingle(PositionDataHolder positionDataHolder) {
+        int requestId = positionDataHolder.getIbPnlRequestId();
+
+        pnlRequestMap.put(requestId, positionDataHolder);
+        ibController.requestPnlSingle(requestId, positionDataHolder.getInstrument().getConid());
+    }
+
+    private void cancelPnlSingle(PositionDataHolder positionDataHolder) {
+        int requestId = positionDataHolder.getIbPnlRequestId();
+
+        ibController.cancelPnlSingle(requestId);
+        pnlRequestMap.remove(requestId);
     }
 
     private void sendReloadRequestMessage(DataHolderType type) {
@@ -218,10 +235,10 @@ public class DataService {
                     double strike = contract.strike();
                     LocalDate expirationDate = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
 
-                    positionDataHolder = new PositionDataHolder(instrument, ibMktDataRequestIdGen.incrementAndGet(), right, strike, expirationDate, positionSize);
+                    positionDataHolder = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), right, strike, expirationDate, positionSize);
                     positionMap.put(conid, positionDataHolder);
 
-                    ibController.requestContractDetails(ibContractDetailsRequestIdGen.incrementAndGet(), contract);
+                    ibController.requestContractDetails(ibRequestIdGen.incrementAndGet(), contract);
                 }
             } else if (positionSize != 0) {
                 if (positionSize != positionDataHolder.getPositionSize()) {
@@ -232,6 +249,7 @@ public class DataService {
                 }
             } else {
                 cancelMktData(positionDataHolder);
+                cancelPnlSingle(positionDataHolder);
                 positionMap.remove(contract.conid());
                 sendReloadRequestMessage(DataHolderType.POSITION);
             }
@@ -260,6 +278,14 @@ public class DataService {
 
         sendReloadRequestMessage(DataHolderType.POSITION);
         requestMktData(positionDataHolder);
+        requestPnlSingle(positionDataHolder);
+    }
+
+    public void updatePositionUnrealizedPnl(int requestId, double unrealizedPnL) {
+        PositionDataHolder positionDataHolder = pnlRequestMap.get(requestId);
+        positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
+
+        messageSender.sendWsMessage(positionDataHolder.getType(), positionDataHolder.createMessage(PositionDataField.UNREALIZED_PNL));
     }
 
     public List<UnderlyingDataHolder> getUnderlyingDataHolders() {

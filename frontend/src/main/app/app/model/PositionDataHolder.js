@@ -10,7 +10,7 @@ Ext.define('HopGui.model.PositionDataHolder', {
         {name: 'expirationDate', type: 'date', dateFormat: 'Y-m-d'},
         'daysToExpiration',
         'positionSize',
-        'unrealizedPl',
+        'unrealizedPnl',
         'timeValue',
         'timeValuePct',
         'delta',

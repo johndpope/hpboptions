@@ -12,36 +12,42 @@ import java.util.stream.Stream;
  */
 public class PositionDataHolder extends AbstractOptionDataHolder {
 
-    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate, int positionSize) {
+    private final int ibPnlRequestId;
+
+    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, int ibPnlRequestId, Types.Right right, double strike, LocalDate expirationDate, int positionSize) {
         super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike, expirationDate);
+        this.ibPnlRequestId = ibPnlRequestId;
 
         PositionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 PositionDataField.POSITION_SIZE,
-                PositionDataField.UNREALIZED_PL
+                PositionDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
 
         updatePositionSize(positionSize);
+    }
+    public void updatePositionSize(int positionSize) {
+        update(PositionDataField.POSITION_SIZE, positionSize);
+    }
+
+    public void updateUnrealizedPnl(double unrealizedPl) {
+        update(PositionDataField.UNREALIZED_PNL, unrealizedPl);
+    }
+
+    public int getIbPnlRequestId() {
+        return ibPnlRequestId;
     }
 
     public String getUnderlyingSymbol() {
         return getInstrument().getUnderlyingSymbol();
     }
 
-    public void updatePositionSize(int positionSize) {
-        update(PositionDataField.POSITION_SIZE, positionSize);
-    }
-
-    public void updateUnrelaizedPl(double unrealizedPl) {
-        update(PositionDataField.UNREALIZED_PL, unrealizedPl);
-    }
-
     public int getPositionSize() {
         return getCurrent(PositionDataField.POSITION_SIZE).intValue();
     }
 
-    public double getUnrealizedPl() {
-        return getCurrent(PositionDataField.UNREALIZED_PL).doubleValue();
+    public double getUnrealizedPnl() {
+        return getCurrent(PositionDataField.UNREALIZED_PNL).doubleValue();
     }
 }

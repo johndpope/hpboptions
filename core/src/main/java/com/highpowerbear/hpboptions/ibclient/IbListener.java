@@ -128,4 +128,11 @@ public class IbListener extends GenericIbListener {
         }
         dataService.optionPositionContractDetailsReceived(contractDetails);
     }
+
+    @Override
+    public void pnlSingle(int reqId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
+        //super.pnlSingle(reqId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
+
+        dataService.updatePositionUnrealizedPnl(reqId, unrealizedPnL);
+    }
 }
