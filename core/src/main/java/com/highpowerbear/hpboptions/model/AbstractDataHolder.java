@@ -29,8 +29,8 @@ public abstract class AbstractDataHolder implements DataHolder {
         this.ibMktDataRequestId = ibMktDataRequestId;
         id = type.name().toLowerCase() + "-" + instrument.getId();
 
-        BasicMktDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
-        DerivedMktDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        BasicMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        DerivedMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         Stream.of(
                 BasicMktDataField.BID,
@@ -55,13 +55,13 @@ public abstract class AbstractDataHolder implements DataHolder {
     private void determineGenericTicks() {
         Set<Integer> genericTicksSet = new HashSet<>();
 
-        Arrays.stream(BasicMktDataField.values())
+        BasicMktDataField.fields().stream()
                 .filter(fieldsToDisplay::contains)
                 .map(BasicMktDataField::getGenericTick)
                 .filter(Objects::nonNull)
                 .forEach(genericTicksSet::add);
 
-        Arrays.stream(DerivedMktDataField.values())
+        DerivedMktDataField.fields().stream()
                 .filter(fieldsToDisplay::contains)
                 .flatMap(derivedField -> derivedField.getDependencies().stream())
                 .map(BasicMktDataField::getGenericTick)

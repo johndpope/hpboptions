@@ -97,7 +97,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         //super.tickOptionComputation(requestId, tickType, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
-        dataService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+        dataService.updateOptionData(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override

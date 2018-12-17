@@ -14,6 +14,6 @@ public class ChainDataHolder extends AbstractOptionDataHolder {
     public ChainDataHolder(Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate) {
         super(DataHolderType.CHAIN, instrument, ibMktDataRequestId, right, strike, expirationDate);
 
-        OptionDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
     }
 }

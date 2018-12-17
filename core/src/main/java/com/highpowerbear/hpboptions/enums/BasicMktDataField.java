@@ -49,12 +49,12 @@ public enum BasicMktDataField implements DataField {
     private static final Map<TickType, BasicMktDataField> tickFieldMap = Arrays.stream(BasicMktDataField.values())
             .collect(Collectors.toMap(BasicMktDataField::getTickType, bf -> bf));
 
-    public static BasicMktDataField getBasicField(TickType tickType) {
+    public static BasicMktDataField basicField(TickType tickType) {
         return tickFieldMap.get(tickType);
     }
 
     private static List<BasicMktDataField> fields = Arrays.asList(BasicMktDataField.values());
-    public static List<BasicMktDataField> getFields() {
+    public static List<BasicMktDataField> fields() {
         return fields;
     }
 }

@@ -28,7 +28,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         this.ibHistDataRequestId = ibHistDataRequestId;
         this.optionMultiplier = optionMultiplier;
 
-        UnderlyingDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 BasicMktDataField.OPTION_IMPLIED_VOL,

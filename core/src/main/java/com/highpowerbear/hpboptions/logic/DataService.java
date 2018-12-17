@@ -174,22 +174,23 @@ public class DataService {
             return;
         }
         Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
-        if (positionDataHolders.stream().anyMatch(p -> !p.isOptionDataValid())) {
+        if (positionDataHolders.stream().anyMatch(p -> !p.portfolioSourceFieldsReady())) {
             return;
         }
         int multiplier = underlyingDataHolder.getOptionMultiplier();
-        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, deltaDollars = 0d;
+        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
 
         for (PositionDataHolder p : positionDataHolders) {
             delta += p.getDelta() * p.getPositionSize() * multiplier;
             gamma += p.getGamma() * p.getPositionSize() * multiplier;
             vega += p.getVega() * p.getPositionSize() * multiplier;
             theta += p.getTheta() * p.getPositionSize() * multiplier;
-            timeValue += p.getTimeValue() * p.getPositionSize() * multiplier;
-            deltaDollars += p.getDelta() * p.getPositionSize() * p.getUnderlyingPrice();
+            timeValue += p.getTimeValue() * Math.abs(p.getPositionSize()) * multiplier;
         }
+        double deltaDollars = delta * underlyingDataHolder.getLast();
+
         underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
-        UnderlyingDataField.getPortfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
+        UnderlyingDataField.portfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
     }
 
     private void recalculateCumulativePnl(int underlyingConid) {
@@ -206,24 +207,27 @@ public class DataService {
         if (dataHolder == null) {
             return;
         }
-        BasicMktDataField basicField = BasicMktDataField.getBasicField(TickType.get(tickType));
+        BasicMktDataField basicField = BasicMktDataField.basicField(TickType.get(tickType));
         if (basicField == null) {
             return;
         }
         dataHolder.updateField(basicField, value);
-        DerivedMktDataField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
+        DerivedMktDataField.derivedFields(basicField).forEach(dataHolder::calculateField);
 
         sendWsMessage(dataHolder, basicField);
-        DerivedMktDataField.getDerivedFields(basicField).forEach(derivedField -> sendWsMessage(dataHolder, derivedField));
+        DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> sendWsMessage(dataHolder, derivedField));
     }
 
-    public void updateOptionData(int requestId, int tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
+    public void updateOptionData(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
+        if (tickType != TickType.BID_OPTION && tickType != TickType.ASK_OPTION) {
+            return;
+        }
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
         if (dataHolder == null) {
             return;
         }
-        ((OptionDataHolder) dataHolder).updateOptionData(TickType.get(tickType), delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-        OptionDataField.getFields().forEach(field -> sendWsMessage(dataHolder, field));
+        ((OptionDataHolder) dataHolder).updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        OptionDataField.fields().forEach(field -> sendWsMessage(dataHolder, field));
 
         if (dataHolder.getType() == DataHolderType.POSITION) {
             recalculatePortfolioOptionData(dataHolder.getInstrument().getUnderlyingConid());

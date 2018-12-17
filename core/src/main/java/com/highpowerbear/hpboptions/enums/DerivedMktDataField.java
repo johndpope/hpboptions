@@ -39,12 +39,12 @@ public enum DerivedMktDataField implements DataField {
         }
     }
 
-    public static Set<DerivedMktDataField> getDerivedFields(BasicMktDataField basicField) {
+    public static Set<DerivedMktDataField> derivedFields(BasicMktDataField basicField) {
         return basicDerivedMap.get(basicField);
     }
 
     private static List<DerivedMktDataField> fields = Arrays.asList(DerivedMktDataField.values());
-    public static List<DerivedMktDataField> getFields() {
+    public static List<DerivedMktDataField> fields() {
         return fields;
     }
 }

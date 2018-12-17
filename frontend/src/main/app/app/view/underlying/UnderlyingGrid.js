@@ -144,17 +144,17 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'Gm',
-        width: 60,
-        dataIndex: 'portfolioGamma',
-        tdCls: 'portfolioGamma hop-whole',
-        align: 'right',
-        renderer: 'wholeRenderer'
-    }, {
         text: 'Ddol',
         width: 70,
         dataIndex: 'portfolioDeltaDollars',
         tdCls: 'portfolioDeltaDollars hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'Gm',
+        width: 60,
+        dataIndex: 'portfolioGamma',
+        tdCls: 'portfolioGamma hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {

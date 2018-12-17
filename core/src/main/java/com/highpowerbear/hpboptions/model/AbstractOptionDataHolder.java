@@ -39,11 +39,13 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
         computationMap.put(TickType.BID_OPTION, new ConcurrentHashMap<>());
         computationMap.put(TickType.ASK_OPTION, new ConcurrentHashMap<>());
-        computationMap.put(TickType.LAST_OPTION, new ConcurrentHashMap<>());
-        computationMap.put(TickType.MODEL_OPTION, new ConcurrentHashMap<>());
 
-        computationMap.values().forEach(m -> Arrays.asList(Computation.values()).forEach(c -> m.put(c, Double.NaN)));
-        OptionDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        for (Computation c : Computation.values()) {
+            computationMap.get(TickType.BID_OPTION).put(c, Double.NaN);
+            computationMap.get(TickType.ASK_OPTION).put(c, Double.NaN);
+        }
+
+        OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
@@ -67,6 +69,10 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         m.put(Computation.OP, optionPrice);
         m.put(Computation.UP, underlyingPrice);
 
+        if (tickType != TickType.ASK_OPTION) { // store on bid or ask, but recalculate only on ask
+            return;
+        }
+
         double greekIntpl = interpolate(Computation.D);
         if (valid(greekIntpl)) {
             update(OptionDataField.DELTA, greekIntpl);
@@ -86,6 +92,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         if (valid(greekIntpl)) {
             update(OptionDataField.THETA, greekIntpl);
         }
+
+        update(OptionDataField.IMPLIED_VOL, interpolate(Computation.IV));
 
         double optionPriceIntpl = interpolate(Computation.OP);
         double underlyingPriceIntpl = interpolate(Computation.UP);
@@ -112,45 +120,19 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     private double interpolate(Computation c) {
-        double b = getBid();
-        double a = getAsk();
-        double l = getLast();
-
         double cb = computationMap.get(TickType.BID_OPTION).get(c);
         double ca = computationMap.get(TickType.ASK_OPTION).get(c);
-        double cl = computationMap.get(TickType.LAST_OPTION).get(c);
-        double cm = computationMap.get(TickType.MODEL_OPTION).get(c);
 
-        if (isValidPrice(b) && isValidPrice(a) && valid(cb) && valid(ca)) {
-            return (cb + ca) / 2d;
-        } else if (isValidPrice(b) && isValidPrice(l) && valid(cb) && valid(cl)) {
-            return l > b ? cl : cb;
-        } else if (isValidPrice(a) && isValidPrice(l) && valid(ca) && valid(cl)) {
-            return l < a ? cl : ca;
-        } else if (isValidPrice(l) && valid(cl)) {
-            return cl;
-        } else if (isValidPrice(b) && valid(cb)) {
-            return cb;
-        } else if (isValidPrice(a) && valid(ca)) {
-            return ca;
-        } else if (valid(cm)) {
-            return cm;
-        } else {
-            return Double.NaN;
-        }
+        return valid(cb) && valid(ca) ? (cb + ca) / 2d : Double.NaN;
     }
 
     private boolean valid(double value) {
         return !Double.isNaN(value) && !Double.isInfinite(value) && value != Double.MAX_VALUE;
     }
 
-    private boolean fieldValid(OptionDataField field) {
-        return valid(getCurrent(field).doubleValue());
-    }
-
     @Override
-    public boolean isOptionDataValid() {
-        return OptionDataField.getFields().stream().allMatch(this::fieldValid);
+    public boolean portfolioSourceFieldsReady() {
+        return OptionDataField.portfolioSourceFields().stream().allMatch(field -> valid(getCurrent(field).doubleValue()));
     }
 
     public Types.Right getRight() {

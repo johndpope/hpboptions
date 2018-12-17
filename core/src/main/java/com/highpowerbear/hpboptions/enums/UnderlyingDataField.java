@@ -32,10 +32,10 @@ public enum UnderlyingDataField implements DataField {
             PORTFOLIO_TIME_VALUE,
             PORTFOLIO_DELTA_DOLLARS).collect(Collectors.toList());
 
-    public static List<UnderlyingDataField> getFields() {
+    public static List<UnderlyingDataField> fields() {
         return fields;
     }
 
-    public static List<UnderlyingDataField> getPortfolioFields() {
+    public static List<UnderlyingDataField> portfolioFields() {
         return portfolioFields;
     }}

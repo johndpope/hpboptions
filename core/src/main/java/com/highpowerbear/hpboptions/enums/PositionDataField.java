@@ -21,7 +21,7 @@ public enum PositionDataField implements DataField {
     }
 
     private static List<PositionDataField> fields = Arrays.asList(PositionDataField.values());
-    public static List<PositionDataField> getFields() {
+    public static List<PositionDataField> fields() {
         return fields;
     }
 }

@@ -7,5 +7,5 @@ import com.ib.client.TickType;
  */
 public interface OptionDataHolder {
     void updateOptionData(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice);
-    boolean isOptionDataValid();
+    boolean portfolioSourceFieldsReady();
 }
