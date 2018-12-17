@@ -121,8 +121,8 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void contractDetails(int reqId, ContractDetails contractDetails) {
-        super.contractDetails(reqId, contractDetails);
+    public void contractDetails(int requestId, ContractDetails contractDetails) {
+        super.contractDetails(requestId, contractDetails);
         if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
             return;
         }
@@ -130,9 +130,9 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void pnlSingle(int reqId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
+    public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(reqId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
 
-        dataService.updatePositionUnrealizedPnl(reqId, unrealizedPnL);
+        dataService.updatePositionUnrealizedPnl(requestId, unrealizedPnL);
     }
 }

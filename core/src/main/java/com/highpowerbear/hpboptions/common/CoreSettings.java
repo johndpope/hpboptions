@@ -8,8 +8,8 @@ import java.time.format.DateTimeFormatter;
 public class CoreSettings {
     public static final String IB_HOST = "localhost";
     public static final int IB_PORT = 4001;
-    public static final Integer IB_CLIENT_ID = 1;
-    public static final Integer MAX_ORDER_HEARTBEAT_FAILS = 5;
+    public static final int IB_CLIENT_ID = 1;
+    public static final int MAX_ORDER_HEARTBEAT_FAILS = 5;
     public static final String JSON_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     public static final DateTimeFormatter IB_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss");
     public static final DateTimeFormatter IB_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -21,4 +21,5 @@ public class CoreSettings {
     public static final String WS_TOPIC_CHAIN = "/topic/chain";
     public static final String WS_TOPIC_IB_CONNECTION = "/topic/ib_connection";
     public static final double DATA_FIELD_MIN_CHANGE_TO_SEND = 0.0001d;
+    public static final long CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
 }

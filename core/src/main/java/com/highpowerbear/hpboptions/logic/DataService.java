@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -31,8 +32,8 @@ public class DataService {
 
     private IbController ibController; // prevent circular dependency
 
-    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
-    private final List<UnderlyingDataHolder> underlyingDataHolders = new ArrayList<>();
+    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new LinkedHashMap<>(); // conid -> underlyingDataHolder
+    private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
     private final ReentrantLock positionLock = new ReentrantLock();
 
@@ -56,10 +57,12 @@ public class DataService {
             UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(
                     underlying.createInstrument(),
                     ibRequestIdGen.incrementAndGet(),
-                    ibRequestIdGen.incrementAndGet());
+                    ibRequestIdGen.incrementAndGet(),
+                    underlying.getOptionMultiplier());
 
-            underlyingMap.put(underlying.getConid(), underlyingDataHolder);
-            underlyingDataHolders.add(underlyingDataHolder);
+            int conid = underlying.getConid();
+            underlyingMap.put(conid, underlyingDataHolder);
+            underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
         }
     }
 
@@ -73,8 +76,8 @@ public class DataService {
         if (isConnected()) {
             cancelAllMktData();
 
-            underlyingDataHolders.forEach(this::requestMktData);
-            underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
+            underlyingMap.values().forEach(this::requestMktData);
+            underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
             positionMap.values().forEach(this::requestMktData);
             ibController.requestPositions();
         }
@@ -105,8 +108,8 @@ public class DataService {
 
     @Scheduled(cron="0 0 6 * * MON-FRI")
     private void performStartOfDayTasks() {
-        underlyingDataHolders.forEach(this::requestImpliedVolatilityHistory);
-        sendReloadRequestMessage(DataHolderType.POSITION);
+        underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
+        sendWsReloadRequestMessage(DataHolderType.POSITION);
     }
 
     private void requestMktData(DataHolder dataHolder) {
@@ -155,13 +158,46 @@ public class DataService {
         pnlRequestMap.remove(requestId);
     }
 
-    private void sendReloadRequestMessage(DataHolderType type) {
+    private void sendWsMessage(DataHolder dataHolder, DataField field) {
+        if (dataHolder.isSendMessage(field)) {
+            messageSender.sendWsMessage(dataHolder.getType(), dataHolder.createMessage(field));
+        }
+    }
+
+    private void sendWsReloadRequestMessage(DataHolderType type) {
         messageSender.sendWsMessage(type, "reload request");
     }
 
-    private void recalculateCumulativeData(int underlyingConid) {
+    private void recalculateCumulativeOptionData(int underlyingConid) {
         UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
-        // TODO
+        if (!underlyingDataHolder.isCumulativeOptionDataUpdateDue()) { // throttling
+            return;
+        }
+        Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
+        int multiplier = underlyingDataHolder.getOptionMultiplier();
+
+        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
+
+        for (PositionDataHolder p : positionDataHolders) {
+            delta += p.getDelta() * p.getPositionSize() * multiplier;
+            gamma += p.getGamma() * p.getPositionSize() * multiplier;
+            vega += p.getVega() + p.getPositionSize() * multiplier;
+            theta += p.getTheta() + p.getPositionSize() * multiplier;
+            timeValue += p.getTimeValue() * p.getPositionSize() * multiplier;
+        }
+        double deltaDollars = delta * underlyingDataHolder.getLast();
+
+        underlyingDataHolder.updateCumulativeOptionData(delta, gamma, vega, theta, deltaDollars, timeValue);
+        underlyingDataHolder.getCumulativeOptionDataFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
+    }
+
+    private void recalculateCumulativePnl(int underlyingConid) {
+        UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
+
+        double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
+
+        underlyingDataHolder.updateCumulativePnl(unrealizedPnl);
+        sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE);
     }
 
     public void updateMktData(int requestId, int tickType, Number value) {
@@ -176,13 +212,8 @@ public class DataService {
         dataHolder.updateField(basicField, value);
         DerivedMktDataField.getDerivedFields(basicField).forEach(dataHolder::calculateField);
 
-        if (dataHolder.isSendMessage(basicField)) {
-            messageSender.sendWsMessage(dataHolder.getType(), dataHolder.createMessage(basicField));
-        }
-
-        DerivedMktDataField.getDerivedFields(basicField).stream()
-                .filter(dataHolder::isSendMessage)
-                .forEach(derivedField -> messageSender.sendWsMessage(dataHolder.getType(), dataHolder.createMessage(derivedField)));
+        sendWsMessage(dataHolder, basicField);
+        DerivedMktDataField.getDerivedFields(basicField).forEach(derivedField -> sendWsMessage(dataHolder, derivedField));
     }
 
     public void updateOptionData(int requestId, int tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
@@ -191,13 +222,10 @@ public class DataService {
             return;
         }
         ((OptionDataHolder) dataHolder).updateOptionData(TickType.get(tickType), delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-
-        OptionDataField.getValues().stream()
-                .filter(dataHolder::isSendMessage)
-                .forEach(field -> messageSender.sendWsMessage(dataHolder.getType(), dataHolder.createMessage(field)));
+        OptionDataField.getValues().forEach(field -> sendWsMessage(dataHolder, field));
 
         if (dataHolder.getType() == DataHolderType.POSITION) {
-            recalculateCumulativeData(dataHolder.getInstrument().getUnderlyingConid());
+            recalculateCumulativeOptionData(dataHolder.getInstrument().getUnderlyingConid());
         }
     }
 
@@ -213,15 +241,14 @@ public class DataService {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
         underlyingDataHolder.impliedVolatilityHistoryCompleted();
 
-        underlyingDataHolder.getIvHistoryDependentFields()
-                .forEach(field -> messageSender.sendWsMessage(underlyingDataHolder.getType(), underlyingDataHolder.createMessage(field)));
+        underlyingDataHolder.getIvHistoryDependentFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
     }
 
     public void optionPositionChanged(Contract contract, int positionSize) {
         positionLock.lock();
         try {
             int conid = contract.conid();
-            PositionDataHolder positionDataHolder = positionMap.get(contract.conid());
+            PositionDataHolder positionDataHolder = positionMap.get(conid);
 
             if (positionDataHolder == null) {
                 if (positionSize != 0) {
@@ -243,15 +270,19 @@ public class DataService {
             } else if (positionSize != 0) {
                 if (positionSize != positionDataHolder.getPositionSize()) {
                     positionDataHolder.updatePositionSize(positionSize);
+                    sendWsMessage(positionDataHolder, PositionDataField.POSITION_SIZE);
 
-                    messageSender.sendWsMessage(positionDataHolder.getType(), positionDataHolder.createMessage(PositionDataField.POSITION_SIZE));
-                    recalculateCumulativeData(positionDataHolder.getInstrument().getUnderlyingConid());
+                    recalculateCumulativeOptionData(positionDataHolder.getInstrument().getUnderlyingConid());
                 }
             } else {
                 cancelMktData(positionDataHolder);
                 cancelPnlSingle(positionDataHolder);
-                positionMap.remove(contract.conid());
-                sendReloadRequestMessage(DataHolderType.POSITION);
+
+                int underlyingConid = positionDataHolder.getInstrument().getUnderlyingConid();
+                positionMap.remove(conid);
+                underlyingPositionMap.get(underlyingConid).remove(conid);
+
+                sendWsReloadRequestMessage(DataHolderType.POSITION);
             }
         } finally {
             positionLock.unlock();
@@ -276,32 +307,34 @@ public class DataService {
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
-        sendReloadRequestMessage(DataHolderType.POSITION);
+        underlyingPositionMap.get(underlyingConid).put(conid, positionDataHolder);
+
+        sendWsReloadRequestMessage(DataHolderType.POSITION);
         requestMktData(positionDataHolder);
         requestPnlSingle(positionDataHolder);
     }
 
     public void updatePositionUnrealizedPnl(int requestId, double unrealizedPnL) {
         PositionDataHolder positionDataHolder = pnlRequestMap.get(requestId);
-        positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
 
-        messageSender.sendWsMessage(positionDataHolder.getType(), positionDataHolder.createMessage(PositionDataField.UNREALIZED_PNL));
+        positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
+        sendWsMessage(positionDataHolder, PositionDataField.UNREALIZED_PNL);
+
+        recalculateCumulativePnl(positionDataHolder.getInstrument().getUnderlyingConid());
     }
 
-    public List<UnderlyingDataHolder> getUnderlyingDataHolders() {
-        return underlyingDataHolders;
+    public Collection<UnderlyingDataHolder> getUnderlyingDataHolders() {
+        return underlyingMap.values();
     }
 
     public List<PositionDataHolder> getSortedPositionDataHolders() {
-        List<PositionDataHolder> positionDataHolders = new ArrayList<>(positionMap.values());
 
-        positionDataHolders.sort(Comparator
-                .comparing(PositionDataHolder::getDaysToExpiration)
-                .thenComparing(PositionDataHolder::getUnderlyingSymbol)
-                .thenComparing(PositionDataHolder::getRight)
-                .thenComparingDouble(PositionDataHolder::getStrike));
-
-        return positionDataHolders;
+        return positionMap.values().stream()
+                .sorted(Comparator
+                        .comparing(PositionDataHolder::getDaysToExpiration)
+                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                        .thenComparing(PositionDataHolder::getRight)
+                        .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
     }
 
     public List<ChainDataHolder> getChainDataHolders() {

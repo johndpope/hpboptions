@@ -21,14 +21,14 @@ import java.util.stream.Stream;
  */
 public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
 
-    private Types.Right right;
-    private double strike;
-    private LocalDate expirationDate;
+    private final Types.Right right;
+    private final double strike;
+    private final LocalDate expirationDate;
 
     private final Map<TickType, Map<Computation, Double>> computationMap = new HashMap<>();
 
     private enum Computation {
-        delta, gamma, vega, theta, impliedVol, optionPrice, underlyingPrice
+        D, G, V, T, IV, OP, UP
     }
 
     public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate) {
@@ -59,21 +59,21 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     public void updateOptionData(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVol, double optionPrice, double underlyingPrice) {
         Map<Computation, Double> m = computationMap.get(tickType);
 
-        m.put(Computation.delta, delta);
-        m.put(Computation.gamma, gamma);
-        m.put(Computation.vega, vega);
-        m.put(Computation.theta, theta);
-        m.put(Computation.impliedVol, impliedVol);
-        m.put(Computation.optionPrice, optionPrice);
-        m.put(Computation.underlyingPrice, underlyingPrice);
+        m.put(Computation.D, delta);
+        m.put(Computation.G, gamma);
+        m.put(Computation.V, vega);
+        m.put(Computation.T, theta);
+        m.put(Computation.IV, impliedVol);
+        m.put(Computation.OP, optionPrice);
+        m.put(Computation.UP, underlyingPrice);
 
-        update(OptionDataField.DELTA, interpolate(Computation.delta));
-        update(OptionDataField.GAMMA, interpolate(Computation.gamma));
-        update(OptionDataField.VEGA, interpolate(Computation.vega));
-        update(OptionDataField.THETA, interpolate(Computation.theta));
-        update(OptionDataField.IMPLIED_VOL, interpolate(Computation.impliedVol));
+        update(OptionDataField.DELTA, interpolate(Computation.D));
+        update(OptionDataField.GAMMA, interpolate(Computation.G));
+        update(OptionDataField.VEGA, interpolate(Computation.V));
+        update(OptionDataField.THETA, interpolate(Computation.T));
+        update(OptionDataField.IMPLIED_VOL, interpolate(Computation.IV));
 
-        double timeValue = timeValue(interpolate(Computation.optionPrice), interpolate(Computation.underlyingPrice));
+        double timeValue = timeValue(interpolate(Computation.OP), interpolate(Computation.UP));
         double timeValuePct = timeValuePct(timeValue);
 
         update(OptionDataField.TIME_VALUE, CoreUtil.round2(timeValue));
@@ -165,6 +165,14 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     public double getGamma() {
         return getCurrent(OptionDataField.GAMMA).doubleValue();
+    }
+
+    public double getVega() {
+        return getCurrent(OptionDataField.VEGA).doubleValue();
+    }
+
+    public double getTheta() {
+        return getCurrent(OptionDataField.THETA).doubleValue();
     }
 
     public double getImpliedVol() {

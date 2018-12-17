@@ -14,7 +14,7 @@ public enum UnderlyingDataField implements DataField {
     THETA_CUMULATIVE,
     DELTA_DOLLARS_CUMULATIVE,
     TIME_VALUE_CUMULATIVE,
-    UNREALIZED_PL_CUMULATIVE;
+    UNREALIZED_PNL_CUMULATIVE;
 
     @Override
     public Number getInitialValue() {

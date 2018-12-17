@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -51,7 +52,7 @@ public class AppRestController {
 
     @RequestMapping("underlying-data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<UnderlyingDataHolder> underlyingDataHolders = dataService.getUnderlyingDataHolders();
+        Collection<UnderlyingDataHolder> underlyingDataHolders = dataService.getUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, (long) underlyingDataHolders.size()));
     }
 

@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.*;
 
@@ -15,13 +16,19 @@ import java.util.stream.Stream;
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
     private final int ibHistDataRequestId;
+    private final int optionMultiplier;
     private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
+    @JsonIgnore
+    private final Set<DataField> cumulativeOptionDataFields;
 
-    public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
+    private long lastCumulativeOptionDataUpdateTime;
+
+    public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId, int optionMultiplier) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
         this.ibHistDataRequestId = ibHistDataRequestId;
+        this.optionMultiplier = optionMultiplier;
 
         UnderlyingDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
@@ -36,13 +43,22 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 UnderlyingDataField.GAMMA_CUMULATIVE,
                 UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE,
                 UnderlyingDataField.TIME_VALUE_CUMULATIVE,
-                UnderlyingDataField.UNREALIZED_PL_CUMULATIVE
+                UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE
         ).collect(Collectors.toSet()));
 
         ivHistoryDependentFields = Stream.of(
                 UnderlyingDataField.IV_CLOSE,
                 DerivedMktDataField.IV_CHANGE_PCT,
                 DerivedMktDataField.IV_RANK
+        ).collect(Collectors.toSet());
+
+        cumulativeOptionDataFields = Stream.of(
+                UnderlyingDataField.DELTA_CUMULATIVE,
+                UnderlyingDataField.GAMMA_CUMULATIVE,
+                UnderlyingDataField.VEGA_CUMULATIVE,
+                UnderlyingDataField.THETA_CUMULATIVE,
+                UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE,
+                UnderlyingDataField.TIME_VALUE_CUMULATIVE
         ).collect(Collectors.toSet());
     }
 
@@ -125,22 +141,39 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
-    public void updateCumulativeData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue, double unrealizedPl) {
+    public void updateCumulativeOptionData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue) {
+        lastCumulativeOptionDataUpdateTime = System.currentTimeMillis();
+
         update(UnderlyingDataField.DELTA_CUMULATIVE, delta);
         update(UnderlyingDataField.GAMMA_CUMULATIVE, gamma);
         update(UnderlyingDataField.VEGA_CUMULATIVE, vega);
         update(UnderlyingDataField.THETA_CUMULATIVE, theta);
         update(UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE, deltaDollars);
         update(UnderlyingDataField.TIME_VALUE_CUMULATIVE, timeValue);
-        update(UnderlyingDataField.UNREALIZED_PL_CUMULATIVE, unrealizedPl);
+    }
+
+    public boolean isCumulativeOptionDataUpdateDue() {
+        return (System.currentTimeMillis() - lastCumulativeOptionDataUpdateTime) > CoreSettings.CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
+    }
+
+    public void updateCumulativePnl(double unrealizedPnl) {
+        update(UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE, unrealizedPnl);
     }
 
     public Set<DataField> getIvHistoryDependentFields() {
         return ivHistoryDependentFields;
     }
 
+    public Set<DataField> getCumulativeOptionDataFields() {
+        return cumulativeOptionDataFields;
+    }
+
     public int getIbHistDataRequestId() {
         return ibHistDataRequestId;
+    }
+
+    public int getOptionMultiplier() {
+        return optionMultiplier;
     }
 
     public double getOptionImpliedVol() {
@@ -183,7 +216,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return getCurrent(UnderlyingDataField.TIME_VALUE_CUMULATIVE).doubleValue();
     }
 
-    public double getUnrealizedPlCumulative() {
-        return getCurrent(UnderlyingDataField.UNREALIZED_PL_CUMULATIVE).doubleValue();
+    public double getUnrealizedPnlCumulative() {
+        return getCurrent(UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE).doubleValue();
     }
 }
