@@ -130,6 +130,41 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
+        text: 'TV',
+        width: 60,
+        dataIndex: 'portfolioTimeValue',
+        tdCls: 'portfolioTimeValue hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'Dlt',
+        width: 60,
+        dataIndex: 'portfolioDelta',
+        tdCls: 'portfolioDelta hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'Gm',
+        width: 60,
+        dataIndex: 'portfolioGamma',
+        tdCls: 'portfolioGamma hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'Ddol',
+        width: 70,
+        dataIndex: 'portfolioDeltaDollars',
+        tdCls: 'portfolioDeltaDollars hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'PnL',
+        width: 60,
+        dataIndex: 'unrealizedPnl',
+        tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
+        align: 'right',
+        renderer: 'pnlRenderer'
+    }, {
         flex: 1
     }],
     dockedItems: [{

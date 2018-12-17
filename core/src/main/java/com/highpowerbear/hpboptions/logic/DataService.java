@@ -168,27 +168,28 @@ public class DataService {
         messageSender.sendWsMessage(type, "reload request");
     }
 
-    private void recalculateCumulativeOptionData(int underlyingConid) {
+    private void recalculatePortfolioOptionData(int underlyingConid) {
         UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
         if (!underlyingDataHolder.isCumulativeOptionDataUpdateDue()) { // throttling
             return;
         }
         Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
+        if (positionDataHolders.stream().anyMatch(p -> !p.isOptionDataValid())) {
+            return;
+        }
         int multiplier = underlyingDataHolder.getOptionMultiplier();
-
-        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
+        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, deltaDollars = 0d;
 
         for (PositionDataHolder p : positionDataHolders) {
             delta += p.getDelta() * p.getPositionSize() * multiplier;
             gamma += p.getGamma() * p.getPositionSize() * multiplier;
-            vega += p.getVega() + p.getPositionSize() * multiplier;
-            theta += p.getTheta() + p.getPositionSize() * multiplier;
+            vega += p.getVega() * p.getPositionSize() * multiplier;
+            theta += p.getTheta() * p.getPositionSize() * multiplier;
             timeValue += p.getTimeValue() * p.getPositionSize() * multiplier;
+            deltaDollars += p.getDelta() * p.getPositionSize() * p.getUnderlyingPrice();
         }
-        double deltaDollars = delta * underlyingDataHolder.getLast();
-
-        underlyingDataHolder.updateCumulativeOptionData(delta, gamma, vega, theta, deltaDollars, timeValue);
-        underlyingDataHolder.getCumulativeOptionDataFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
+        underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
+        UnderlyingDataField.getPortfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
     }
 
     private void recalculateCumulativePnl(int underlyingConid) {
@@ -197,7 +198,7 @@ public class DataService {
         double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
 
         underlyingDataHolder.updateCumulativePnl(unrealizedPnl);
-        sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE);
+        sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL);
     }
 
     public void updateMktData(int requestId, int tickType, Number value) {
@@ -222,10 +223,10 @@ public class DataService {
             return;
         }
         ((OptionDataHolder) dataHolder).updateOptionData(TickType.get(tickType), delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-        OptionDataField.getValues().forEach(field -> sendWsMessage(dataHolder, field));
+        OptionDataField.getFields().forEach(field -> sendWsMessage(dataHolder, field));
 
         if (dataHolder.getType() == DataHolderType.POSITION) {
-            recalculateCumulativeOptionData(dataHolder.getInstrument().getUnderlyingConid());
+            recalculatePortfolioOptionData(dataHolder.getInstrument().getUnderlyingConid());
         }
     }
 
@@ -272,7 +273,7 @@ public class DataService {
                     positionDataHolder.updatePositionSize(positionSize);
                     sendWsMessage(positionDataHolder, PositionDataField.POSITION_SIZE);
 
-                    recalculateCumulativeOptionData(positionDataHolder.getInstrument().getUnderlyingConid());
+                    recalculatePortfolioOptionData(positionDataHolder.getInstrument().getUnderlyingConid());
                 }
             } else {
                 cancelMktData(positionDataHolder);

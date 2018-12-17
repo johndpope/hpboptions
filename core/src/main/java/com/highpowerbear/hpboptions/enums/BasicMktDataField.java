@@ -53,9 +53,9 @@ public enum BasicMktDataField implements DataField {
         return tickFieldMap.get(tickType);
     }
 
-    private static List<BasicMktDataField> values = Arrays.asList(BasicMktDataField.values());
-    public static List<BasicMktDataField> getValues() {
-        return values;
+    private static List<BasicMktDataField> fields = Arrays.asList(BasicMktDataField.values());
+    public static List<BasicMktDataField> getFields() {
+        return fields;
     }
 }
 

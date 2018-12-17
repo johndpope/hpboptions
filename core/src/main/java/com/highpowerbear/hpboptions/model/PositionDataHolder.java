@@ -18,7 +18,7 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
         super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike, expirationDate);
         this.ibPnlRequestId = ibPnlRequestId;
 
-        PositionDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        PositionDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 PositionDataField.POSITION_SIZE,

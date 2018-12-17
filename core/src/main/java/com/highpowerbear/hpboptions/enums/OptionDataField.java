@@ -13,7 +13,9 @@ public enum OptionDataField implements DataField {
     THETA,
     IMPLIED_VOL,
     TIME_VALUE,
-    TIME_VALUE_PCT;
+    TIME_VALUE_PCT,
+    OPTION_PRICE,
+    UNDERLYING_PRICE;
 
 
     @Override
@@ -21,8 +23,8 @@ public enum OptionDataField implements DataField {
         return Double.NaN;
     }
 
-    private static List<OptionDataField> values = Arrays.asList(OptionDataField.values());
-    public static List<OptionDataField> getValues() {
-        return values;
+    private static List<OptionDataField> fields = Arrays.asList(OptionDataField.values());
+    public static List<OptionDataField> getFields() {
+        return fields;
     }
 }

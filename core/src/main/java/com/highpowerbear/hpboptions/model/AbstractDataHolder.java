@@ -29,8 +29,8 @@ public abstract class AbstractDataHolder implements DataHolder {
         this.ibMktDataRequestId = ibMktDataRequestId;
         id = type.name().toLowerCase() + "-" + instrument.getId();
 
-        BasicMktDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
-        DerivedMktDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        BasicMktDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        DerivedMktDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         Stream.of(
                 BasicMktDataField.BID,
@@ -89,7 +89,7 @@ public abstract class AbstractDataHolder implements DataHolder {
 
             if (isValidPrice(l) && isValidPrice(c)) {
                 double value = ((l - c) / c) * 100d;
-                update(field, CoreUtil.round2(value));
+                update(field, CoreUtil.round4(value));
             }
 
         } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
@@ -159,8 +159,18 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     @Override
     public boolean isSendMessage(DataField field) {
-        return fieldsToDisplay.contains(field) &&
-                (Math.abs(getCurrent(field).doubleValue() - getOld(field).doubleValue()) > CoreSettings.DATA_FIELD_MIN_CHANGE_TO_SEND);
+        if (!fieldsToDisplay.contains(field)) {
+            return false;
+        }
+        double current = getCurrent(field).doubleValue();
+        if (Double.isNaN(current)) {
+            return false;
+        }
+        double old = getOld(field).doubleValue();
+        if (Double.isNaN(old)) {
+            return true;
+        }
+        return Math.abs(current - old) > CoreSettings.DATA_FIELD_MIN_CHANGE_TO_SEND;
     }
 
     @Override

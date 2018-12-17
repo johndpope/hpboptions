@@ -2,27 +2,40 @@ package com.highpowerbear.hpboptions.enums;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by robertk on 12/9/2018.
  */
 public enum UnderlyingDataField implements DataField {
     IV_CLOSE,
-    DELTA_CUMULATIVE,
-    GAMMA_CUMULATIVE,
-    VEGA_CUMULATIVE,
-    THETA_CUMULATIVE,
-    DELTA_DOLLARS_CUMULATIVE,
-    TIME_VALUE_CUMULATIVE,
-    UNREALIZED_PNL_CUMULATIVE;
+    PORTFOLIO_DELTA,
+    PORTFOLIO_GAMMA,
+    PORTFOLIO_VEGA,
+    PORTFOLIO_THETA,
+    PORTFOLIO_TIME_VALUE,
+    PORTFOLIO_DELTA_DOLLARS,
+    UNREALIZED_PNL;
 
     @Override
     public Number getInitialValue() {
         return Double.NaN;
     }
 
-    private static List<UnderlyingDataField> values = Arrays.asList(UnderlyingDataField.values());
-    public static List<UnderlyingDataField> getValues() {
-        return values;
+    private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
+    private static List<UnderlyingDataField> portfolioFields = Stream.of(
+            PORTFOLIO_DELTA,
+            PORTFOLIO_GAMMA,
+            PORTFOLIO_VEGA,
+            PORTFOLIO_THETA,
+            PORTFOLIO_TIME_VALUE,
+            PORTFOLIO_DELTA_DOLLARS).collect(Collectors.toList());
+
+    public static List<UnderlyingDataField> getFields() {
+        return fields;
     }
-}
+
+    public static List<UnderlyingDataField> getPortfolioFields() {
+        return portfolioFields;
+    }}

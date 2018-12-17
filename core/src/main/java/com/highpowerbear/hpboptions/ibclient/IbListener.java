@@ -96,6 +96,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
+        //super.tickOptionComputation(requestId, tickType, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
         dataService.updateOptionData(requestId, tickType, delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
@@ -131,7 +132,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
-        //super.pnlSingle(reqId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
+        //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
 
         dataService.updatePositionUnrealizedPnl(requestId, unrealizedPnL);
     }

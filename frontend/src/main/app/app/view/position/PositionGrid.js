@@ -65,7 +65,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
-        text: 'Tv',
+        text: 'TV',
         width: 60,
         dataIndex: 'timeValue',
         tdCls: 'timeValue hop-decimal hop-unchanged',

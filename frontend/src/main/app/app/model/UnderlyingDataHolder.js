@@ -11,6 +11,11 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'ivChangePct',
         'ivRank',
         'optionVolume',
-        'optionOpenInterest'
+        'optionOpenInterest',
+        'portfolioDelta',
+        'portfolioGamma',
+        'portfolioTimeValue',
+        'portfolioDeltaDollars',
+        'unrealizedPnl'
     ]
 });

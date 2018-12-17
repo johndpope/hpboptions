@@ -20,8 +20,6 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
-    @JsonIgnore
-    private final Set<DataField> cumulativeOptionDataFields;
 
     private long lastCumulativeOptionDataUpdateTime;
 
@@ -30,7 +28,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         this.ibHistDataRequestId = ibHistDataRequestId;
         this.optionMultiplier = optionMultiplier;
 
-        UnderlyingDataField.getValues().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        UnderlyingDataField.getFields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
                 BasicMktDataField.OPTION_IMPLIED_VOL,
@@ -39,26 +37,17 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
                 UnderlyingDataField.IV_CLOSE,
-                UnderlyingDataField.DELTA_CUMULATIVE,
-                UnderlyingDataField.GAMMA_CUMULATIVE,
-                UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE,
-                UnderlyingDataField.TIME_VALUE_CUMULATIVE,
-                UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE
+                UnderlyingDataField.PORTFOLIO_DELTA,
+                UnderlyingDataField.PORTFOLIO_GAMMA,
+                UnderlyingDataField.PORTFOLIO_TIME_VALUE,
+                UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS,
+                UnderlyingDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
 
         ivHistoryDependentFields = Stream.of(
                 UnderlyingDataField.IV_CLOSE,
                 DerivedMktDataField.IV_CHANGE_PCT,
                 DerivedMktDataField.IV_RANK
-        ).collect(Collectors.toSet());
-
-        cumulativeOptionDataFields = Stream.of(
-                UnderlyingDataField.DELTA_CUMULATIVE,
-                UnderlyingDataField.GAMMA_CUMULATIVE,
-                UnderlyingDataField.VEGA_CUMULATIVE,
-                UnderlyingDataField.THETA_CUMULATIVE,
-                UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE,
-                UnderlyingDataField.TIME_VALUE_CUMULATIVE
         ).collect(Collectors.toSet());
     }
 
@@ -102,11 +91,8 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivClose = ivHistoryMap.lastEntry().getValue();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivClose)) {
-            ivCurrent = CoreUtil.round(ivCurrent, 8);
-            ivClose = CoreUtil.round(ivClose, 8);
-
             double value = ((ivCurrent - ivClose) / ivClose) * 100d;
-            update(DerivedMktDataField.IV_CHANGE_PCT, CoreUtil.round2(value));
+            update(DerivedMktDataField.IV_CHANGE_PCT, CoreUtil.round4(value));
         }
     }
 
@@ -136,20 +122,20 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivYearHigh = ivYearHighOptional.getAsDouble();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
-            double ivRank = CoreUtil.round2(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow));
+            double ivRank = CoreUtil.round4(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow));
             update(DerivedMktDataField.IV_RANK, ivRank);
         }
     }
 
-    public void updateCumulativeOptionData(double delta, double gamma, double vega, double theta, double deltaDollars, double timeValue) {
+    public void updatePortfolioOptionData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars) {
         lastCumulativeOptionDataUpdateTime = System.currentTimeMillis();
 
-        update(UnderlyingDataField.DELTA_CUMULATIVE, delta);
-        update(UnderlyingDataField.GAMMA_CUMULATIVE, gamma);
-        update(UnderlyingDataField.VEGA_CUMULATIVE, vega);
-        update(UnderlyingDataField.THETA_CUMULATIVE, theta);
-        update(UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE, deltaDollars);
-        update(UnderlyingDataField.TIME_VALUE_CUMULATIVE, timeValue);
+        update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
+        update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
+        update(UnderlyingDataField.PORTFOLIO_VEGA, vega);
+        update(UnderlyingDataField.PORTFOLIO_THETA, theta);
+        update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
+        update(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS, deltaDollars);
     }
 
     public boolean isCumulativeOptionDataUpdateDue() {
@@ -157,15 +143,11 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     }
 
     public void updateCumulativePnl(double unrealizedPnl) {
-        update(UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE, unrealizedPnl);
+        update(UnderlyingDataField.UNREALIZED_PNL, unrealizedPnl);
     }
 
     public Set<DataField> getIvHistoryDependentFields() {
         return ivHistoryDependentFields;
-    }
-
-    public Set<DataField> getCumulativeOptionDataFields() {
-        return cumulativeOptionDataFields;
     }
 
     public int getIbHistDataRequestId() {
@@ -200,23 +182,31 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return getCurrent(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
-    public double getDeltaCumulative() {
-        return getCurrent(UnderlyingDataField.DELTA_CUMULATIVE).doubleValue();
+    public double getPortfolioDelta() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA).doubleValue();
     }
 
-    public double getGammaCumulative() {
-        return getCurrent(UnderlyingDataField.GAMMA_CUMULATIVE).doubleValue();
+    public double getPortfolioGamma() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_GAMMA).doubleValue();
     }
 
-    public double getDeltaDollarsCumulative() {
-        return getCurrent(UnderlyingDataField.DELTA_DOLLARS_CUMULATIVE).doubleValue();
+    public double getPortfolioVega() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_VEGA).doubleValue();
     }
 
-    public double getTimeValueCumulative() {
-        return getCurrent(UnderlyingDataField.TIME_VALUE_CUMULATIVE).doubleValue();
+    public double getPortfolioTheta() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_THETA).doubleValue();
     }
 
-    public double getUnrealizedPnlCumulative() {
-        return getCurrent(UnderlyingDataField.UNREALIZED_PNL_CUMULATIVE).doubleValue();
+    public double getPortfolioTimeValue() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_TIME_VALUE).doubleValue();
+    }
+
+    public double getPortfolioDeltaDollars() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS).doubleValue();
+    }
+
+    public double getUnrealizedPnl() {
+        return getCurrent(UnderlyingDataField.UNREALIZED_PNL).doubleValue();
     }
 }

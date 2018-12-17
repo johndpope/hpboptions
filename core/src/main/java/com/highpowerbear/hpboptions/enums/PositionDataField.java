@@ -20,8 +20,8 @@ public enum PositionDataField implements DataField {
         return Double.NaN;
     }
 
-    private static List<PositionDataField> values = Arrays.asList(PositionDataField.values());
-    public static List<PositionDataField> getValues() {
-        return values;
+    private static List<PositionDataField> fields = Arrays.asList(PositionDataField.values());
+    public static List<PositionDataField> getFields() {
+        return fields;
     }
 }
