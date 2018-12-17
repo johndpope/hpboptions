@@ -219,7 +219,7 @@ public class DataService {
     }
 
     public void updateOptionData(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
-        if (tickType != TickType.BID_OPTION && tickType != TickType.ASK_OPTION) {
+        if (tickType != TickType.BID_OPTION && tickType != TickType.ASK_OPTION && tickType != TickType.MODEL_OPTION) {
             return;
         }
         DataHolder dataHolder = mktDataRequestMap.get(requestId);

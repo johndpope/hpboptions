@@ -9,7 +9,6 @@ import com.ib.client.Types;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,10 +38,12 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
         computationMap.put(TickType.BID_OPTION, new ConcurrentHashMap<>());
         computationMap.put(TickType.ASK_OPTION, new ConcurrentHashMap<>());
+        computationMap.put(TickType.MODEL_OPTION, new ConcurrentHashMap<>());
 
         for (Computation c : Computation.values()) {
             computationMap.get(TickType.BID_OPTION).put(c, Double.NaN);
             computationMap.get(TickType.ASK_OPTION).put(c, Double.NaN);
+            computationMap.get(TickType.MODEL_OPTION).put(c, Double.NaN);
         }
 
         OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -69,7 +70,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         m.put(Computation.OP, optionPrice);
         m.put(Computation.UP, underlyingPrice);
 
-        if (tickType != TickType.ASK_OPTION) { // store on bid or ask, but recalculate only on ask
+        if (tickType != TickType.MODEL_OPTION) { // store on bid, ask or model, but recalculate only on model
             return;
         }
 
@@ -122,8 +123,9 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     private double interpolate(Computation c) {
         double cb = computationMap.get(TickType.BID_OPTION).get(c);
         double ca = computationMap.get(TickType.ASK_OPTION).get(c);
+        double cm = computationMap.get(TickType.MODEL_OPTION).get(c);
 
-        return valid(cb) && valid(ca) ? (cb + ca) / 2d : Double.NaN;
+        return valid(cb) && valid(ca) ? (cb + ca) / 2d : cm;
     }
 
     private boolean valid(double value) {
