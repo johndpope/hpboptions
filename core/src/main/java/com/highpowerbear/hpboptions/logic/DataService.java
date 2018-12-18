@@ -4,8 +4,8 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.entity.Underlying;
-import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.ibclient.IbController;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.*;
@@ -76,16 +76,19 @@ public class DataService {
 
         if (isConnected()) {
             cancelAllMktData();
+            cancelAllPnlSingle();
 
             underlyingMap.values().forEach(this::requestMktData);
             underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
             positionMap.values().forEach(this::requestMktData);
+            positionMap.values().forEach(this::requestPnlSingle);
             ibController.requestPositions();
         }
     }
 
     public void disconnect() {
         cancelAllMktData();
+        cancelAllPnlSingle();
         ibController.cancelPositions();
         CoreUtil.waitMilliseconds(1000);
 
@@ -132,6 +135,11 @@ public class DataService {
         mktDataRequestMap.clear();
     }
 
+    private void cancelAllPnlSingle() {
+        pnlRequestMap.keySet().forEach(ibController::cancelPnlSingle);
+        pnlRequestMap.clear();
+    }
+
     private void requestImpliedVolatilityHistory(UnderlyingDataHolder underlyingDataHolder) {
         histDataRequestMap.putIfAbsent(underlyingDataHolder.getIbHistDataRequestId(), underlyingDataHolder);
 
@@ -171,37 +179,44 @@ public class DataService {
 
     private void recalculatePortfolioOptionData(int underlyingConid) {
         UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
-        if (!underlyingDataHolder.isCumulativeOptionDataUpdateDue()) { // throttling
-            return;
-        }
         Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
-        if (positionDataHolders.stream().anyMatch(p -> !p.portfolioSourceFieldsReady())) {
-            return;
+
+        if (positionDataHolders.isEmpty()) {
+            underlyingDataHolder.resetPortfolioOptionData();
+            UnderlyingDataField.portfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
+
+        } else if (underlyingDataHolder.isCumulativeOptionDataUpdateDue() &&
+                positionDataHolders.stream().allMatch(AbstractOptionDataHolder::portfolioSourceFieldsReady)) {
+
+            double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
+
+            for (PositionDataHolder p : positionDataHolders) {
+                int multiplier = p.getInstrument().getMultiplier();
+
+                delta += p.getDelta() * p.getPositionSize() * multiplier;
+                gamma += p.getGamma() * p.getPositionSize() * multiplier;
+                vega += p.getVega() * p.getPositionSize() * multiplier;
+                theta += p.getTheta() * p.getPositionSize() * multiplier;
+                timeValue += p.getTimeValue() * Math.abs(p.getPositionSize()) * multiplier;
+            }
+            double lastPrice = underlyingDataHolder.getLast();
+            double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * underlyingDataHolder.getLast() : Double.NaN;
+
+            underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
+            UnderlyingDataField.portfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
         }
-        double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
-
-        for (PositionDataHolder p : positionDataHolders) {
-            int multiplier = p.getInstrument().getMultiplier();
-
-            delta += p.getDelta() * p.getPositionSize() * multiplier;
-            gamma += p.getGamma() * p.getPositionSize() * multiplier;
-            vega += p.getVega() * p.getPositionSize() * multiplier;
-            theta += p.getTheta() * p.getPositionSize() * multiplier;
-            timeValue += p.getTimeValue() * Math.abs(p.getPositionSize()) * multiplier;
-        }
-        double lastPrice = underlyingDataHolder.getLast();
-        double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * underlyingDataHolder.getLast() : Double.NaN;
-
-        underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
-        UnderlyingDataField.portfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
     }
 
     private void recalculateCumulativePnl(int underlyingConid) {
         UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
+        Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
 
-        double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
-
-        underlyingDataHolder.updateCumulativePnl(unrealizedPnl);
+        if (positionDataHolders.isEmpty()) {
+            underlyingDataHolder.resetCumulativePnl();
+        } else {
+            double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
+            underlyingDataHolder.updateCumulativePnl(unrealizedPnl);
+        }
         sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL);
     }
 
@@ -222,7 +237,7 @@ public class DataService {
     }
 
     public void updateOptionData(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
-        if (tickType != TickType.BID_OPTION && tickType != TickType.ASK_OPTION && tickType != TickType.MODEL_OPTION) {
+        if (tickType == TickType.LAST_OPTION) {
             return;
         }
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
@@ -231,10 +246,14 @@ public class DataService {
         }
         OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
         optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-        OptionDataField.fields().forEach(field -> sendWsMessage(dataHolder, field));
 
-        if (dataHolder.getType() == DataHolderType.POSITION) {
-            recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
+        if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
+            optionDataHolder.recalculateOptionData();
+            OptionDataField.fields().forEach(field -> sendWsMessage(dataHolder, field));
+
+            if (dataHolder.getType() == DataHolderType.POSITION) {
+                recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
+            }
         }
     }
 
@@ -293,6 +312,9 @@ public class DataService {
                 positionMap.remove(conid);
                 underlyingPositionMap.get(underlyingConid).remove(conid);
 
+                recalculatePortfolioOptionData(underlyingConid);
+                recalculateCumulativePnl(underlyingConid);
+
                 sendWsReloadRequestMessage(DataHolderType.POSITION);
             }
         } finally {
@@ -326,10 +348,11 @@ public class DataService {
 
     public void updatePositionUnrealizedPnl(int requestId, double unrealizedPnL) {
         PositionDataHolder positionDataHolder = pnlRequestMap.get(requestId);
-
+        if (positionDataHolder == null) {
+            return;
+        }
         positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
         sendWsMessage(positionDataHolder, PositionDataField.UNREALIZED_PNL);
-
         recalculateCumulativePnl(positionDataHolder.getInstrument().getUnderlyingConid());
     }
 

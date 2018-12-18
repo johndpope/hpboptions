@@ -165,18 +165,7 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     @Override
     public boolean isSendMessage(DataField field) {
-        if (!fieldsToDisplay.contains(field)) {
-            return false;
-        }
-        double current = getCurrent(field).doubleValue();
-        if (Double.isNaN(current)) {
-            return false;
-        }
-        double old = getOld(field).doubleValue();
-        if (Double.isNaN(old)) {
-            return true;
-        }
-        return Math.abs(current - old) > CoreSettings.DATA_FIELD_MIN_CHANGE_TO_SEND;
+        return fieldsToDisplay.contains(field);
     }
 
     @Override

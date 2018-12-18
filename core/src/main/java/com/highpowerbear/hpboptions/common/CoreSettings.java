@@ -20,6 +20,5 @@ public class CoreSettings {
     public static final String WS_TOPIC_POSITION = "/topic/position";
     public static final String WS_TOPIC_CHAIN = "/topic/chain";
     public static final String WS_TOPIC_IB_CONNECTION = "/topic/ib_connection";
-    public static final double DATA_FIELD_MIN_CHANGE_TO_SEND = 0.0001d;
     public static final long CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
 }

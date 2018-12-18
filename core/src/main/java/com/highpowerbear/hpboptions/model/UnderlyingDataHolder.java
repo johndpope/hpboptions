@@ -23,7 +23,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
-    private long lastCumulativeOptionDataUpdateTime;
+    private long lastPortfolioOptionDataUpdateTime;
 
     public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
@@ -129,7 +129,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     }
 
     public void updatePortfolioOptionData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars) {
-        lastCumulativeOptionDataUpdateTime = System.currentTimeMillis();
+        lastPortfolioOptionDataUpdateTime = System.currentTimeMillis();
 
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
         update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
@@ -139,12 +139,22 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS, deltaDollars);
     }
 
+    public void resetPortfolioOptionData() {
+        lastPortfolioOptionDataUpdateTime = 0;
+        UnderlyingDataField.portfolioFields().forEach(field -> update(field, field.getInitialValue()));
+    }
+
     public boolean isCumulativeOptionDataUpdateDue() {
-        return (System.currentTimeMillis() - lastCumulativeOptionDataUpdateTime) > CoreSettings.CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
+        return (System.currentTimeMillis() - lastPortfolioOptionDataUpdateTime) > CoreSettings.CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
     }
 
     public void updateCumulativePnl(double unrealizedPnl) {
         update(UnderlyingDataField.UNREALIZED_PNL, unrealizedPnl);
+    }
+
+    public void resetCumulativePnl() {
+        UnderlyingDataField field = UnderlyingDataField.UNREALIZED_PNL;
+        update(field, field.getInitialValue());
     }
 
     public Set<DataField> getIvHistoryDependentFields() {

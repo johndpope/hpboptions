@@ -8,5 +8,6 @@ import com.ib.client.TickType;
 public interface OptionDataHolder extends DataHolder {
     OptionInstrument getInstrument();
     void updateOptionData(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice);
+    void recalculateOptionData();
     boolean portfolioSourceFieldsReady();
 }

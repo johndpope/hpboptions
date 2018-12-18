@@ -66,11 +66,10 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         m.put(Computation.IV, impliedVol);
         m.put(Computation.OP, optionPrice);
         m.put(Computation.UP, underlyingPrice);
+    }
 
-        if (tickType != TickType.MODEL_OPTION) { // store on bid, ask or model, but recalculate only on model
-            return;
-        }
-
+    @Override
+    public void recalculateOptionData() {
         double greekIntpl = interpolate(Computation.D);
         if (valid(greekIntpl)) {
             update(OptionDataField.DELTA, greekIntpl);
@@ -96,7 +95,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         double optionPriceIntpl = interpolate(Computation.OP);
         double underlyingPriceIntpl = interpolate(Computation.UP);
 
-        if (valid(optionPrice) && valid(underlyingPriceIntpl)) {
+        if (valid(optionPriceIntpl) && valid(underlyingPriceIntpl)) {
             double timeValue = optionPriceIntpl - intrinsicValue(underlyingPriceIntpl);
             double timeValuePct = (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d;
 
