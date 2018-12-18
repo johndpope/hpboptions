@@ -33,4 +33,12 @@ public class CoreUtil {
     public static double round4(double number) {
         return round(number, 4);
     }
+
+    public static  boolean isValidPrice(double d) {
+        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0d && d != Double.MAX_VALUE;
+    }
+
+    public static  boolean isValidSize(int i) {
+        return i > 0 && i != Integer.MAX_VALUE;
+    }
 }

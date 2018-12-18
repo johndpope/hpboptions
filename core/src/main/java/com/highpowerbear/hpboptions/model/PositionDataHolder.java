@@ -1,9 +1,10 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.enums.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.PositionDataField;
 import com.ib.client.Types;
 
-import java.time.LocalDate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -14,8 +15,8 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
 
     private final int ibPnlRequestId;
 
-    public PositionDataHolder(Instrument instrument, int ibMktDataRequestId, int ibPnlRequestId, Types.Right right, double strike, LocalDate expirationDate, int positionSize) {
-        super(DataHolderType.POSITION, instrument, ibMktDataRequestId, right, strike, expirationDate);
+    public PositionDataHolder(OptionInstrument instrument, int ibMktDataRequestId, int ibPnlRequestId) {
+        super(DataHolderType.POSITION, instrument, ibMktDataRequestId);
         this.ibPnlRequestId = ibPnlRequestId;
 
         PositionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -24,23 +25,33 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
                 PositionDataField.POSITION_SIZE,
                 PositionDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
-
-        updatePositionSize(positionSize);
-    }
-    public void updatePositionSize(int positionSize) {
-        update(PositionDataField.POSITION_SIZE, positionSize);
     }
 
-    public void updateUnrealizedPnl(double unrealizedPl) {
-        update(PositionDataField.UNREALIZED_PNL, unrealizedPl);
+    @JsonIgnore
+    public String getUnderlyingSymbol() { //sorting
+        return getInstrument().getUnderlyingSymbol();
+    }
+
+    @JsonIgnore
+    public Types.Right getRight() { //sorting
+        return getInstrument().getRight();
+    }
+
+    @JsonIgnore
+    public double getStrike() { //sorting
+        return getInstrument().getStrike();
     }
 
     public int getIbPnlRequestId() {
         return ibPnlRequestId;
     }
 
-    public String getUnderlyingSymbol() {
-        return getInstrument().getUnderlyingSymbol();
+    public void updatePositionSize(int positionSize) {
+        update(PositionDataField.POSITION_SIZE, positionSize);
+    }
+
+    public void updateUnrealizedPnl(double unrealizedPl) {
+        update(PositionDataField.UNREALIZED_PNL, unrealizedPl);
     }
 
     public int getPositionSize() {

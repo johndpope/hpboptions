@@ -1,15 +1,10 @@
 package com.highpowerbear.hpboptions.entity;
 
-import com.highpowerbear.hpboptions.model.Instrument;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Types;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -33,14 +28,9 @@ public class Underlying {
     private Exchange exchange;
     @Enumerated(EnumType.STRING)
     private Exchange primaryExchange;
-    private Integer optionMultiplier;
     private LocalTime marketOpen;
     private LocalTime marketClose;
     private Boolean active;
-
-    public Instrument createInstrument() {
-        return new Instrument(conid, secType, null, symbol, currency, exchange, primaryExchange);
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -111,14 +101,6 @@ public class Underlying {
 
     public void setPrimaryExchange(Exchange primaryExchange) {
         this.primaryExchange = primaryExchange;
-    }
-
-    public Integer getOptionMultiplier() {
-        return optionMultiplier;
-    }
-
-    public void setOptionMultiplier(Integer optionMultiplier) {
-        this.optionMultiplier = optionMultiplier;
     }
 
     public LocalTime getMarketOpen() {

@@ -54,13 +54,14 @@ public class DataService {
         List<Underlying> underlyings = coreDao.getActiveUnderlyings();
 
         for (Underlying underlying : underlyings) {
-            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(
-                    underlying.createInstrument(),
-                    ibRequestIdGen.incrementAndGet(),
-                    ibRequestIdGen.incrementAndGet(),
-                    underlying.getOptionMultiplier());
-
             int conid = underlying.getConid();
+
+            Instrument instrument = new Instrument(conid, underlying.getSecType(), underlying.getSymbol(), underlying.getCurrency());
+            instrument.setExchange(underlying.getExchange());
+            instrument.setPrimaryExchange(underlying.getPrimaryExchange());
+
+            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+
             underlyingMap.put(conid, underlyingDataHolder);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
         }
@@ -116,7 +117,7 @@ public class DataService {
         int requestId = dataHolder.getIbMktDataRequestId();
 
         mktDataRequestMap.put(requestId, dataHolder);
-        ibController.requestMktData(requestId, dataHolder.getInstrument().toIbContract(), dataHolder.getGenericTicks());
+        ibController.requestMktData(requestId, dataHolder.toIbContract(), dataHolder.getGenericTicks());
     }
 
     private void cancelMktData(DataHolder dataHolder) {
@@ -136,7 +137,7 @@ public class DataService {
 
         ibController.requestHistData(
                 underlyingDataHolder.getIbHistDataRequestId(),
-                underlyingDataHolder.getInstrument().toIbContract(),
+                underlyingDataHolder.toIbContract(),
                 LocalDate.now().atStartOfDay().format(CoreSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
@@ -177,17 +178,19 @@ public class DataService {
         if (positionDataHolders.stream().anyMatch(p -> !p.portfolioSourceFieldsReady())) {
             return;
         }
-        int multiplier = underlyingDataHolder.getOptionMultiplier();
         double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
 
         for (PositionDataHolder p : positionDataHolders) {
+            int multiplier = p.getInstrument().getMultiplier();
+
             delta += p.getDelta() * p.getPositionSize() * multiplier;
             gamma += p.getGamma() * p.getPositionSize() * multiplier;
             vega += p.getVega() * p.getPositionSize() * multiplier;
             theta += p.getTheta() * p.getPositionSize() * multiplier;
             timeValue += p.getTimeValue() * Math.abs(p.getPositionSize()) * multiplier;
         }
-        double deltaDollars = delta * underlyingDataHolder.getLast();
+        double lastPrice = underlyingDataHolder.getLast();
+        double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * underlyingDataHolder.getLast() : Double.NaN;
 
         underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
         UnderlyingDataField.portfolioFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
@@ -226,11 +229,12 @@ public class DataService {
         if (dataHolder == null) {
             return;
         }
-        ((OptionDataHolder) dataHolder).updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
+        optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
         OptionDataField.fields().forEach(field -> sendWsMessage(dataHolder, field));
 
         if (dataHolder.getType() == DataHolderType.POSITION) {
-            recalculatePortfolioOptionData(dataHolder.getInstrument().getUnderlyingConid());
+            recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
         }
     }
 
@@ -261,13 +265,15 @@ public class DataService {
                     String underlyingSymbol = contract.symbol();
                     String symbol = contract.localSymbol();
                     Currency currency = Currency.valueOf(contract.currency());
-                    Instrument instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency, null, null);
+                    int multiplier = Integer.valueOf(contract.multiplier());
 
                     Types.Right right = contract.right();
                     double strike = contract.strike();
                     LocalDate expirationDate = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
 
-                    positionDataHolder = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), right, strike, expirationDate, positionSize);
+                    OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expirationDate, multiplier, underlyingSymbol);
+                    positionDataHolder = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+                    positionDataHolder.updatePositionSize(positionSize);
                     positionMap.put(conid, positionDataHolder);
 
                     ibController.requestContractDetails(ibRequestIdGen.incrementAndGet(), contract);
@@ -299,16 +305,15 @@ public class DataService {
 
         int conid = contract.conid();
         PositionDataHolder positionDataHolder = positionMap.get(conid);
-        Instrument instrument = positionDataHolder.getInstrument();
 
         Exchange exchange = Exchange.valueOf(contract.exchange());
-        Exchange primaryExchange = contract.primaryExch() != null ? Exchange.valueOf(contract.primaryExch()) : null;
-
+        double minTick = contractDetails.minTick();
         int underlyingConid = contractDetails.underConid();
         Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
 
+        OptionInstrument instrument = positionDataHolder.getInstrument();
         instrument.setExchange(exchange);
-        instrument.setPrimaryExchange(primaryExchange);
+        instrument.setMinTick(minTick);
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 

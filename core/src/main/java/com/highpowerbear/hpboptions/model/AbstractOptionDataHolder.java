@@ -20,21 +20,13 @@ import java.util.stream.Stream;
  */
 public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
 
-    private final Types.Right right;
-    private final double strike;
-    private final LocalDate expirationDate;
-
     private final Map<TickType, Map<Computation, Double>> computationMap = new HashMap<>();
-
     private enum Computation {
         D, G, V, T, IV, OP, UP
     }
 
-    public AbstractOptionDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, Types.Right right, double strike, LocalDate expirationDate) {
+    public AbstractOptionDataHolder(DataHolderType type, OptionInstrument instrument, int ibMktDataRequestId) {
         super(type, instrument, ibMktDataRequestId);
-        this.right = right;
-        this.strike = strike;
-        this.expirationDate = expirationDate;
 
         computationMap.put(TickType.BID_OPTION, new ConcurrentHashMap<>());
         computationMap.put(TickType.ASK_OPTION, new ConcurrentHashMap<>());
@@ -56,6 +48,11 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
                 OptionDataField.TIME_VALUE,
                 OptionDataField.TIME_VALUE_PCT
         ).collect(Collectors.toSet()));
+    }
+
+    @Override
+    public OptionInstrument getInstrument() {
+        return (OptionInstrument) instrument;
     }
 
     @Override
@@ -101,7 +98,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
         if (valid(optionPrice) && valid(underlyingPriceIntpl)) {
             double timeValue = optionPriceIntpl - intrinsicValue(underlyingPriceIntpl);
-            double timeValuePct = (timeValue / strike) * (365 / (double) getDaysToExpiration()) * 100d;
+            double timeValuePct = (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d;
 
             update(OptionDataField.OPTION_PRICE, optionPriceIntpl);
             update(OptionDataField.UNDERLYING_PRICE, underlyingPriceIntpl);
@@ -111,6 +108,9 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     private double intrinsicValue(double underlyingPrice) {
+        Types.Right right = getInstrument().getRight();
+        double strike = getInstrument().getStrike();
+
         if (right == Types.Right.Call && underlyingPrice > strike) {
             return underlyingPrice - strike;
         } else if (right == Types.Right.Put && underlyingPrice < strike) {
@@ -125,7 +125,9 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         double ca = computationMap.get(TickType.ASK_OPTION).get(c);
         double cm = computationMap.get(TickType.MODEL_OPTION).get(c);
 
-        return valid(cb) && valid(ca) ? (cb + ca) / 2d : cm;
+        return valid(cb) && valid(ca) ?
+                (cb + ca) / 2d :
+                (valid(cm) ? cm : Double.NaN);
     }
 
     private boolean valid(double value) {
@@ -137,20 +139,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         return OptionDataField.portfolioSourceFields().stream().allMatch(field -> valid(getCurrent(field).doubleValue()));
     }
 
-    public Types.Right getRight() {
-        return right;
-    }
-
-    public double getStrike() {
-        return strike;
-    }
-
-    public LocalDate getExpirationDate() {
-        return expirationDate;
-    }
-
     public long getDaysToExpiration() {
-        return ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
+        return ChronoUnit.DAYS.between(LocalDate.now(), getInstrument().getExpirationDate());
     }
 
     public int getOptionOpenInterest() {

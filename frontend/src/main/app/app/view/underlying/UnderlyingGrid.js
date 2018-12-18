@@ -130,13 +130,6 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
-        text: 'TV',
-        width: 60,
-        dataIndex: 'portfolioTimeValue',
-        tdCls: 'portfolioTimeValue hop-whole',
-        align: 'right',
-        renderer: 'wholeRenderer'
-    }, {
         text: 'Dlt',
         width: 60,
         dataIndex: 'portfolioDelta',
@@ -155,6 +148,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         width: 60,
         dataIndex: 'portfolioGamma',
         tdCls: 'portfolioGamma hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'TV',
+        width: 60,
+        dataIndex: 'portfolioTimeValue',
+        tdCls: 'portfolioTimeValue hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {

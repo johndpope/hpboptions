@@ -6,7 +6,10 @@ import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,17 +19,15 @@ import java.util.stream.Stream;
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
     private final int ibHistDataRequestId;
-    private final int optionMultiplier;
     private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
     private long lastCumulativeOptionDataUpdateTime;
 
-    public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId, int optionMultiplier) {
+    public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
         this.ibHistDataRequestId = ibHistDataRequestId;
-        this.optionMultiplier = optionMultiplier;
 
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
@@ -152,10 +153,6 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public int getIbHistDataRequestId() {
         return ibHistDataRequestId;
-    }
-
-    public int getOptionMultiplier() {
-        return optionMultiplier;
     }
 
     public double getOptionImpliedVol() {

@@ -2,7 +2,11 @@ package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.enums.*;
+import com.highpowerbear.hpboptions.enums.BasicMktDataField;
+import com.highpowerbear.hpboptions.enums.DataField;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
+import com.ib.client.Contract;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,8 +20,9 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     protected final String id;
     private final DataHolderType type;
-    private final Instrument instrument;
+    protected final Instrument instrument;
     private final int ibMktDataRequestId;
+
     private final Set<DataField> fieldsToDisplay = new HashSet<>();
     private String genericTicks;
 
@@ -27,7 +32,8 @@ public abstract class AbstractDataHolder implements DataHolder {
         this.type = type;
         this.instrument = instrument;
         this.ibMktDataRequestId = ibMktDataRequestId;
-        id = type.name().toLowerCase() + "-" + instrument.getId();
+
+        id = type.name().toLowerCase() + "-" + instrument.getSymbol().toLowerCase().replaceAll("\\s+","") + "-" + instrument.getConid();
 
         BasicMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
         DerivedMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -130,11 +136,11 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     protected boolean isValidPrice(double d) {
-        return !Double.isNaN(d) && !Double.isInfinite(d) && d > 0d && d != Double.MAX_VALUE;
+        return CoreUtil.isValidPrice(d);
     }
 
     protected boolean isValidSize(int i) {
-        return i > 0 && i != Integer.MAX_VALUE;
+        return CoreUtil.isValidSize(i);
     }
 
     @Override
@@ -176,6 +182,14 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public String getGenericTicks() {
         return genericTicks;
+    }
+
+    @Override
+    public Contract toIbContract() {
+        Contract contract = new Contract();
+        contract.conid(instrument.getConid());
+        contract.exchange(instrument.getExchange().name());
+        return contract;
     }
 
     public double getBid() {
