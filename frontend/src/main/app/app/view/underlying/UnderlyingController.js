@@ -15,7 +15,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             underlyingDataHolders = me.getStore('underlyingDataHolders'),
             wsStatusField = me.lookupReference('wsStatus');
 
-        me.updateIbConnectionInfo();
+        me.refreshIbConnectionInfo();
 
         if (underlyingDataHolders) {
             underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying-data-holders');
@@ -30,17 +30,22 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             wsStatusField.update("WS connected");
             wsStatusField.addCls('hop-connected');
 
+            stompClient.subscribe('/topic/ib_connection', function(message) {
+                underlyingDataHolders.reload();
+                me.updateIbConnectionInfo(message.body);
+            });
+
+            stompClient.subscribe('/topic/account', function(message) {
+                me.updateAccountSummary(message.body);
+            });
+
             stompClient.subscribe('/topic/underlying', function(message) {
                 me.updateData(message.body);
             });
 
-            stompClient.subscribe('/topic/ib_connection', function(message) {
-                underlyingDataHolders.reload();
-                me.updateIbConnectionInfo();
-            });
-
         }, function() {
             console.log("WS underlying disconnected");
+
             wsStatusField.update("WS disconnected");
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');
@@ -90,22 +95,46 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    updateIbConnectionInfo: function() {
+    updateIbConnectionInfo: function(message) {
         var me = this,
             infoField = me.lookupReference('ibConnectionInfo');
+
+        var arr = message.split(","),
+            info = arr[0],
+            connected = arr[1];
+
+        infoField.update('IB ' + info);
+        infoField.removeCls('hop-connected');
+        infoField.removeCls('hop-disconnected');
+        infoField.addCls(connected === 'true' ? 'hop-connected' : 'hop-disconnected');
+    },
+
+    refreshIbConnectionInfo: function() {
+        var me = this;
 
         Ext.Ajax.request({
             method: 'GET',
             url: HopGui.common.Definitions.urlPrefix + '/connection-info',
             success: function(response) {
-                var arr = response.responseText.split(","),
-                    info = arr[0],
-                    connected = arr[1];
+                me.updateIbConnectionInfo(response.responseText);
+            }
+        });
+    },
 
-                infoField.update('IB ' + info);
-                infoField.removeCls('hop-connected');
-                infoField.removeCls('hop-disconnected');
-                infoField.addCls(connected === 'true' ? 'hop-connected' : 'hop-disconnected');
+    updateAccountSummary: function(message) {
+        var me = this;
+
+        me.lookupReference('accountSummary').update(message);
+    },
+
+    refreshAccountSummary: function() {
+        var me = this;
+
+        Ext.Ajax.request({
+            method: 'GET',
+            url: HopGui.common.Definitions.urlPrefix + '/account-summary',
+            success: function(response) {
+                me.updateAccountSummary(response.responseText);
             }
         });
     },

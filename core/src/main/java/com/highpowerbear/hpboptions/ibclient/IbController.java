@@ -96,6 +96,22 @@ public class IbController {
         return markConnected;
     }
 
+    public void requestAccountSummary(int requestId, String tags) {
+        log.info("requesting account summary, requestId=" + requestId);
+
+        if (checkConnected()) {
+            eClientSocket.reqAccountSummary(requestId, "All", tags);
+        }
+    }
+
+    public void cancelAccountSummary(int requestId) {
+        log.info("canceling account summary for requestId=" + requestId);
+
+        if (checkConnected()) {
+            eClientSocket.cancelAccountSummary(requestId);
+        }
+    }
+
     public void requestMktData(int requestId, Contract contract, String genericTicks) {
         log.info("requesting market data for requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
 

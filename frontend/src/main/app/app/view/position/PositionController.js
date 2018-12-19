@@ -38,6 +38,7 @@ Ext.define('HopGui.view.position.PositionController', {
 
         }, function() {
             console.log("WS position disconnected");
+
             wsStatusField.update("WS disconnected");
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');

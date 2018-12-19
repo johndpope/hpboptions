@@ -15,10 +15,6 @@ public class CoreSettings {
     public static final DateTimeFormatter IB_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
-    public static final String WS_TOPIC_ORDER = "/topic/order";
-    public static final String WS_TOPIC_UNDERLYING = "/topic/underlying";
-    public static final String WS_TOPIC_POSITION = "/topic/position";
-    public static final String WS_TOPIC_CHAIN = "/topic/chain";
-    public static final String WS_TOPIC_IB_CONNECTION = "/topic/ib_connection";
+    public static final String WS_TOPIC_PREFIX = "/topic/";
     public static final long CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
 }

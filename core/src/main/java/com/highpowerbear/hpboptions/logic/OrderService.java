@@ -3,14 +3,13 @@ package com.highpowerbear.hpboptions.logic;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
+import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.ib.client.Contract;
 import com.ib.client.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_ORDER;
 
 /**
  * Created by robertk on 11/8/2018.
@@ -30,11 +29,11 @@ public class OrderService {
         this.messageSender = messageSender;
     }
 
-    public void handleOpenOrder(int orderId, Contract contract, Order order) {
+    public void openOrderReceived(int orderId, Contract contract, Order order) {
         // TODO
     }
 
-    public void handleOrderStatus(String status, double remaining, double avgFillPrice, int permId) {
+    public void orderStatusReceived(String status, double remaining, double avgFillPrice, int permId) {
         if (!(  OrderStatus.SUBMITTED.getIbStatus().equals(status) ||
                 OrderStatus.PRESUBMITTED.getIbStatus().equals(status) ||
                 OrderStatus.CANCELLED.getIbStatus().equals(status) ||
@@ -60,6 +59,6 @@ public class OrderService {
             coreDao.updateIbOrder(ibOrder);
             heartbeatMonitor.removeHeartbeat(ibOrder);
         }
-        messageSender.sendWsMessage(WS_TOPIC_ORDER, "order status changed");
+        messageSender.sendWsMessage(WsTopic.ORDER, "order status changed");
     }
 }

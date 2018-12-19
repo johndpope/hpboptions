@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.ibclient;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
@@ -8,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.SocketException;
-
-import static com.highpowerbear.hpboptions.common.CoreSettings.WS_TOPIC_IB_CONNECTION;
 
 /**
  *
@@ -41,20 +40,20 @@ public class IbListener extends GenericIbListener {
     @Override
     public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
         super.openOrder(orderId, contract, order, orderState);
-        orderService.handleOpenOrder(orderId, contract, order);
+        orderService.openOrderReceived(orderId, contract, order);
     }
 
     @Override
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
         super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
-        orderService.handleOrderStatus(status, remaining, avgFillPrice, permId);
+        orderService.orderStatusReceived(status, remaining, avgFillPrice, permId);
     }
 
     @Override
     public void error(Exception e) {
         super.error(e);
         if (e instanceof SocketException && e.getMessage().equals("Socket closed")) {
-            messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
         }
     }
 
@@ -63,41 +62,48 @@ public class IbListener extends GenericIbListener {
         super.error(id, errorCode, errorMsg);
         if (errorCode == 507) {
             ibController.connectionBroken();
-            messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
         }
     }
 
     @Override
     public void connectionClosed() {
         super.connectionClosed();
-        messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "disconnected");
+        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
     }
 
     @Override
     public void connectAck() {
         super.connectAck();
-        messageSender.sendWsMessage(WS_TOPIC_IB_CONNECTION, "connected");
+        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
+    }
+
+    @Override
+    public void accountSummary(int reqId, String account, String tag, String value, String currency) {
+        super.accountSummary(reqId, account, tag, value, currency);
+
+        dataService.accountSummaryReceived(account, tag, value, currency);
     }
 
     @Override
     public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
-        dataService.updateMktData(requestId, tickType, price);
+        dataService.mktDataReceived(requestId, tickType, price);
     }
 
     @Override
     public void tickSize(int requestId, int tickType, int size) {
-        dataService.updateMktData(requestId, tickType, size);
+        dataService.mktDataReceived(requestId, tickType, size);
     }
 
     @Override
     public void tickGeneric(int requestId, int tickType, double value) {
-        dataService.updateMktData(requestId, tickType, value);
+        dataService.mktDataReceived(requestId, tickType, value);
     }
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         //super.tickOptionComputation(requestId, tickType, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
-        dataService.updateOptionData(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+        dataService.optionDataReceived(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override
@@ -109,7 +115,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        dataService.historicalDataEnd(requestId);
+        dataService.historicalDataEndReceived(requestId);
     }
 
     @Override
@@ -118,7 +124,7 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
             return;
         }
-        dataService.optionPositionChanged(contract, (int) pos);
+        dataService.optionPositionReceived(contract, (int) pos);
     }
 
     @Override
@@ -134,6 +140,6 @@ public class IbListener extends GenericIbListener {
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
 
-        dataService.updatePositionUnrealizedPnl(requestId, unrealizedPnL);
+        dataService.positionUnrealizedPnlReceived(requestId, unrealizedPnL);
     }
 }

@@ -32,6 +32,7 @@ public class DataService {
 
     private IbController ibController; // prevent circular dependency
 
+    private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new LinkedHashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
@@ -47,6 +48,8 @@ public class DataService {
     public DataService(CoreDao coreDao, MessageSender messageSender) {
         this.coreDao = coreDao;
         this.messageSender = messageSender;
+
+        accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
     }
 
     @PostConstruct
@@ -83,6 +86,7 @@ public class DataService {
             positionMap.values().forEach(this::requestMktData);
             positionMap.values().forEach(this::requestPnlSingle);
             ibController.requestPositions();
+            ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
         }
     }
 
@@ -90,8 +94,9 @@ public class DataService {
         cancelAllMktData();
         cancelAllPnlSingle();
         ibController.cancelPositions();
-        CoreUtil.waitMilliseconds(1000);
+        ibController.cancelAccountSummary(accountSummary.getIbRequestId());
 
+        CoreUtil.waitMilliseconds(1000);
         ibController.disconnect();
     }
 
@@ -220,7 +225,12 @@ public class DataService {
         sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL);
     }
 
-    public void updateMktData(int requestId, int tickType, Number value) {
+    public void accountSummaryReceived(String account, String tag, String value, String currency) {
+        accountSummary.update(account, tag, value, currency);
+        messageSender.sendWsMessage(WsTopic.ACCOUNT, accountSummary.getText());
+    }
+
+    public void mktDataReceived(int requestId, int tickType, Number value) {
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
         if (dataHolder == null) {
             return;
@@ -236,7 +246,7 @@ public class DataService {
         DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> sendWsMessage(dataHolder, derivedField));
     }
 
-    public void updateOptionData(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
+    public void optionDataReceived(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
         if (tickType == TickType.LAST_OPTION) {
             return;
         }
@@ -265,14 +275,14 @@ public class DataService {
         underlyingDataHolder.addImpliedVolatility(date, value);
     }
 
-    public void historicalDataEnd(int requestId) {
+    public void historicalDataEndReceived(int requestId) {
         UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
         underlyingDataHolder.impliedVolatilityHistoryCompleted();
 
         underlyingDataHolder.getIvHistoryDependentFields().forEach(field -> sendWsMessage(underlyingDataHolder, field));
     }
 
-    public void optionPositionChanged(Contract contract, int positionSize) {
+    public void optionPositionReceived(Contract contract, int positionSize) {
         positionLock.lock();
         try {
             int conid = contract.conid();
@@ -346,7 +356,7 @@ public class DataService {
         requestPnlSingle(positionDataHolder);
     }
 
-    public void updatePositionUnrealizedPnl(int requestId, double unrealizedPnL) {
+    public void positionUnrealizedPnlReceived(int requestId, double unrealizedPnL) {
         PositionDataHolder positionDataHolder = pnlRequestMap.get(requestId);
         if (positionDataHolder == null) {
             return;
@@ -354,6 +364,10 @@ public class DataService {
         positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
         sendWsMessage(positionDataHolder, PositionDataField.UNREALIZED_PNL);
         recalculateCumulativePnl(positionDataHolder.getInstrument().getUnderlyingConid());
+    }
+
+    public String getAccountSummaryText() {
+        return accountSummary.getText();
     }
 
     public Collection<UnderlyingDataHolder> getUnderlyingDataHolders() {

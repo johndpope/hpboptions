@@ -195,11 +195,37 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
                 }
             }
         }, {
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: '',
+            handler: 'refreshIbConnectionInfo',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('refresh'));
+                }
+            }
+        }, {
             xtype: 'tbtext',
-            html: 'IB connection info',
+            html: 'IB Connection Info',
             width: 180,
             margin: '0 0 0 10',
             reference: 'ibConnectionInfo'
+        }, {
+            xtype: 'button',
+            margin: '0 0 0 20',
+            text: '',
+            handler: 'refreshAccountSummary',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('refresh'));
+                }
+            }
+        }, {
+            xtype: 'tbtext',
+            html: 'Account Summary',
+            width: 500,
+            margin: '0 0 0 10',
+            reference: 'accountSummary'
         }, {
             xtype: 'tbtext',
             flex: 1

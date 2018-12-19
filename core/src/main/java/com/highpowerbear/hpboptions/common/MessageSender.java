@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.common;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.WsTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,20 +48,20 @@ public class MessageSender {
         jmsTemplate.convertAndSend(destination, message);
     }
 
-    public void sendWsMessage(String topic, String message) {
-        simpMessagingTemplate.convertAndSend(topic, message);
+    public void sendWsMessage(WsTopic topic, String message) {
+        simpMessagingTemplate.convertAndSend(CoreSettings.WS_TOPIC_PREFIX + topic.suffix(), message);
     }
 
     public void sendWsMessage(DataHolderType type, String message) {
+        String prefix = CoreSettings.WS_TOPIC_PREFIX;
         String topic;
 
         switch (type) {
-            case UNDERLYING: topic = CoreSettings.WS_TOPIC_UNDERLYING; break;
-            case POSITION: topic = CoreSettings.WS_TOPIC_POSITION; break;
-            case CHAIN: topic = CoreSettings.WS_TOPIC_CHAIN; break;
+            case UNDERLYING: topic = prefix + WsTopic.UNDERLYING.suffix(); break;
+            case POSITION: topic = prefix + WsTopic.POSITION.suffix(); break;
+            case CHAIN: topic = prefix + WsTopic.CHAIN.suffix(); break;
             default: throw new IllegalStateException("no ws topic for " + type);
         }
-
         simpMessagingTemplate.convertAndSend(topic, message);
     }
 }

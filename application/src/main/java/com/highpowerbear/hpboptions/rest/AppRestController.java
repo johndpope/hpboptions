@@ -45,6 +45,11 @@ public class AppRestController {
         return ResponseEntity.ok("connected=" + dataService.isConnected());
     }
 
+    @RequestMapping("account-summary")
+    public ResponseEntity<?> getAccountSummary() {
+        return ResponseEntity.ok(dataService.getAccountSummaryText());
+    }
+
     @RequestMapping("connection-info")
     public ResponseEntity<?> getConnectionInfo() {
         return ResponseEntity.ok(dataService.getConnectionInfo());
