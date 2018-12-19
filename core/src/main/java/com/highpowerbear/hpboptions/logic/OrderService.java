@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.logic;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.entity.IbOrder;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
 import com.highpowerbear.hpboptions.enums.WsTopic;
@@ -11,16 +12,20 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Created by robertk on 11/8/2018.
  */
 @Service
-public class OrderService {
+public class OrderService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final CoreDao coreDao;
     private final HeartbeatMonitor heartbeatMonitor;
     private final MessageSender messageSender;
+
+    private final AtomicInteger ibOrderIdGenerator = new AtomicInteger();
 
     @Autowired
     public OrderService(CoreDao coreDao, HeartbeatMonitor heartbeatMonitor, MessageSender messageSender) {

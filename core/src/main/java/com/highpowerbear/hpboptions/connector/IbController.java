@@ -1,15 +1,19 @@
-package com.highpowerbear.hpboptions.ibclient;
+package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.logic.DataService;
+import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -28,11 +32,15 @@ public class IbController {
 
     private final IbListener ibListener;
     private final DataService dataService;
+    private final OrderService orderService;
+
+    private final List<ConnectionListener> connectionListeners = new ArrayList<>();
 
     @Autowired
-    public IbController(IbListener ibListener, DataService dataService) {
+    public IbController(IbListener ibListener, DataService dataService, OrderService orderService) {
         this.ibListener = ibListener;
         this.dataService = dataService;
+        this.orderService = orderService;
     }
 
     @PostConstruct
@@ -41,20 +49,24 @@ public class IbController {
         ibListener.setIbController(this);
         ibListener.setDataService(dataService);
 
+        connectionListeners.add(dataService);
+        connectionListeners.add(orderService);
+
         eReaderSignal = new EJavaSignal();
         eClientSocket = new EClientSocket(ibListener, eReaderSignal);
     }
 
     public void connect() {
-        markConnected = true;
+        connectionListeners.forEach(ConnectionListener::preConnect);
 
+        markConnected = true;
         if (!isConnected()) {
-            log.info("connecting " + getIbConnectionInfo());
+            log.info("connecting " + getConnectionInfo());
             eClientSocket.eConnect(host, port, clientId);
             CoreUtil.waitMilliseconds(1000);
 
             if (isConnected()) {
-                log.info("successfully connected " + getIbConnectionInfo());
+                log.info("successfully connected " + getConnectionInfo());
 
                 final EReader eReader = new EReader(eClientSocket, eReaderSignal);
 
@@ -70,21 +82,31 @@ public class IbController {
                         }
                     }
                 }).start();
+                connectionListeners.forEach(ConnectionListener::postConnect);
             }
         }
     }
 
     public void disconnect() {
-        markConnected = false;
+        connectionListeners.forEach(ConnectionListener::preDisconnect);
 
+        markConnected = false;
         if (isConnected()) {
-            log.info("disconnecting " + getIbConnectionInfo());
+            log.info("disconnecting " + getConnectionInfo());
             eClientSocket.eDisconnect();
             CoreUtil.waitMilliseconds(1000);
 
             if (!isConnected()) {
-                log.info("successfully disconnected " + getIbConnectionInfo());
+                log.info("successfully disconnected " + getConnectionInfo());
+                connectionListeners.forEach(ConnectionListener::postDisconnect);
             }
+        }
+    }
+
+    @Scheduled(fixedRate = 5000)
+    private void reconnect() {
+        if (!isConnected() && isMarkConnected()) {
+            connect();
         }
     }
 
@@ -178,7 +200,17 @@ public class IbController {
         }
     }
 
-    public String getIbConnectionInfo() {
+    public void requestOpenOrders() {
+        log.info("requesting openOrders, allOpenOrders and autoOpenOrders");
+
+        if (checkConnected()) {
+            eClientSocket.reqOpenOrders();
+            eClientSocket.reqAllOpenOrders();
+            eClientSocket.reqAutoOpenOrders(true);
+        }
+    }
+
+    public String getConnectionInfo() {
         return host + ":" + port + ":" + clientId + "," + isConnected();
     }
 
@@ -188,7 +220,7 @@ public class IbController {
 
     private boolean checkConnected() {
         if (!isConnected()) {
-            log.info("not connected " + getIbConnectionInfo());
+            log.info("not connected " + getConnectionInfo());
             return false;
         }
         return true;

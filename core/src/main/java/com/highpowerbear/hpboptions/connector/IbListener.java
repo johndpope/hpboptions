@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.ibclient;
+package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.enums.WsTopic;
@@ -53,7 +53,7 @@ public class IbListener extends GenericIbListener {
     public void error(Exception e) {
         super.error(e);
         if (e instanceof SocketException && e.getMessage().equals("Socket closed")) {
-            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
+            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
         }
     }
 
@@ -62,20 +62,20 @@ public class IbListener extends GenericIbListener {
         super.error(id, errorCode, errorMsg);
         if (errorCode == 507) {
             ibController.connectionBroken();
-            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
+            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
         }
     }
 
     @Override
     public void connectionClosed() {
         super.connectionClosed();
-        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
+        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
     }
 
     @Override
     public void connectAck() {
         super.connectAck();
-        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, dataService.getConnectionInfo());
+        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
     }
 
     @Override

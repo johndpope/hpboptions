@@ -3,10 +3,11 @@ package com.highpowerbear.hpboptions.logic;
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.*;
-import com.highpowerbear.hpboptions.ibclient.IbController;
+import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  * Created by robertk on 11/5/2018.
  */
 @Service
-public class DataService {
+public class DataService implements ConnectionListener {
 
     private final CoreDao coreDao;
     private final MessageSender messageSender;
@@ -74,45 +75,25 @@ public class DataService {
         this.ibController = ibController;
     }
 
-    public void connect() {
-        ibController.connect();
+    @Override
+    public void postConnect() {
+        cancelAllMktData();
+        cancelAllPnlSingle();
 
-        if (isConnected()) {
-            cancelAllMktData();
-            cancelAllPnlSingle();
-
-            underlyingMap.values().forEach(this::requestMktData);
-            underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
-            positionMap.values().forEach(this::requestMktData);
-            positionMap.values().forEach(this::requestPnlSingle);
-            ibController.requestPositions();
-            ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
-        }
+        underlyingMap.values().forEach(this::requestMktData);
+        underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
+        positionMap.values().forEach(this::requestMktData);
+        positionMap.values().forEach(this::requestPnlSingle);
+        ibController.requestPositions();
+        ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
     }
 
-    public void disconnect() {
+    @Override
+    public void preDisconnect() {
         cancelAllMktData();
         cancelAllPnlSingle();
         ibController.cancelPositions();
         ibController.cancelAccountSummary(accountSummary.getIbRequestId());
-
-        CoreUtil.waitMilliseconds(1000);
-        ibController.disconnect();
-    }
-
-    public boolean isConnected() {
-        return ibController.isConnected();
-    }
-
-    public String getConnectionInfo() {
-        return ibController.getIbConnectionInfo();
-    }
-
-    @Scheduled(fixedRate = 5000)
-    private void reconnect() {
-        if (!ibController.isConnected() && ibController.isMarkConnected()) {
-            connect();
-        }
     }
 
     @Scheduled(cron="0 0 6 * * MON-FRI")

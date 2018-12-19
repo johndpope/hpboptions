@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.ibclient;
+package com.highpowerbear.hpboptions.connector;
 
 import com.ib.client.*;
 import org.slf4j.Logger;

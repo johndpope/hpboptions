@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.rest;
 
 import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.model.PositionDataHolder;
 import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
@@ -20,29 +21,31 @@ import java.util.List;
 @RequestMapping("/")
 public class AppRestController {
 
+    private final IbController ibController;
     private final DataService dataService;
 
     @Autowired
-    public AppRestController(DataService dataService) {
+    public AppRestController(IbController ibController, DataService dataService) {
+        this.ibController = ibController;
         this.dataService = dataService;
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connect")
     public ResponseEntity<?> connect() {
-        if (!dataService.isConnected()) {
-            dataService.connect();
+        if (!ibController.isConnected()) {
+            ibController.connect();
         }
 
-        return ResponseEntity.ok("connected=" + dataService.isConnected());
+        return ResponseEntity.ok("connected=" + ibController.isConnected());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "disconnect")
     public ResponseEntity<?> disconnect() {
-        if (dataService.isConnected()) {
-            dataService.disconnect();
+        if (ibController.isConnected()) {
+            ibController.disconnect();
             CoreUtil.waitMilliseconds(1000);
         }
-        return ResponseEntity.ok("connected=" + dataService.isConnected());
+        return ResponseEntity.ok("connected=" + ibController.isConnected());
     }
 
     @RequestMapping("account-summary")
@@ -52,7 +55,7 @@ public class AppRestController {
 
     @RequestMapping("connection-info")
     public ResponseEntity<?> getConnectionInfo() {
-        return ResponseEntity.ok(dataService.getConnectionInfo());
+        return ResponseEntity.ok(ibController.getConnectionInfo());
     }
 
     @RequestMapping("underlying-data-holders")

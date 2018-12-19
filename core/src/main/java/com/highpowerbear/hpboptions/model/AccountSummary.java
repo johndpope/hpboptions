@@ -70,7 +70,7 @@ public class AccountSummary {
             for (AccountSummaryTag tag : tags) {
                 Entry entry = map.get(tag);
                 if (entry != null) {
-                    sb.append(tag.name()).append(" ").append((int) entry.value).append(" ").append(entry.currency.name()).append(", ");
+                    sb.append(tag.name()).append(" ").append(Math.round(entry.value)).append(" ").append(entry.currency.name()).append(", ");
                 }
             }
         }
