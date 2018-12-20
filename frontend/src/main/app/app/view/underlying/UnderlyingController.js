@@ -16,6 +16,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             wsStatusField = me.lookupReference('wsStatus');
 
         me.refreshIbConnectionInfo();
+        me.refreshAccountSummary();
 
         if (underlyingDataHolders) {
             underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying-data-holders');
@@ -139,7 +140,13 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    setupChain: function (view, cell, cellIndex, record, row, rowIndex, e) {
-        // TODO
+    setChainsUnderlying: function (grid, record, index, eOpts) {
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/chains-underlying/' + record.data.conid,
+            success: function(response) {
+                console.log('chains underlying set to ' + response.responseText);
+            }
+        });
     }
 });

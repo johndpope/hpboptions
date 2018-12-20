@@ -10,7 +10,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     ],
     bind: '{chainDataHolders}',
     listeners: {
-        'cellclick': 'placeOrder'
+        cellclick: 'placeOrder'
     },
     viewConfig: {
         stripeRows: true

@@ -7,9 +7,7 @@ import com.highpowerbear.hpboptions.model.PositionDataHolder;
 import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,5 +66,11 @@ public class AppRestController {
     public ResponseEntity<?> getPositionDataHolders() {
         List<PositionDataHolder> positionDataHolders = dataService.getSortedPositionDataHolders();
         return ResponseEntity.ok(new RestList<>(positionDataHolders, (long) positionDataHolders.size()));
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "chains-underlying/{conid}")
+    public ResponseEntity<?> setChainsUnderlying(@PathVariable("conid") int conid) {
+        String underlyingSymbol = dataService.setChainsUnderlying(conid);
+        return ResponseEntity.ok(underlyingSymbol);
     }
 }

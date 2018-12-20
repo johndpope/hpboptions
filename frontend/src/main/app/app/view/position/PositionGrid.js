@@ -10,7 +10,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
     ],
     bind: '{positionDataHolders}',
     listeners: {
-        'cellclick': 'placeOrder'
+        cellclick: 'placeOrder'
     },
     viewConfig: {
         stripeRows: true

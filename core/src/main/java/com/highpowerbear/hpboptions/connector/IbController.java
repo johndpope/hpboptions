@@ -176,6 +176,14 @@ public class IbController {
         }
     }
 
+    public void requestOptionChainsParams(int requestId, String underlyingSymbol, Types.SecType underlyingSecType, int underlyingConId) {
+        log.info("requesting option chain parameters for requestId=" + requestId + ", symbol=" + underlyingSymbol);
+
+        if (checkConnected()) {
+            eClientSocket.reqSecDefOptParams(requestId, underlyingSymbol, "", underlyingSecType.name(), underlyingConId);
+        }
+    }
+
     public void requestContractDetails(int requestId, Contract contract) {
         log.info("requesting contract details for requestId=" + requestId + ", symbol=" + contract.localSymbol());
 

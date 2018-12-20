@@ -10,7 +10,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
     ],
     bind: '{orders}',
     listeners: {
-        'cellclick': 'submitOrder'
+        cellclick: 'submitOrder'
     },
     viewConfig: {
         stripeRows: true

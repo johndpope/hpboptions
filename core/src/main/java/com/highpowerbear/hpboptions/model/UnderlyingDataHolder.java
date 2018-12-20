@@ -144,15 +144,15 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         UnderlyingDataField.portfolioFields().forEach(field -> update(field, field.getInitialValue()));
     }
 
-    public boolean isCumulativeOptionDataUpdateDue() {
-        return (System.currentTimeMillis() - lastPortfolioOptionDataUpdateTime) > CoreSettings.CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
+    public boolean isPortfolioOptionDataUpdateDue() {
+        return (System.currentTimeMillis() - lastPortfolioOptionDataUpdateTime) > CoreSettings.PORTFOLIO_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
     }
 
-    public void updateCumulativePnl(double unrealizedPnl) {
+    public void updatePortfolioPnl(double unrealizedPnl) {
         update(UnderlyingDataField.UNREALIZED_PNL, unrealizedPnl);
     }
 
-    public void resetCumulativePnl() {
+    public void resetPortfolioPnl() {
         UnderlyingDataField field = UnderlyingDataField.UNREALIZED_PNL;
         update(field, field.getInitialValue());
     }

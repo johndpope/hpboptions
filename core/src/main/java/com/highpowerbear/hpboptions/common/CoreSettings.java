@@ -16,5 +16,5 @@ public class CoreSettings {
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
     public static final String WS_TOPIC_PREFIX = "/topic/";
-    public static final long CUMULATIVE_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
+    public static final long PORTFOLIO_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
 }

@@ -8,6 +8,7 @@ Ext.define('HopGui.model.DataHolderBase', {
     fields: [
         'id',
         'instrument',
+        {name: 'conid', mapping: 'instrument.conid'},
         {name: 'secType', mapping: 'instrument.secType'},
         {name: 'symbol', mapping: 'instrument.symbol'},
         {name: 'underlyingSymbol', mapping: 'instrument.underlyingSymbol'},

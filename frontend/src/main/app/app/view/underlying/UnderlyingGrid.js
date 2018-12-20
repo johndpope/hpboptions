@@ -10,7 +10,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     ],
     bind: '{underlyingDataHolders}',
     listeners: {
-        'cellclick': 'setupChain'
+        select: 'setChainsUnderlying'
     },
     viewConfig: {
         stripeRows: true
@@ -191,7 +191,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             handler: 'disconnect',
             listeners: {
                 beforerender: function(c, eOpts) {
-                    c.setGlyph(HopGui.common.Glyphs.getGlyph('stop'));
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
                 }
             }
         }, {
@@ -206,7 +206,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: 'IB Connection Info',
+            html: '',
             width: 180,
             margin: '0 0 0 10',
             reference: 'ibConnectionInfo'
@@ -222,7 +222,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: 'Account Summary',
+            html: '',
             width: 500,
             margin: '0 0 0 10',
             reference: 'accountSummary'

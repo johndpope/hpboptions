@@ -19,7 +19,7 @@ Ext.define('HopGui.common.Glyphs', {
         destroy: 'xf1f8',
         download: 'xf019',
         play: 'xf04b',
-        stop: 'xf04d',
+        times: 'xf00d',
         list: 'xf03a',
         chain: 'xf0c1'
     },

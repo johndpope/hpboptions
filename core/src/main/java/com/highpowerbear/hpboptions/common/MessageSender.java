@@ -1,7 +1,9 @@
 package com.highpowerbear.hpboptions.common;
 
+import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.WsTopic;
+import com.highpowerbear.hpboptions.model.DataHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,5 +65,15 @@ public class MessageSender {
             default: throw new IllegalStateException("no ws topic for " + type);
         }
         simpMessagingTemplate.convertAndSend(topic, message);
+    }
+
+    public void sendWsMessage(DataHolder dataHolder, DataField field) {
+        if (dataHolder.isSendMessage(field)) {
+            sendWsMessage(dataHolder.getType(), dataHolder.createMessage(field));
+        }
+    }
+
+    public void sendWsReloadRequestMessage(DataHolderType type) {
+        sendWsMessage(type, "reload request");
     }
 }

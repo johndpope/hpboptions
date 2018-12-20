@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.SocketException;
+import java.util.Set;
 
 /**
  *
@@ -124,7 +125,14 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
             return;
         }
-        dataService.optionPositionReceived(contract, (int) pos);
+        dataService.positionReceived(contract, (int) pos);
+    }
+
+    @Override
+    public void securityDefinitionOptionalParameter(int reqId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
+        super.securityDefinitionOptionalParameter(reqId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
+
+        // TODO
     }
 
     @Override
@@ -133,13 +141,13 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
             return;
         }
-        dataService.optionPositionContractDetailsReceived(contractDetails);
+        dataService.contractDetailsReceived(requestId, contractDetails);
     }
 
     @Override
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
 
-        dataService.positionUnrealizedPnlReceived(requestId, unrealizedPnL);
+        dataService.unrealizedPnlReceived(requestId, unrealizedPnL);
     }
 }
