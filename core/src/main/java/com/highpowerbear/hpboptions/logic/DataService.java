@@ -13,8 +13,6 @@ import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +31,7 @@ public class DataService implements ConnectionListener {
     private final MessageSender messageSender;
 
     private final AccountSummary accountSummary;
-    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new LinkedHashMap<>(); // conid -> underlyingDataHolder
+    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
     private final ReentrantLock positionLock = new ReentrantLock();
@@ -52,10 +50,10 @@ public class DataService implements ConnectionListener {
 
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
+        initUnderlyings();
     }
 
-    @PostConstruct
-    public void init() {
+    private void initUnderlyings() {
         List<Underlying> underlyings = coreDao.getActiveUnderlyings();
 
         for (Underlying underlying : underlyings) {
@@ -66,6 +64,7 @@ public class DataService implements ConnectionListener {
             instrument.setPrimaryExchange(underlying.getPrimaryExchange());
 
             UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            udh.setDisplayRank(underlying.getDisplayRank());
 
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
@@ -321,6 +320,7 @@ public class DataService implements ConnectionListener {
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
+        pdh.setDisplayRank(underlyingMap.get(underlyingConid).getDisplayRank());
         underlyingPositionMap.get(underlyingConid).put(conid, pdh);
 
         messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
@@ -342,8 +342,9 @@ public class DataService implements ConnectionListener {
         return accountSummary.getText();
     }
 
-    public Collection<UnderlyingDataHolder> getUnderlyingDataHolders() {
-        return underlyingMap.values();
+    public Collection<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
+        return underlyingMap.values().stream().sorted(Comparator
+                        .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
     }
 
     public List<PositionDataHolder> getSortedPositionDataHolders() {
@@ -351,7 +352,7 @@ public class DataService implements ConnectionListener {
         return positionMap.values().stream()
                 .sorted(Comparator
                         .comparing(PositionDataHolder::getDaysToExpiration)
-                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                        .thenComparing(PositionDataHolder::getDisplayRank)
                         .thenComparing(PositionDataHolder::getRight)
                         .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
     }

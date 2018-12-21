@@ -1,6 +1,5 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
@@ -18,13 +17,15 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractDataHolder implements DataHolder {
 
-    protected final String id;
+    private final String id;
     private final DataHolderType type;
     protected final Instrument instrument;
     private final int ibMktDataRequestId;
 
     private final Set<DataField> fieldsToDisplay = new HashSet<>();
     private String genericTicks;
+
+    private int displayRank;
 
     protected final Map<DataField, CircularFifoQueue<Number>> valueMap = new HashMap<>(); // field -> queue[value, oldValue]
 
@@ -156,6 +157,15 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public int getIbMktDataRequestId() {
         return ibMktDataRequestId;
+    }
+
+    @Override
+    public int getDisplayRank() {
+        return displayRank;
+    }
+
+    public void setDisplayRank(int displayRank) {
+        this.displayRank = displayRank;
     }
 
     @Override

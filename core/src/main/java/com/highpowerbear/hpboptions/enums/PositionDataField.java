@@ -7,6 +7,7 @@ import java.util.List;
  * Created by robertk on 12/10/2018.
  */
 public enum PositionDataField implements DataField {
+
     POSITION_SIZE {
         @Override
         public Number getInitialValue() {

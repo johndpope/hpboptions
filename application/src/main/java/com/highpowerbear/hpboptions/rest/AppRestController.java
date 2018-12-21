@@ -65,7 +65,7 @@ public class AppRestController {
     @RequestMapping("underlying-data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
 
-        Collection<UnderlyingDataHolder> underlyingDataHolders = dataService.getUnderlyingDataHolders();
+        Collection<UnderlyingDataHolder> underlyingDataHolders = dataService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 

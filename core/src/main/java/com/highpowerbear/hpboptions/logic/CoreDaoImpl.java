@@ -60,7 +60,7 @@ public class CoreDaoImpl implements CoreDao {
 
     @Override
     public List<Underlying> getActiveUnderlyings() {
-        TypedQuery<Underlying> q = em.createQuery("SELECT u FROM Underlying u WHERE u.active = TRUE ORDER BY u.id", Underlying.class);
+        TypedQuery<Underlying> q = em.createQuery("SELECT u FROM Underlying u WHERE u.active = TRUE ORDER BY u.displayRank", Underlying.class);
         return q.getResultList();
     }
 }

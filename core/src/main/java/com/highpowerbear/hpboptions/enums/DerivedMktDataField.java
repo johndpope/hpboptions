@@ -6,6 +6,7 @@ import java.util.*;
  * Created by robertk on 12/3/2018.
  */
 public enum DerivedMktDataField implements DataField {
+
     CHANGE_PCT (Double.NaN, BasicMktDataField.LAST, BasicMktDataField.CLOSE),
     IV_CHANGE_PCT (Double.NaN, BasicMktDataField.OPTION_IMPLIED_VOL),
     IV_RANK (Double.NaN, BasicMktDataField.OPTION_IMPLIED_VOL),

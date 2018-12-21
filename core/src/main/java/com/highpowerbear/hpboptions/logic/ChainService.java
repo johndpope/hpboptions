@@ -4,14 +4,13 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
+import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.model.ChainDataHolder;
 import com.ib.client.ContractDetails;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +25,7 @@ public class ChainService implements ConnectionListener {
     private final CoreDao coreDao;
     private final MessageSender messageSender;
 
+    private final List<Underlying> underlyings;
     private final Map<Integer, Set<String>> chainExpirationsMap = new ConcurrentHashMap<>(); // underlying conid -> chain expirations
     private final SortedMap<Double, Pair<ChainDataHolder, ChainDataHolder>> activeChainMap = new TreeMap<>(); // strike -> (call, put)
     private int activeChainUnderlyingConid;
@@ -39,11 +39,7 @@ public class ChainService implements ConnectionListener {
         this.messageSender = messageSender;
 
         ibController.addConnectionListener(this);
-    }
-
-    @PostConstruct
-    public void init() {
-        // TODO
+        underlyings = coreDao.getActiveUnderlyings();
     }
 
     @Override

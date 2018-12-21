@@ -31,6 +31,7 @@ public class Underlying {
     private LocalTime marketOpen;
     private LocalTime marketClose;
     private Boolean active;
+    private Integer displayRank;
 
     @Override
     public boolean equals(Object o) {
@@ -125,5 +126,13 @@ public class Underlying {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Integer getDisplayRank() {
+        return displayRank;
+    }
+
+    public void setDisplayRank(Integer displayRank) {
+        this.displayRank = displayRank;
     }
 }

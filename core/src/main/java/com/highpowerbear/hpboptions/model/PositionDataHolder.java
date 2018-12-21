@@ -28,11 +28,6 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
     }
 
     @JsonIgnore
-    public String getUnderlyingSymbol() { //sorting
-        return getInstrument().getUnderlyingSymbol();
-    }
-
-    @JsonIgnore
     public Types.Right getRight() { //sorting
         return getInstrument().getRight();
     }

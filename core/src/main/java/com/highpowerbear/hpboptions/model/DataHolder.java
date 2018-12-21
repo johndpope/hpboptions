@@ -13,6 +13,7 @@ public interface DataHolder {
     String getId();
     DataHolderType getType();
     Instrument getInstrument();
+    int getDisplayRank();
     void updateField(BasicMktDataField field, Number value);
     void calculateField(DerivedMktDataField field);
     int getIbMktDataRequestId();

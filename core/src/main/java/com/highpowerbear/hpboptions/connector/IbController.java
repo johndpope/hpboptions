@@ -33,6 +33,8 @@ public class IbController {
 
     void initialize(IbListener ibListener) {
         if (!initialized.get()) {
+            initialized.set(true);
+
             eReaderSignal = new EJavaSignal();
             eClientSocket = new EClientSocket(ibListener, eReaderSignal);
         }
