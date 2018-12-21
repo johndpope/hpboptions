@@ -10,7 +10,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     ],
     bind: '{underlyingDataHolders}',
     listeners: {
-        select: 'setChainsUnderlying'
+        select: 'setChainUnderlying'
     },
     viewConfig: {
         stripeRows: true

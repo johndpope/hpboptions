@@ -140,12 +140,12 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    setChainsUnderlying: function (grid, record, index, eOpts) {
+    setChainUnderlying: function (grid, record, index, eOpts) {
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/chains-underlying/' + record.data.conid,
+            url: HopGui.common.Definitions.urlPrefix + '/chain-underlying/' + record.data.conid,
             success: function(response) {
-                console.log('chains underlying set to ' + response.responseText);
+                console.log('chain underlying set to ' + response.responseText);
             }
         });
     }

@@ -31,7 +31,7 @@ public class CoreUtil {
     }
 
     public static double round4(double number) {
-        return round(number, 4);
+        return Double.isNaN(number) ? number : round(number, 4);
     }
 
     public static  boolean isValidPrice(double d) {

@@ -10,7 +10,6 @@ import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.*;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,10 +28,9 @@ import java.util.stream.Collectors;
 @Service
 public class DataService implements ConnectionListener {
 
+    private final IbController ibController;
     private final CoreDao coreDao;
     private final MessageSender messageSender;
-
-    private IbController ibController; // prevent circular dependency
 
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new LinkedHashMap<>(); // conid -> underlyingDataHolder
@@ -40,21 +38,19 @@ public class DataService implements ConnectionListener {
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
     private final ReentrantLock positionLock = new ReentrantLock();
 
-    private final ChainParams chainParams = new ChainParams();
-    private final SortedMap<Double, Pair<ChainDataHolder, ChainDataHolder>> chainMap = new TreeMap<>(); // strike -> (call, put)
-
     private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final Map<Integer, PositionDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> positionDataHolder
 
-    private final AtomicInteger ibRequestIdGen = new AtomicInteger();
-    private int chainContractDetailsRequestId;
+    private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_DATA_REQUEST_ID_INITIAL);
 
     @Autowired
-    public DataService(CoreDao coreDao, MessageSender messageSender) {
+    public DataService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
+        this.ibController = ibController;
         this.coreDao = coreDao;
         this.messageSender = messageSender;
 
+        ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
     }
 
@@ -69,15 +65,11 @@ public class DataService implements ConnectionListener {
             instrument.setExchange(underlying.getExchange());
             instrument.setPrimaryExchange(underlying.getPrimaryExchange());
 
-            UnderlyingDataHolder underlyingDataHolder = new UnderlyingDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
 
-            underlyingMap.put(conid, underlyingDataHolder);
+            underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
         }
-    }
-
-    public void setIbController(IbController ibController) {
-        this.ibController = ibController;
     }
 
     @Override
@@ -101,16 +93,13 @@ public class DataService implements ConnectionListener {
         ibController.cancelAccountSummary(accountSummary.getIbRequestId());
     }
 
-    public String setChainsUnderlying(int underlyingConid) {
-        String underlyingSymbol = underlyingMap.get(underlyingConid).getInstrument().getSymbol();
-        chainParams.setUnderlying(underlyingConid,underlyingSymbol);
-
-        return underlyingSymbol;
-    }
-
     @Scheduled(cron="0 0 6 * * MON-FRI")
     private void performStartOfDayTasks() {
-        underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
+        for (UnderlyingDataHolder udh : underlyingMap.values()) {
+            requestImpliedVolatilityHistory(udh);
+            Instrument instr = udh.getInstrument();
+            ibController.requestOptionChainParams(ibRequestIdGen.incrementAndGet(), instr.getSymbol(), instr.getSecType(), instr.getConid());
+        }
         messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
     }
 
@@ -138,12 +127,12 @@ public class DataService implements ConnectionListener {
         pnlRequestMap.clear();
     }
 
-    private void requestImpliedVolatilityHistory(UnderlyingDataHolder underlyingDataHolder) {
-        histDataRequestMap.putIfAbsent(underlyingDataHolder.getIbHistDataRequestId(), underlyingDataHolder);
+    private void requestImpliedVolatilityHistory(UnderlyingDataHolder udh) {
+        histDataRequestMap.putIfAbsent(udh.getIbHistDataRequestId(), udh);
 
         ibController.requestHistData(
-                underlyingDataHolder.getIbHistDataRequestId(),
-                underlyingDataHolder.toIbContract(),
+                udh.getIbHistDataRequestId(),
+                udh.toIbContract(),
                 LocalDate.now().atStartOfDay().format(CoreSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
@@ -151,61 +140,61 @@ public class DataService implements ConnectionListener {
                 IbTradingHours.REGULAR.getValue());
     }
 
-    private void requestPnlSingle(PositionDataHolder positionDataHolder) {
-        int requestId = positionDataHolder.getIbPnlRequestId();
+    private void requestPnlSingle(PositionDataHolder pdh) {
+        int requestId = pdh.getIbPnlRequestId();
 
-        pnlRequestMap.put(requestId, positionDataHolder);
-        ibController.requestPnlSingle(requestId, positionDataHolder.getInstrument().getConid());
+        pnlRequestMap.put(requestId, pdh);
+        ibController.requestPnlSingle(requestId, pdh.getInstrument().getConid());
     }
 
-    private void cancelPnlSingle(PositionDataHolder positionDataHolder) {
-        int requestId = positionDataHolder.getIbPnlRequestId();
+    private void cancelPnlSingle(PositionDataHolder pdh) {
+        int requestId = pdh.getIbPnlRequestId();
 
         ibController.cancelPnlSingle(requestId);
         pnlRequestMap.remove(requestId);
     }
 
     private void recalculatePortfolioOptionData(int underlyingConid) {
-        UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
-        Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
+        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
-        if (positionDataHolders.isEmpty()) {
-            underlyingDataHolder.resetPortfolioOptionData();
-            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(underlyingDataHolder, field));
+        if (pdhs.isEmpty()) {
+            udh.resetPortfolioOptionData();
+            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(udh, field));
 
-        } else if (underlyingDataHolder.isPortfolioOptionDataUpdateDue() &&
-                positionDataHolders.stream().allMatch(AbstractOptionDataHolder::portfolioSourceFieldsReady)) {
+        } else if (udh.isPortfolioOptionDataUpdateDue() &&
+                pdhs.stream().allMatch(AbstractOptionDataHolder::portfolioSourceFieldsReady)) {
 
             double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
 
-            for (PositionDataHolder p : positionDataHolders) {
-                int multiplier = p.getInstrument().getMultiplier();
+            for (PositionDataHolder pdh : pdhs) {
+                int multiplier = pdh.getInstrument().getMultiplier();
 
-                delta += p.getDelta() * p.getPositionSize() * multiplier;
-                gamma += p.getGamma() * p.getPositionSize() * multiplier;
-                vega += p.getVega() * p.getPositionSize() * multiplier;
-                theta += p.getTheta() * p.getPositionSize() * multiplier;
-                timeValue += p.getTimeValue() * Math.abs(p.getPositionSize()) * multiplier;
+                delta += pdh.getDelta() * pdh.getPositionSize() * multiplier;
+                gamma += pdh.getGamma() * pdh.getPositionSize() * multiplier;
+                vega += pdh.getVega() * pdh.getPositionSize() * multiplier;
+                theta += pdh.getTheta() * pdh.getPositionSize() * multiplier;
+                timeValue += pdh.getTimeValue() * Math.abs(pdh.getPositionSize()) * multiplier;
             }
-            double lastPrice = underlyingDataHolder.getLast();
-            double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * underlyingDataHolder.getLast() : Double.NaN;
+            double lastPrice = udh.getLast();
+            double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
 
-            underlyingDataHolder.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
-            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(underlyingDataHolder, field));
+            udh.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
+            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(udh, field));
         }
     }
 
     private void recalculatePortfolioPnl(int underlyingConid) {
-        UnderlyingDataHolder underlyingDataHolder = underlyingMap.get(underlyingConid);
-        Collection<PositionDataHolder> positionDataHolders = underlyingPositionMap.get(underlyingConid).values();
+        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
-        if (positionDataHolders.isEmpty()) {
-            underlyingDataHolder.resetPortfolioPnl();
+        if (pdhs.isEmpty()) {
+            udh.resetPortfolioPnl();
         } else {
             double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
-            underlyingDataHolder.updatePortfolioPnl(unrealizedPnl);
+            udh.updatePortfolioPnl(unrealizedPnl);
         }
-        messageSender.sendWsMessage(underlyingDataHolder, UnderlyingDataField.UNREALIZED_PNL);
+        messageSender.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
     }
 
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
@@ -251,27 +240,27 @@ public class DataService implements ConnectionListener {
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
-        UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
+        UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
 
         LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_DATE_FORMATTER);
         double value = bar.close();
-        underlyingDataHolder.addImpliedVolatility(date, value);
+        udh.addImpliedVolatility(date, value);
     }
 
     public void historicalDataEndReceived(int requestId) {
-        UnderlyingDataHolder underlyingDataHolder = histDataRequestMap.get(requestId);
-        underlyingDataHolder.impliedVolatilityHistoryCompleted();
+        UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
+        udh.impliedVolatilityHistoryCompleted();
 
-        underlyingDataHolder.getIvHistoryDependentFields().forEach(field -> messageSender.sendWsMessage(underlyingDataHolder, field));
+        udh.getIvHistoryDependentFields().forEach(field -> messageSender.sendWsMessage(udh, field));
     }
 
     public void positionReceived(Contract contract, int positionSize) {
         positionLock.lock();
         try {
             int conid = contract.conid();
-            PositionDataHolder positionDataHolder = positionMap.get(conid);
+            PositionDataHolder pdh = positionMap.get(conid);
 
-            if (positionDataHolder == null) {
+            if (pdh == null) {
                 if (positionSize != 0) {
                     Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
                     String underlyingSymbol = contract.symbol();
@@ -284,24 +273,24 @@ public class DataService implements ConnectionListener {
                     LocalDate expirationDate = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
 
                     OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expirationDate, multiplier, underlyingSymbol);
-                    positionDataHolder = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
-                    positionDataHolder.updatePositionSize(positionSize);
-                    positionMap.put(conid, positionDataHolder);
+                    pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+                    pdh.updatePositionSize(positionSize);
+                    positionMap.put(conid, pdh);
 
                     ibController.requestContractDetails(ibRequestIdGen.incrementAndGet(), contract);
                 }
             } else if (positionSize != 0) {
-                if (positionSize != positionDataHolder.getPositionSize()) {
-                    positionDataHolder.updatePositionSize(positionSize);
-                    messageSender.sendWsMessage(positionDataHolder, PositionDataField.POSITION_SIZE);
+                if (positionSize != pdh.getPositionSize()) {
+                    pdh.updatePositionSize(positionSize);
+                    messageSender.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
 
-                    recalculatePortfolioOptionData(positionDataHolder.getInstrument().getUnderlyingConid());
+                    recalculatePortfolioOptionData(pdh.getInstrument().getUnderlyingConid());
                 }
             } else {
-                cancelMktData(positionDataHolder);
-                cancelPnlSingle(positionDataHolder);
+                cancelMktData(pdh);
+                cancelPnlSingle(pdh);
 
-                int underlyingConid = positionDataHolder.getInstrument().getUnderlyingConid();
+                int underlyingConid = pdh.getInstrument().getUnderlyingConid();
                 positionMap.remove(conid);
                 underlyingPositionMap.get(underlyingConid).remove(conid);
 
@@ -315,50 +304,38 @@ public class DataService implements ConnectionListener {
         }
     }
 
-    public void contractDetailsReceived(int requestId, ContractDetails contractDetails) {
-        if (requestId == chainContractDetailsRequestId) {
-            handleChainContractDetails(contractDetails);
-        } else {
-            handlePositionContractDetails(contractDetails);
-        }
-    }
-
-    private void handlePositionContractDetails(ContractDetails contractDetails) {
+    public void contractDetailsReceived(ContractDetails contractDetails) {
         Contract contract = contractDetails.contract();
 
         int conid = contract.conid();
-        PositionDataHolder positionDataHolder = positionMap.get(conid);
+        PositionDataHolder pdh = positionMap.get(conid);
 
         Exchange exchange = Exchange.valueOf(contract.exchange());
         double minTick = contractDetails.minTick();
         int underlyingConid = contractDetails.underConid();
         Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
 
-        OptionInstrument instrument = positionDataHolder.getInstrument();
+        OptionInstrument instrument = pdh.getInstrument();
         instrument.setExchange(exchange);
         instrument.setMinTick(minTick);
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
-        underlyingPositionMap.get(underlyingConid).put(conid, positionDataHolder);
+        underlyingPositionMap.get(underlyingConid).put(conid, pdh);
 
         messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
-        requestMktData(positionDataHolder);
-        requestPnlSingle(positionDataHolder);
-    }
-
-    private void handleChainContractDetails(ContractDetails contractDetails) {
-        // TODO
+        requestMktData(pdh);
+        requestPnlSingle(pdh);
     }
 
     public void unrealizedPnlReceived(int requestId, double unrealizedPnL) {
-        PositionDataHolder positionDataHolder = pnlRequestMap.get(requestId);
-        if (positionDataHolder == null) {
+        PositionDataHolder pdh = pnlRequestMap.get(requestId);
+        if (pdh == null) {
             return;
         }
-        positionDataHolder.updateUnrealizedPnl(unrealizedPnL);
-        messageSender.sendWsMessage(positionDataHolder, PositionDataField.UNREALIZED_PNL);
-        recalculatePortfolioPnl(positionDataHolder.getInstrument().getUnderlyingConid());
+        pdh.updateUnrealizedPnl(unrealizedPnL);
+        messageSender.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
+        recalculatePortfolioPnl(pdh.getInstrument().getUnderlyingConid());
     }
 
     public String getAccountSummaryText() {
@@ -377,9 +354,5 @@ public class DataService implements ConnectionListener {
                         .thenComparing(PositionDataHolder::getUnderlyingSymbol)
                         .thenComparing(PositionDataHolder::getRight)
                         .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
-    }
-
-    public Collection<Pair<ChainDataHolder, ChainDataHolder>> getChains() {
-        return chainMap.values();
     }
 }

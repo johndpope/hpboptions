@@ -97,7 +97,9 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
         if (valid(optionPriceIntpl) && valid(underlyingPriceIntpl)) {
             double timeValue = optionPriceIntpl - intrinsicValue(underlyingPriceIntpl);
-            double timeValuePct = (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d;
+            double timeValuePct = getDaysToExpiration() > 0 ?
+                    (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d :
+                    Double.NaN;
 
             update(OptionDataField.OPTION_PRICE, optionPriceIntpl);
             update(OptionDataField.UNDERLYING_PRICE, underlyingPriceIntpl);

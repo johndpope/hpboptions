@@ -1,7 +1,10 @@
 package com.highpowerbear.hpboptions.connector;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.enums.WsTopic;
+import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
@@ -18,24 +21,21 @@ import java.util.Set;
 @Component
 public class IbListener extends GenericIbListener {
 
+    private final IbController ibController;
+    private final DataService dataService;
     private final OrderService orderService;
+    private final ChainService chainService;
     private final MessageSender messageSender;
 
-    private IbController ibController; // prevent circular dependency
-    private DataService dataService; // prevent circular dependency
-
     @Autowired
-    public IbListener(OrderService orderService, MessageSender messageSender) {
-        this.orderService = orderService;
-        this.messageSender = messageSender;
-    }
-
-    void setIbController(IbController ibController) {
+    public IbListener(IbController ibController, DataService dataService, OrderService orderService, ChainService chainService, MessageSender messageSender) {
         this.ibController = ibController;
-    }
-
-    void setDataService(DataService dataService) {
         this.dataService = dataService;
+        this.orderService = orderService;
+        this.chainService = chainService;
+        this.messageSender = messageSender;
+
+        ibController.initialize(this);
     }
 
     @Override
@@ -132,7 +132,9 @@ public class IbListener extends GenericIbListener {
     public void securityDefinitionOptionalParameter(int reqId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
         super.securityDefinitionOptionalParameter(reqId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
 
-        // TODO
+        if (Exchange.SMART.name().equals(exchange) && Integer.valueOf(multiplier) == CoreSettings.CHAIN_MULTIPLIER) {
+            chainService.chainExpirationsReceived(underlyingConId, expirations);
+        }
     }
 
     @Override
@@ -141,7 +143,11 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
             return;
         }
-        dataService.contractDetailsReceived(requestId, contractDetails);
+        if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
+            chainService.contractDetailsReceived(contractDetails);
+        } else {
+            dataService.contractDetailsReceived(contractDetails);
+        }
     }
 
     @Override

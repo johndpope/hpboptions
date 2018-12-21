@@ -2,18 +2,15 @@ package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.logic.DataService;
-import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by robertk on 11/5/2018.
@@ -21,6 +18,8 @@ import java.util.List;
 @Component
 public class IbController {
     private static final Logger log = LoggerFactory.getLogger(IbController.class);
+
+    private AtomicBoolean initialized = new AtomicBoolean(false);
 
     private final String host = CoreSettings.IB_HOST;
     private final Integer port = CoreSettings.IB_PORT;
@@ -30,30 +29,17 @@ public class IbController {
     private EClientSocket eClientSocket;
     private boolean markConnected;
 
-    private final IbListener ibListener;
-    private final DataService dataService;
-    private final OrderService orderService;
-
     private final List<ConnectionListener> connectionListeners = new ArrayList<>();
 
-    @Autowired
-    public IbController(IbListener ibListener, DataService dataService, OrderService orderService) {
-        this.ibListener = ibListener;
-        this.dataService = dataService;
-        this.orderService = orderService;
+    void initialize(IbListener ibListener) {
+        if (!initialized.get()) {
+            eReaderSignal = new EJavaSignal();
+            eClientSocket = new EClientSocket(ibListener, eReaderSignal);
+        }
     }
 
-    @PostConstruct
-    public void init() {
-        dataService.setIbController(this);
-        ibListener.setIbController(this);
-        ibListener.setDataService(dataService);
-
-        connectionListeners.add(dataService);
-        connectionListeners.add(orderService);
-
-        eReaderSignal = new EJavaSignal();
-        eClientSocket = new EClientSocket(ibListener, eReaderSignal);
+    public void addConnectionListener(ConnectionListener connectionListener) {
+        connectionListeners.add(connectionListener);
     }
 
     public void connect() {
@@ -176,7 +162,7 @@ public class IbController {
         }
     }
 
-    public void requestOptionChainsParams(int requestId, String underlyingSymbol, Types.SecType underlyingSecType, int underlyingConId) {
+    public void requestOptionChainParams(int requestId, String underlyingSymbol, Types.SecType underlyingSecType, int underlyingConId) {
         log.info("requesting option chain parameters for requestId=" + requestId + ", symbol=" + underlyingSymbol);
 
         if (checkConnected()) {

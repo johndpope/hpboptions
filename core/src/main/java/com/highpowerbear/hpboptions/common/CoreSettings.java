@@ -16,5 +16,8 @@ public class CoreSettings {
     public static final String EMAIL_FROM = "hpb@highpowerbear.com";
     public static final String EMAIL_TO = "info@highpowerbear.com";
     public static final String WS_TOPIC_PREFIX = "/topic/";
+    public static final int IB_DATA_REQUEST_ID_INITIAL = 0;
+    public static final int IB_CHAIN_REQUEST_ID_INITIAL = 1000000;
     public static final long PORTFOLIO_OPTION_DATA_UPDATE_INTERVAL_MILLIS = 2000;
+    public static final int CHAIN_MULTIPLIER = 100;
 }
