@@ -9,9 +9,10 @@ import com.highpowerbear.hpboptions.model.PositionDataHolder;
 import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Collection;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Set;
 
@@ -65,7 +66,7 @@ public class AppRestController {
     @RequestMapping("underlying-data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
 
-        Collection<UnderlyingDataHolder> underlyingDataHolders = dataService.getSortedUnderlyingDataHolders();
+        List<UnderlyingDataHolder> underlyingDataHolders = dataService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 
@@ -76,17 +77,25 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(positionDataHolders, positionDataHolders.size()));
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "chain-underlying/{conid}")
-    public ResponseEntity<?> setActiveChainUnderlying(@PathVariable("conid") int conid) {
+    @RequestMapping("expirations/{underlyingConid}")
+    public ResponseEntity<?> getExpirations(
+            @PathVariable("underlyingConid") int underlyingConid) {
 
-        String underlyingSymbol = chainService.setActiveChainUnderlying(conid);
-        return ResponseEntity.ok(underlyingSymbol);
+        Set<String> expirations = chainService.getExpirations(underlyingConid);
+        return ResponseEntity.ok(new RestList<>(expirations, expirations.size()));
     }
 
-    @RequestMapping("active-chain-expirations")
-    public ResponseEntity<?> getActiveChainExpirations() {
+    @RequestMapping(method = RequestMethod.PUT, value = "load-chain/{underlyingConid}/{expiration}")
+    public ResponseEntity<?> loadChain(
+            @PathVariable("underlyingConid") int underlyingConid,
+            @PathVariable("expiration") String expiration) {
 
-        Set<String> expirations = chainService.getActiveChainExpirations();
-        return ResponseEntity.ok(new RestList<>(expirations, expirations.size()));
+        boolean valid = chainService.loadChain(underlyingConid, expiration);
+        return valid ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    }
+
+    @RequestMapping("active-chain")
+    public ResponseEntity<?> getActiveChain() {
+        return ResponseEntity.ok(chainService.getActiveChain());
     }
 }

@@ -2,7 +2,6 @@ package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.MessageSender;
-import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
@@ -131,10 +130,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void securityDefinitionOptionalParameter(int reqId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
         super.securityDefinitionOptionalParameter(reqId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
-
-        if (Exchange.SMART.name().equals(exchange) && Integer.valueOf(multiplier) == CoreSettings.CHAIN_MULTIPLIER) {
-            chainService.chainExpirationsReceived(underlyingConId, expirations);
-        }
+        chainService.expirationsReceived(underlyingConId, exchange, Integer.valueOf(multiplier), expirations);
     }
 
     @Override
@@ -147,6 +143,14 @@ public class IbListener extends GenericIbListener {
             chainService.contractDetailsReceived(contractDetails);
         } else {
             dataService.contractDetailsReceived(contractDetails);
+        }
+    }
+
+    @Override
+    public void	contractDetailsEnd(int requestId) {
+        super.contractDetailsEnd(requestId);
+        if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
+            chainService.contractDetailsEndReceived(requestId);
         }
     }
 

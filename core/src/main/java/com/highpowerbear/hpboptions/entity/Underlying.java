@@ -32,6 +32,9 @@ public class Underlying {
     private LocalTime marketClose;
     private Boolean active;
     private Integer displayRank;
+    private Integer chainMultiplier;
+    private Boolean chainHalfPoint;
+    private Exchange chainExchange;
 
     @Override
     public boolean equals(Object o) {
@@ -134,5 +137,29 @@ public class Underlying {
 
     public void setDisplayRank(Integer displayRank) {
         this.displayRank = displayRank;
+    }
+
+    public Integer getChainMultiplier() {
+        return chainMultiplier;
+    }
+
+    public void setChainMultiplier(Integer chainMultiplier) {
+        this.chainMultiplier = chainMultiplier;
+    }
+
+    public Boolean getChainHalfPoint() {
+        return chainHalfPoint;
+    }
+
+    public void setChainHalfPoint(Boolean chainHalfPoint) {
+        this.chainHalfPoint = chainHalfPoint;
+    }
+
+    public Exchange getChainExchange() {
+        return chainExchange;
+    }
+
+    public void setChainExchange(Exchange chainExchange) {
+        this.chainExchange = chainExchange;
     }
 }

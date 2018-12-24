@@ -94,12 +94,8 @@ public class DataService implements ConnectionListener {
 
     @Scheduled(cron="0 0 6 * * MON-FRI")
     private void performStartOfDayTasks() {
-        for (UnderlyingDataHolder udh : underlyingMap.values()) {
-            requestImpliedVolatilityHistory(udh);
-            Instrument instr = udh.getInstrument();
-            ibController.requestOptionChainParams(ibRequestIdGen.incrementAndGet(), instr.getSymbol(), instr.getSecType(), instr.getConid());
-        }
-        messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
+        underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
+        ibController.requestPositions();
     }
 
     private void requestMktData(DataHolder dataHolder) {
@@ -155,6 +151,9 @@ public class DataService implements ConnectionListener {
 
     private void recalculatePortfolioOptionData(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        if (udh == null) {
+            return;
+        }
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
@@ -185,6 +184,9 @@ public class DataService implements ConnectionListener {
 
     private void recalculatePortfolioPnl(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        if (udh == null) {
+            return;
+        }
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
@@ -320,8 +322,11 @@ public class DataService implements ConnectionListener {
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
-        pdh.setDisplayRank(underlyingMap.get(underlyingConid).getDisplayRank());
-        underlyingPositionMap.get(underlyingConid).put(conid, pdh);
+        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        if (udh != null) {
+            pdh.setDisplayRank(udh.getDisplayRank());
+            underlyingPositionMap.get(underlyingConid).put(conid, pdh);
+        }
 
         messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
         requestMktData(pdh);
@@ -342,7 +347,7 @@ public class DataService implements ConnectionListener {
         return accountSummary.getText();
     }
 
-    public Collection<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
+    public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
         return underlyingMap.values().stream().sorted(Comparator
                         .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
     }
