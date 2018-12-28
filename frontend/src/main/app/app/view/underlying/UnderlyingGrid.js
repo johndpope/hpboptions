@@ -9,9 +9,6 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         'Ext.toolbar.Paging'
     ],
     bind: '{underlyingDataHolders}',
-    listeners: {
-        select: 'setChainUnderlying'
-    },
     viewConfig: {
         stripeRows: true
     },

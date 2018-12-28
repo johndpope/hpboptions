@@ -5,11 +5,12 @@ import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.model.Chain;
-import com.highpowerbear.hpboptions.model.ChainDataHolder;
-import com.highpowerbear.hpboptions.model.ChainItem;
+import com.highpowerbear.hpboptions.model.*;
+import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
+import com.ib.client.Types;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,25 +26,23 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by robertk on 12/21/2018.
  */
 @Service
-public class ChainService implements ConnectionListener {
-
-    private final IbController ibController;
-    private final CoreDao coreDao;
-    private final MessageSender messageSender;
+public class ChainService extends AbstractService implements ConnectionListener {
 
     private final Map<Integer, Underlying> underlyingMap = new HashMap<>(); // conid -> underlying
-    private final Map<Integer, SortedSet<String>> expirationsMap = new ConcurrentHashMap<>(); // underlying conid -> chain expirations
-    private Chain activeChain;
+    private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new ConcurrentHashMap<>(); // underlying conid -> chain expirations
+
+    private final Map<ChainInfo, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainInfo -> (strike -> chainItem)
+    private final Map<ChainInfo, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainInfo -> list of chain data holders
+    private final Map<Integer, Integer> pendingChainRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final AtomicBoolean chainsRebuilt = new AtomicBoolean(false);
+    private ChainInfo activeChainInfo;
     private final ReentrantLock chainLock = new ReentrantLock();
 
-    private final Map<Integer, ChainDataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> chainDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL);
 
     @Autowired
     public ChainService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
-        this.ibController = ibController;
-        this.coreDao = coreDao;
-        this.messageSender = messageSender;
+        super(ibController, coreDao, messageSender);
 
         ibController.addConnectionListener(this);
         coreDao.getActiveUnderlyings().forEach(u -> underlyingMap.put(u.getConid(), u));
@@ -50,86 +50,133 @@ public class ChainService implements ConnectionListener {
 
     @Override
     public void postConnect() {
-        cancelActiveChainMktData();
-        requestActiveChainMktData();
+        if (!chainsRebuilt.get()) {
+            rebuildChains();
+        }
     }
 
     @Override
     public void preDisconnect() {
-        cancelActiveChainMktData();
+        cancelAllMktData();
     }
 
-    @Scheduled(cron="0 0 7 * * MON-FRI")
-    private void performStartOfDayTasks() {
-        requestExpirations();
+    @Scheduled(cron="0 0 7 * * MON")
+    private void performStartOfWeekTasks() {
+        rebuildChains();
     }
 
-    public boolean loadChain(int underlyingConid, String expiration) {
+    public ChainInfo loadChain(int underlyingConid, LocalDate expiration) {
         chainLock.lock();
         try {
-            if (!activeChain.isLoaded()) {
-                return false; // complete the current task first
+            ChainInfo chainInfo = chainInfo(underlyingConid, expiration);
+            if (chainInfo == null) {
+                return null;
             }
-            //TODO cancel current chain mkt data and clear activeChainMap
-
-            activeChain = new Chain(underlyingConid, underlyingMap.get(underlyingConid).getSymbol(), LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER));
-            // TODO request contract details
-
-            return underlyingMap.containsKey(underlyingConid) && expirationsMap.get(underlyingConid).contains(expiration);
+            cancelAllMktData();
+            activeChainInfo = chainInfo;
+            chainDataHolderMap.get(activeChainInfo).forEach(this::requestMktData);
+            return chainInfo;
 
         } finally {
             chainLock.unlock();
         }
     }
 
-    private void requestActiveChainMktData() {
-        for (ChainItem item : activeChain.getItems()) {
-            ChainDataHolder call = item.getCall();
-            ChainDataHolder put = item.getPut();
+    private ChainInfo chainInfo(int underlyingConid, LocalDate expiration) {
+        Underlying underlying = underlyingMap.get(underlyingConid);
 
-            mktDataRequestMap.put(call.getIbMktDataRequestId(), call);
-            mktDataRequestMap.put(put.getIbMktDataRequestId(), call);
-
-            ibController.requestMktData(call.getIbMktDataRequestId(), call.toIbContract(), call.getGenericTicks());
-            ibController.requestMktData(put.getIbMktDataRequestId(), put.toIbContract(), put.getGenericTicks());
+        if (underlying != null && expirationsMap.get(underlyingConid).contains(expiration)) {
+            return new ChainInfo(underlyingConid, underlying.getSymbol(), expiration);
+        } else {
+            return null;
         }
     }
 
-    private void cancelActiveChainMktData() {
-        mktDataRequestMap.keySet().forEach(ibController::cancelMktData);
-        mktDataRequestMap.clear();
+    private void rebuildChains() {
+        chainsRebuilt.set(false);
+
+        expirationsMap.clear();
+        chainMap.clear();
+        chainDataHolderMap.clear();
+        pendingChainRequests.clear();
+
+        for (Underlying underlying : underlyingMap.values()) {
+            int underlyingConid = underlying.getConid();
+            String underlyingSymbol = underlying.getSymbol();
+            Types.SecType underlyingSecType = underlying.getSecType();
+
+            int expirationsRequestId = ibRequestIdGen.incrementAndGet();
+            int contractDetailsRequestId = ibRequestIdGen.incrementAndGet();
+
+            pendingChainRequests.put(expirationsRequestId, underlyingConid);
+            pendingChainRequests.put(contractDetailsRequestId, underlyingConid);
+
+            ibController.requestOptionChainParams(expirationsRequestId, underlyingSymbol, underlyingSecType, underlyingConid);
+            // TODO request chain contract details
+        }
     }
 
-    private void requestExpirations() {
-        underlyingMap.values().forEach(u -> ibController.requestOptionChainParams(ibRequestIdGen.incrementAndGet(), u.getSymbol(), u.getSecType(), u.getConid()));
-    }
-
-    private void requestActiveChainContractDetails() {
-        // TODO
-    }
-
-    public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirations) {
+    public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirationsStringSet) {
         Underlying underlying = underlyingMap.get(underlyingConId);
 
         if (Exchange.valueOf(exchange) == underlying.getChainExchange() && multiplier == underlying.getChainMultiplier()) {
-            expirationsMap.put(underlyingConId, new TreeSet<>(expirations));
+            SortedSet<LocalDate> expirations = new TreeSet<>();
+
+            expirationsStringSet.forEach(expiration -> expirations.add(LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER)));
+            expirationsMap.put(underlyingConId, expirations);
         }
-        // TODO send expirations reload message
     }
 
     public void contractDetailsReceived(ContractDetails contractDetails) {
-        // TODO
+        Contract contract = contractDetails.contract();
+
+        int conid = contract.conid();
+        Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+        String underlyingSymbol = contract.symbol();
+        String symbol = contract.localSymbol();
+        Currency currency = Currency.valueOf(contract.currency());
+        int multiplier = Integer.valueOf(contract.multiplier());
+        Exchange exchange = Exchange.valueOf(contract.exchange());
+
+        double minTick = contractDetails.minTick();
+        int underlyingConid = contractDetails.underConid();
+        Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
+
+        Types.Right right = contract.right();
+        double strike = contract.strike();
+        LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
+
+        OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
+        instrument.setExchange(exchange);
+        instrument.setMinTick(minTick);
+        instrument.setUnderlyingConid(underlyingConid);
+        instrument.setUnderlyingSecType(underlyingSecType);
+
+        ChainDataHolder chainDataHolder = new ChainDataHolder(instrument, ibRequestIdGen.incrementAndGet());
+        ChainInfo chainInfo = chainInfo(underlyingConid, expiration);
+
+        chainMap.putIfAbsent(chainInfo, new TreeMap<>());
+        chainMap.get(chainInfo).putIfAbsent(strike, new ChainItem(strike));
+        chainDataHolderMap.putIfAbsent(chainInfo, new ArrayList<>());
+
+        chainMap.get(chainInfo).get(strike).setDataHolder(chainDataHolder);
+        chainDataHolderMap.get(chainInfo).add(chainDataHolder);
     }
 
-    public void contractDetailsEndReceived(int requestId) {
-        // TODO send chain reload request message
+    public void chainsDataEndReceived(int requestId) {
+        pendingChainRequests.remove(requestId);
+
+        if (pendingChainRequests.isEmpty()) {
+            chainsRebuilt.set(true);
+            // TODO send expirations reload message
+        }
     }
 
-    public Set<String> getExpirations(int underlyingConid) {
+    public Set<LocalDate> getExpirations(int underlyingConid) {
         return expirationsMap.get(underlyingConid);
     }
 
-    public Chain getActiveChain() {
-        return activeChain;
+    public Collection<ChainItem> getActiveChainItems() {
+        return activeChainInfo != null ? chainMap.get(activeChainInfo).values() : new ArrayList<>();
     }
 }

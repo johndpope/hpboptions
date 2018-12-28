@@ -30,7 +30,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
     }, {
         text: 'Expiration',
         width: 100,
-        dataIndex: 'expirationDate',
+        dataIndex: 'expiration',
         xtype: 'datecolumn',
         format: 'm/d/Y'
     }, {

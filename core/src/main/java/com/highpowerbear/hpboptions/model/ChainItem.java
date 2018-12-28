@@ -1,18 +1,27 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.ib.client.Types;
+
 /**
- * Created by robertk on 12/24/2018.
+ * Created by robertk on 12/28/2018.
  */
 public class ChainItem {
+    private final double strike;
+    private ChainDataHolder call;
+    private ChainDataHolder put;
 
-    private double strike;
-    private final ChainDataHolder call;
-    private final ChainDataHolder put;
-
-    public ChainItem(double strike, ChainDataHolder call, ChainDataHolder put) {
+    public ChainItem(double strike) {
         this.strike = strike;
-        this.call = call;
-        this.put = put;
+    }
+
+    public void setDataHolder(ChainDataHolder dataHolder) {
+        Types.Right right = dataHolder.getInstrument().getRight();
+
+        if (right == Types.Right.Call) {
+            call = dataHolder;
+        } else if (right == Types.Right.Put) {
+            put = dataHolder;
+        }
     }
 
     public double getStrike() {

@@ -141,7 +141,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     public long getDaysToExpiration() {
-        return ChronoUnit.DAYS.between(LocalDate.now(), getInstrument().getExpirationDate());
+        return ChronoUnit.DAYS.between(LocalDate.now(), getInstrument().getExpiration());
     }
 
     public int getOptionOpenInterest() {

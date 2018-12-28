@@ -1,10 +1,13 @@
 package com.highpowerbear.hpboptions.rest;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.OrderService;
+import com.highpowerbear.hpboptions.model.ChainInfo;
+import com.highpowerbear.hpboptions.model.ChainItem;
 import com.highpowerbear.hpboptions.model.PositionDataHolder;
 import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -81,7 +87,7 @@ public class AppRestController {
     public ResponseEntity<?> getExpirations(
             @PathVariable("underlyingConid") int underlyingConid) {
 
-        Set<String> expirations = chainService.getExpirations(underlyingConid);
+        Set<LocalDate> expirations = chainService.getExpirations(underlyingConid);
         return ResponseEntity.ok(new RestList<>(expirations, expirations.size()));
     }
 
@@ -90,12 +96,13 @@ public class AppRestController {
             @PathVariable("underlyingConid") int underlyingConid,
             @PathVariable("expiration") String expiration) {
 
-        boolean valid = chainService.loadChain(underlyingConid, expiration);
-        return valid ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+        ChainInfo chainInfo = chainService.loadChain(underlyingConid, LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER));
+        return chainInfo != null ? ResponseEntity.ok(chainInfo) : ResponseEntity.badRequest().build();
     }
 
-    @RequestMapping("active-chain")
-    public ResponseEntity<?> getActiveChain() {
-        return ResponseEntity.ok(chainService.getActiveChain());
+    @RequestMapping("active-chain-items")
+    public ResponseEntity<?> getActiveChainItems() {
+        Collection<ChainItem> chainItems = chainService.getActiveChainItems();
+        return ResponseEntity.ok(new RestList<>(chainItems, chainItems.size()));
     }
 }

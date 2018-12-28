@@ -12,18 +12,18 @@ public class OptionInstrument extends Instrument {
 
     private final Types.Right right;
     private final double strike;
-    private final LocalDate expirationDate;
+    private final LocalDate expiration;
     private final int multiplier;
     private double minTick;
     private Types.SecType underlyingSecType;
     private int underlyingConid;
     private final String underlyingSymbol;
 
-    public OptionInstrument(int conid, Types.SecType secType, String symbol, Currency currency, Types.Right right, double strike, LocalDate expirationDate, int multiplier, String underlyingSymbol) {
+    public OptionInstrument(int conid, Types.SecType secType, String symbol, Currency currency, Types.Right right, double strike, LocalDate expiration, int multiplier, String underlyingSymbol) {
         super(conid, secType, symbol, currency);
         this.right = right;
         this.strike = strike;
-        this.expirationDate = expirationDate;
+        this.expiration = expiration;
         this.multiplier = multiplier;
         this.underlyingSymbol = underlyingSymbol;
     }
@@ -36,8 +36,8 @@ public class OptionInstrument extends Instrument {
         return strike;
     }
 
-    public LocalDate getExpirationDate() {
-        return expirationDate;
+    public LocalDate getExpiration() {
+        return expiration;
     }
 
     public int getMultiplier() {

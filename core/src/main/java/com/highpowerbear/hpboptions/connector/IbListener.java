@@ -128,20 +128,26 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
-    public void securityDefinitionOptionalParameter(int reqId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
-        super.securityDefinitionOptionalParameter(reqId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
+    public void securityDefinitionOptionalParameter(int requestId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
+        super.securityDefinitionOptionalParameter(requestId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
         chainService.expirationsReceived(underlyingConId, exchange, Integer.valueOf(multiplier), expirations);
     }
 
     @Override
+    public void securityDefinitionOptionalParameterEnd(int requestId) {
+        super.securityDefinitionOptionalParameterEnd(requestId);
+        chainService.chainsDataEndReceived(requestId);
+    }
+
+    @Override
     public void contractDetails(int requestId, ContractDetails contractDetails) {
-        super.contractDetails(requestId, contractDetails);
         if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
             return;
         }
         if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
             chainService.contractDetailsReceived(contractDetails);
         } else {
+            super.contractDetails(requestId, contractDetails);
             dataService.contractDetailsReceived(contractDetails);
         }
     }
@@ -149,8 +155,9 @@ public class IbListener extends GenericIbListener {
     @Override
     public void	contractDetailsEnd(int requestId) {
         super.contractDetailsEnd(requestId);
+
         if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
-            chainService.contractDetailsEndReceived(requestId);
+            chainService.chainsDataEndReceived(requestId);
         }
     }
 

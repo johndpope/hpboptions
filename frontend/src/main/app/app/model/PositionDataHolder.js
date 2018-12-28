@@ -7,7 +7,7 @@ Ext.define('HopGui.model.PositionDataHolder', {
     fields: [
         {name: 'right', mapping: 'instrument.right'},
         {name: 'strike', mapping: 'instrument.strike'},
-        {name: 'expirationDate', type: 'date', dateFormat: 'Y-m-d', mapping: 'instrument.expirationDate'},
+        {name: 'expiration', type: 'date', dateFormat: 'Y-m-d', mapping: 'instrument.expiration'},
         'daysToExpiration',
         'positionSize',
         'unrealizedPnl',

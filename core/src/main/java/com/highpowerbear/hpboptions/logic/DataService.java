@@ -24,11 +24,7 @@ import java.util.stream.Collectors;
  * Created by robertk on 11/5/2018.
  */
 @Service
-public class DataService implements ConnectionListener {
-
-    private final IbController ibController;
-    private final CoreDao coreDao;
-    private final MessageSender messageSender;
+public class DataService extends AbstractService implements ConnectionListener {
 
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
@@ -36,7 +32,6 @@ public class DataService implements ConnectionListener {
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
     private final ReentrantLock positionLock = new ReentrantLock();
 
-    private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final Map<Integer, PositionDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> positionDataHolder
 
@@ -44,9 +39,7 @@ public class DataService implements ConnectionListener {
 
     @Autowired
     public DataService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
-        this.ibController = ibController;
-        this.coreDao = coreDao;
-        this.messageSender = messageSender;
+        super(ibController, coreDao, messageSender);
 
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
@@ -96,25 +89,6 @@ public class DataService implements ConnectionListener {
     private void performStartOfDayTasks() {
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
         ibController.requestPositions();
-    }
-
-    private void requestMktData(DataHolder dataHolder) {
-        int requestId = dataHolder.getIbMktDataRequestId();
-
-        mktDataRequestMap.put(requestId, dataHolder);
-        ibController.requestMktData(requestId, dataHolder.toIbContract(), dataHolder.getGenericTicks());
-    }
-
-    private void cancelMktData(DataHolder dataHolder) {
-        int requestId = dataHolder.getIbMktDataRequestId();
-
-        ibController.cancelMktData(requestId);
-        mktDataRequestMap.remove(requestId);
-    }
-
-    private void cancelAllMktData() {
-        mktDataRequestMap.keySet().forEach(ibController::cancelMktData);
-        mktDataRequestMap.clear();
     }
 
     private void cancelAllPnlSingle() {
@@ -198,46 +172,16 @@ public class DataService implements ConnectionListener {
         messageSender.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
     }
 
+    @Override
+    public void modelOptionDataReceived(OptionDataHolder optionDataHolder) {
+        if (optionDataHolder.getType() == DataHolderType.POSITION) {
+            recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
+        }
+    }
+
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
         accountSummary.update(account, tag, value, currency);
         messageSender.sendWsMessage(WsTopic.ACCOUNT, accountSummary.getText());
-    }
-
-    public void mktDataReceived(int requestId, int tickType, Number value) {
-        DataHolder dataHolder = mktDataRequestMap.get(requestId);
-        if (dataHolder == null) {
-            return;
-        }
-        BasicMktDataField basicField = BasicMktDataField.basicField(TickType.get(tickType));
-        if (basicField == null) {
-            return;
-        }
-        dataHolder.updateField(basicField, value);
-        DerivedMktDataField.derivedFields(basicField).forEach(dataHolder::calculateField);
-
-        messageSender.sendWsMessage(dataHolder, basicField);
-        DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> messageSender.sendWsMessage(dataHolder, derivedField));
-    }
-
-    public void optionDataReceived(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
-        if (tickType == TickType.LAST_OPTION) {
-            return;
-        }
-        DataHolder dataHolder = mktDataRequestMap.get(requestId);
-        if (dataHolder == null) {
-            return;
-        }
-        OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
-        optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
-
-        if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
-            optionDataHolder.recalculateOptionData();
-            OptionDataField.fields().forEach(field -> messageSender.sendWsMessage(dataHolder, field));
-
-            if (dataHolder.getType() == DataHolderType.POSITION) {
-                recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
-            }
-        }
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
@@ -271,9 +215,9 @@ public class DataService implements ConnectionListener {
 
                     Types.Right right = contract.right();
                     double strike = contract.strike();
-                    LocalDate expirationDate = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
+                    LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
 
-                    OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expirationDate, multiplier, underlyingSymbol);
+                    OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
                     pdh.updatePositionSize(positionSize);
                     positionMap.put(conid, pdh);
@@ -326,6 +270,8 @@ public class DataService implements ConnectionListener {
         if (udh != null) {
             pdh.setDisplayRank(udh.getDisplayRank());
             underlyingPositionMap.get(underlyingConid).put(conid, pdh);
+        } else {
+            pdh.setDisplayRank(-1);
         }
 
         messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
@@ -358,6 +304,7 @@ public class DataService implements ConnectionListener {
                 .sorted(Comparator
                         .comparing(PositionDataHolder::getDaysToExpiration)
                         .thenComparing(PositionDataHolder::getDisplayRank)
+                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
                         .thenComparing(PositionDataHolder::getRight)
                         .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
     }

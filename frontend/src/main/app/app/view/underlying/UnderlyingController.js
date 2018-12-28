@@ -138,15 +138,5 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                 me.updateAccountSummary(response.responseText);
             }
         });
-    },
-
-    setChainUnderlying: function (grid, record, index, eOpts) {
-        Ext.Ajax.request({
-            method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/chain-underlying/' + record.data.conid,
-            success: function(response) {
-                console.log('chain underlying set to ' + response.responseText);
-            }
-        });
     }
 });
