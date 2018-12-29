@@ -184,10 +184,11 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     @Override
-    public Contract toIbContract() {
+    public Contract createIbContract() {
         Contract contract = new Contract();
         contract.conid(instrument.getConid());
         contract.exchange(instrument.getExchange().name());
+
         return contract;
     }
 

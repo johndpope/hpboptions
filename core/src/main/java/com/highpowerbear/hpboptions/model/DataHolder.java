@@ -20,5 +20,5 @@ public interface DataHolder {
     String createMessage(DataField dataField);
     boolean isSendMessage(DataField dataField);
     String getGenericTicks();
-    Contract toIbContract();
+    Contract createIbContract();
 }

@@ -33,7 +33,7 @@ public abstract class AbstractService {
         int requestId = dataHolder.getIbMktDataRequestId();
 
         mktDataRequestMap.put(requestId, dataHolder);
-        ibController.requestMktData(requestId, dataHolder.toIbContract(), dataHolder.getGenericTicks());
+        ibController.requestMktData(requestId, dataHolder.createIbContract(), dataHolder.getGenericTicks());
     }
 
     protected void cancelMktData(DataHolder dataHolder) {

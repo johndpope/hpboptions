@@ -1,5 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
 
@@ -12,5 +14,10 @@ public class ChainDataHolder extends AbstractOptionDataHolder {
         super(DataHolderType.CHAIN, instrument, ibMktDataRequestId);
 
         OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+    }
+
+    @Override
+    public String createMessage(DataField dataField) {
+        return getId() + "," + CoreUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," + getOld(dataField) + "," + getCurrent(dataField);
     }
 }

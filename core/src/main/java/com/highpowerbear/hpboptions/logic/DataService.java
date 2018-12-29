@@ -89,6 +89,7 @@ public class DataService extends AbstractService implements ConnectionListener {
     private void performStartOfDayTasks() {
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
         ibController.requestPositions();
+        ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
     }
 
     private void cancelAllPnlSingle() {
@@ -101,7 +102,7 @@ public class DataService extends AbstractService implements ConnectionListener {
 
         ibController.requestHistData(
                 udh.getIbHistDataRequestId(),
-                udh.toIbContract(),
+                udh.createIbContract(),
                 LocalDate.now().atStartOfDay().format(CoreSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
@@ -307,5 +308,13 @@ public class DataService extends AbstractService implements ConnectionListener {
                         .thenComparing(PositionDataHolder::getUnderlyingSymbol)
                         .thenComparing(PositionDataHolder::getRight)
                         .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
+    }
+
+    public double getUnderlyingPrice(int conid) {
+        return underlyingMap.get(conid).getLast();
+    }
+
+    public double getUnderlyingOptionImpliedVol(int conid) {
+        return underlyingMap.get(conid).getOptionImpliedVol();
     }
 }

@@ -4,14 +4,14 @@
 Ext.define('HopGui.view.chain.ChainModel', {
     extend: 'Ext.app.ViewModel',
     requires: [
-        'HopGui.model.ChainDataHolder'
+        'HopGui.model.ChainItem'
     ],
 
     alias: 'viewmodel.hop-chain',
 
     stores: {
-        chainDataHolders: {
-            model: 'HopGui.model.ChainDataHolder',
+        chainItems: {
+            model: 'HopGui.model.ChainItem',
             autoload: true
         }
     }

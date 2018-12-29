@@ -2,9 +2,11 @@ package com.highpowerbear.hpboptions.entity;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
+import com.ib.client.Contract;
 import com.ib.client.Types;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -13,7 +15,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "underlying", schema = "hpboptions", catalog = "hpboptions")
-public class Underlying {
+public class Underlying implements Serializable {
     private static final long serialVersionUID = 1162498913826827666L;
 
     @Id
@@ -30,10 +32,10 @@ public class Underlying {
     private Exchange primaryExchange;
     private LocalTime marketOpen;
     private LocalTime marketClose;
-    private Boolean active;
+    private boolean active;
     private Integer displayRank;
     private Integer chainMultiplier;
-    private Boolean chainHalfPoint;
+    private boolean chainRoundStrikes;
     private Exchange chainExchange;
 
     @Override
@@ -49,6 +51,16 @@ public class Underlying {
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
+    }
+
+    public Contract createChainRequestContract() {
+        Contract contract = new Contract();
+        contract.symbol(symbol);
+        contract.secType(Types.SecType.OPT);
+        contract.currency(currency.name());
+        contract.exchange(chainExchange.name());
+
+        return contract;
     }
 
     public Long getId() {
@@ -123,11 +135,11 @@ public class Underlying {
         this.marketClose = marketClose;
     }
 
-    public Boolean getActive() {
+    public boolean isActive() {
         return active;
     }
 
-    public void setActive(Boolean active) {
+    public void setActive(boolean active) {
         this.active = active;
     }
 
@@ -147,12 +159,12 @@ public class Underlying {
         this.chainMultiplier = chainMultiplier;
     }
 
-    public Boolean getChainHalfPoint() {
-        return chainHalfPoint;
+    public boolean isChainRoundStrikes() {
+        return chainRoundStrikes;
     }
 
-    public void setChainHalfPoint(Boolean chainHalfPoint) {
-        this.chainHalfPoint = chainHalfPoint;
+    public void setChainRoundStrikes(boolean chainRoundStrikes) {
+        this.chainRoundStrikes = chainRoundStrikes;
     }
 
     public Exchange getChainExchange() {

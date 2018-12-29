@@ -14,7 +14,7 @@ public class ChainItem {
         this.strike = strike;
     }
 
-    public void setDataHolder(ChainDataHolder dataHolder) {
+    public void setupDataHolder(ChainDataHolder dataHolder) {
         Types.Right right = dataHolder.getInstrument().getRight();
 
         if (right == Types.Right.Call) {

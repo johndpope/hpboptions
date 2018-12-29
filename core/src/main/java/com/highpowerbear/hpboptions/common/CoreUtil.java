@@ -41,4 +41,8 @@ public class CoreUtil {
     public static  boolean isValidSize(int i) {
         return i > 0 && i != Integer.MAX_VALUE;
     }
+
+    public static boolean isRound(double value) {
+        return value == Math.round(value);
+    }
 }
