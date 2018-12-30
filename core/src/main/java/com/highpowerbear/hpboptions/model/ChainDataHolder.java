@@ -18,6 +18,9 @@ public class ChainDataHolder extends AbstractOptionDataHolder {
 
     @Override
     public String createMessage(DataField dataField) {
-        return getId() + "," + CoreUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," + getOld(dataField) + "," + getCurrent(dataField);
+        return getType().name().toLowerCase() + "-" + getInstrument().getStrike() + "," +
+                CoreUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," +
+                getOld(dataField) + "," +
+                getCurrent(dataField);
     }
 }

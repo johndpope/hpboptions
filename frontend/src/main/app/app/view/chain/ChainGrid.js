@@ -6,9 +6,10 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     xtype: 'hop-chain-grid',
     requires: [
         'Ext.grid.column.Date',
-        'Ext.toolbar.Paging'
+        'Ext.toolbar.Paging',
+        'Ext.form.field.ComboBox'
     ],
-    bind: '{chainDataHolders}',
+    bind: '{activeChainItems}',
     listeners: {
         cellclick: 'placeOrder'
     },
@@ -218,9 +219,47 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',
-        bind: '{chainItems}',
+        bind: '{activeChainItems}',
         dock: 'bottom',
         displayInfo: true
-        // TODO underlyings, expirations combo boxes
+    }, {
+        xtype: 'combobox',
+        editable: false,
+        queryMode: 'local',
+        displayField: 'symbol',
+        valueField: 'conid',
+        reference: 'underlyingCombo',
+        fieldLabel: 'Underlying',
+        width: 170,
+        labelWidth: 70,
+        store: Ext.create('Ext.data.ArrayStore', {
+            fields: ['symbol', 'conid'],
+            data: [
+                {"symbol": "symbol", "conid": "conid"}
+            ]
+        }),
+        margin: '0 0 0 10',
+        listeners: {
+            change: 'prepareExpirationCombo'
+        }
+    }, {
+        xtype: 'combobox',
+        editable: false,
+        queryMode: 'local',
+        displayField: 'formattedDate',
+        valueField: 'date',
+        reference: 'expirationCombo',
+        fieldLabel: 'Expiration',
+        width: 170,
+        labelWidth: 70,
+        store: Ext.create('Ext.data.ArrayStore', {
+            fields: ['formattedDate', 'date'],
+            data: [
+                {"formattedDate": "formattedDate", "date": "date"}
+            ]
+        }),
+        margin: '0 0 0 10'
+    }, {
+        // TODO activateChain button
     }]
 });

@@ -34,7 +34,7 @@ public abstract class AbstractDataHolder implements DataHolder {
         this.instrument = instrument;
         this.ibMktDataRequestId = ibMktDataRequestId;
 
-        id = type.name().toLowerCase() + "-" + instrument.getSymbol().toLowerCase().replaceAll("\\s+","") + "-" + instrument.getConid();
+        id = type.name().toLowerCase() + "-" + instrument.getConid();
 
         BasicMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
         DerivedMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));

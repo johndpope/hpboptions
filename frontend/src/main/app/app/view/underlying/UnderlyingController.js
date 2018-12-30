@@ -55,13 +55,11 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     loadUnderlyingDataHolders: function() {
         var me = this,
-            underlyingDataHolders = me.getStore('underlyingDataHolders'),
-            underlyingGrid = me.lookupReference('underlyingGrid');
+            underlyingDataHolders = me.getStore('underlyingDataHolders');
 
         underlyingDataHolders.load(function(records, operation, success) {
             if (success) {
                 console.log('loaded underlyingDataHolders');
-                underlyingGrid.setSelection(underlyingDataHolders.first());
             }
         });
     },

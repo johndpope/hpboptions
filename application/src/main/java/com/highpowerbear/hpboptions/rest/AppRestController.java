@@ -1,15 +1,11 @@
 package com.highpowerbear.hpboptions.rest;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
 import com.highpowerbear.hpboptions.logic.OrderService;
-import com.highpowerbear.hpboptions.model.ChainInfo;
-import com.highpowerbear.hpboptions.model.ChainItem;
-import com.highpowerbear.hpboptions.model.PositionDataHolder;
-import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,6 +79,13 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(positionDataHolders, positionDataHolders.size()));
     }
 
+    @RequestMapping("underlying-infos")
+    public ResponseEntity<?> getUnderlyingInfos() {
+
+        List<UnderlyingInfo> underlyingInfos = chainService.getUnderlyingInfos();
+        return ResponseEntity.ok(new RestList<>(underlyingInfos, underlyingInfos.size()));
+    }
+
     @RequestMapping("expirations/{underlyingConid}")
     public ResponseEntity<?> getExpirations(
             @PathVariable("underlyingConid") int underlyingConid) {
@@ -91,13 +94,13 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(expirations, expirations.size()));
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "load-chain/{underlyingConid}/{expiration}")
-    public ResponseEntity<?> loadChain(
+    @RequestMapping(method = RequestMethod.PUT, value = "activate-chain/{underlyingConid}/{expiration}")
+    public ResponseEntity<?> activateChain(
             @PathVariable("underlyingConid") int underlyingConid,
-            @PathVariable("expiration") String expiration) {
+            @PathVariable("expiration") LocalDate expiration) {
 
-        ChainInfo chainInfo = chainService.loadChain(underlyingConid, LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER));
-        return chainInfo != null ? ResponseEntity.ok(chainInfo) : ResponseEntity.badRequest().build();
+        boolean success = chainService.activateChain(underlyingConid, expiration);
+        return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
 
     @RequestMapping("active-chain-items")

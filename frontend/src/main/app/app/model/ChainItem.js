@@ -4,7 +4,7 @@
 Ext.define('HopGui.model.ChainItem', {
     extend: 'Ext.data.Model',
 
-    idProperty: 'strike',
+    idProperty: 'id',
     fields: [
         'strike',
         'call',

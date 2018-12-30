@@ -29,7 +29,7 @@ Ext.define('HopGui.view.position.PositionController', {
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/position', function(message) {
-                if (message.body.startsWith('reload request')) {
+                if (message.body.startsWith('reloadRequest')) {
                     positionDataHolders.reload();
                 } else {
                     me.updateData(message.body);
@@ -47,13 +47,11 @@ Ext.define('HopGui.view.position.PositionController', {
 
     loadPositionDataHolders: function() {
         var me = this,
-            positionDataHolders = me.getStore('positionDataHolders'),
-            positionGrid = me.lookupReference('positionGrid');
+            positionDataHolders = me.getStore('positionDataHolders');
 
         positionDataHolders.load(function(records, operation, success) {
             if (success) {
                 console.log('loaded positionDataHolders');
-                positionGrid.setSelection(positionDataHolders.first());
             }
         });
     },

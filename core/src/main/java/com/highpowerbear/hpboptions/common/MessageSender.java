@@ -74,6 +74,6 @@ public class MessageSender {
     }
 
     public void sendWsReloadRequestMessage(DataHolderType type) {
-        sendWsMessage(type, "reload request");
+        sendWsMessage(type, "reloadRequest");
     }
 }

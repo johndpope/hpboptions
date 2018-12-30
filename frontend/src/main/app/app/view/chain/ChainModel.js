@@ -10,7 +10,7 @@ Ext.define('HopGui.view.chain.ChainModel', {
     alias: 'viewmodel.hop-chain',
 
     stores: {
-        chainItems: {
+        activeChainItems: {
             model: 'HopGui.model.ChainItem',
             autoload: true
         }
