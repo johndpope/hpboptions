@@ -12,7 +12,8 @@ Ext.define('HopGui.view.underlying.UnderlyingModel', {
     stores: {
         underlyingDataHolders: {
             model: 'HopGui.model.UnderlyingDataHolder',
-            autoload: true
+            autoload: true,
+            pageSize: 1000 // disable
         }
     }
 });

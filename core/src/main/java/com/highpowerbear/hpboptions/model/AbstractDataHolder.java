@@ -187,6 +187,7 @@ public abstract class AbstractDataHolder implements DataHolder {
     public Contract createIbContract() {
         Contract contract = new Contract();
         contract.conid(instrument.getConid());
+        contract.localSymbol(instrument.getSymbol());
         contract.exchange(instrument.getExchange().name());
 
         return contract;

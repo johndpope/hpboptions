@@ -9,18 +9,25 @@ import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.model.*;
+import com.highpowerbear.hpboptions.model.ChainDataHolder;
+import com.highpowerbear.hpboptions.model.ChainItem;
+import com.highpowerbear.hpboptions.model.OptionInstrument;
+import com.highpowerbear.hpboptions.model.UnderlyingInfo;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -29,10 +36,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by robertk on 12/21/2018.
  */
 @Service
-public class ChainService extends AbstractService implements ConnectionListener {
+public class ChainService extends AbstractDataService implements ConnectionListener {
+    private static final Logger log = LoggerFactory.getLogger(ChainService.class);
 
-    private final DataService dataService;
-    private final AsyncTaskExecutor asyncTaskExecutor;
+    private final RiskService riskService;
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private final Map<Integer, Underlying> underlyingMap = new HashMap<>(); // conid -> underlying
     private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
@@ -40,11 +48,12 @@ public class ChainService extends AbstractService implements ConnectionListener 
 
     private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new ConcurrentHashMap<>(); // underlying conid -> chain expirations
     private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainInfo -> (strike -> chainItem)
+    private ChainKey activeChainKey;
     private final Map<ChainKey, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainInfo -> list of chain data holders
 
-    private final Map<Integer, Integer> pendingChainRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final Map<Integer, Integer> pendingExpirationsRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final Map<Integer, Integer> pendingContractDetailsRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
     private final AtomicBoolean chainsRebuilt = new AtomicBoolean(false);
-    private ChainKey activeChainKey;
     private final ReentrantLock chainLock = new ReentrantLock();
 
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL);
@@ -85,13 +94,17 @@ public class ChainService extends AbstractService implements ConnectionListener 
             result = 31 * result + expiration.hashCode();
             return result;
         }
+
+        @Override
+        public String toString() {
+            return underlyingConid + "_" + expiration;
+        }
     }
 
     @Autowired
-    public ChainService(IbController ibController, CoreDao coreDao, MessageSender messageSender, DataService dataService, AsyncTaskExecutor asyncTaskExecutor) {
+    public ChainService(IbController ibController, CoreDao coreDao, MessageSender messageSender, RiskService riskService) {
         super(ibController, coreDao, messageSender);
-        this.dataService = dataService;
-        this.asyncTaskExecutor = asyncTaskExecutor;
+        this.riskService = riskService;
 
         ibController.addConnectionListener(this);
         for (Underlying u : coreDao.getActiveUnderlyings()) {
@@ -104,7 +117,7 @@ public class ChainService extends AbstractService implements ConnectionListener 
     @Override
     public void postConnect() {
         if (!chainsRebuilt.get()) {
-            asyncTaskExecutor.execute(this::rebuildChains, CoreSettings.CHAIN_UNDERLYING_DATA_WAIT_MILLIS);
+            executor.schedule(this::rebuildChains, CoreSettings.CHAIN_UNDERLYING_DATA_DELAY_MILLIS, TimeUnit.MILLISECONDS);
         } else if (activeChainKey != null) {
             requestActiveChainMktData();
         }
@@ -117,7 +130,7 @@ public class ChainService extends AbstractService implements ConnectionListener 
 
     @Scheduled(cron="0 0 5 * * MON")
     private void performStartOfWeekTasks() {
-        asyncTaskExecutor.execute(this::rebuildChains);
+        executor.execute(this::rebuildChains);
     }
 
     public boolean activateChain(int underlyingConid, LocalDate expiration) {
@@ -142,6 +155,7 @@ public class ChainService extends AbstractService implements ConnectionListener 
     private void rebuildChains() {
         chainLock.lock();
         try {
+            log.info("rebuilding chains");
             chainsRebuilt.set(false);
             if (!ibController.isConnected()) {
                 return; // rebuild upon next connect
@@ -152,7 +166,8 @@ public class ChainService extends AbstractService implements ConnectionListener 
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
             chainDataHolderMap.clear();
-            pendingChainRequests.clear();
+            pendingExpirationsRequests.clear();
+            pendingContractDetailsRequests.clear();
 
             for (Underlying underlying : underlyingMap.values()) {
                 int underlyingConid = underlying.getConid();
@@ -160,15 +175,15 @@ public class ChainService extends AbstractService implements ConnectionListener 
                 int expirationsRequestId = ibRequestIdGen.incrementAndGet();
                 int contractDetailsRequestId = ibRequestIdGen.incrementAndGet();
 
-                double underlyingPrice = dataService.getUnderlyingPrice(underlyingConid);
-                double underlyingOptionImpliedVol = dataService.getUnderlyingOptionImpliedVol(underlyingConid);
+                double underlyingPrice = riskService.getUnderlyingPrice(underlyingConid);
+                double underlyingOptionImpliedVol = riskService.getUnderlyingOptionImpliedVol(underlyingConid);
 
                 if (CoreUtil.isValidPrice(underlyingPrice) && CoreUtil.isValidPrice(underlyingOptionImpliedVol)) {
                     underlyingMktDataMap.put(underlyingConid, new UnderlyingMktData(underlyingPrice, underlyingOptionImpliedVol));
                 }
 
-                pendingChainRequests.put(expirationsRequestId, underlyingConid);
-                pendingChainRequests.put(contractDetailsRequestId, underlyingConid);
+                pendingExpirationsRequests.put(expirationsRequestId, underlyingConid);
+                pendingContractDetailsRequests.put(contractDetailsRequestId, underlyingConid);
 
                 ibController.requestOptionChainParams(expirationsRequestId, underlying.getSymbol(), underlying.getSecType(), underlyingConid);
                 ibController.requestContractDetails(contractDetailsRequestId, underlying.createChainRequestContract());
@@ -182,6 +197,7 @@ public class ChainService extends AbstractService implements ConnectionListener 
         if (!ibController.isConnected()) {
             return;
         }
+        log.info("requestActiveChainMktData for chainKey=" + activeChainKey);
         cancelAllMktData();
         chainDataHolderMap.get(activeChainKey).forEach(this::requestMktData);
     }
@@ -214,11 +230,12 @@ public class ChainService extends AbstractService implements ConnectionListener 
     public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirationsStringSet) {
         Underlying underlying = underlyingMap.get(underlyingConId);
 
-        if (Exchange.valueOf(exchange) == underlying.getChainExchange() && multiplier == underlying.getChainMultiplier()) {
+        if (underlying.getChainExchange().name().equals(exchange) && multiplier == underlying.getChainMultiplier()) {
             expirationsStringSet.forEach(expiration -> expirationsMap.get(underlyingConId).add(LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER)));
         }
     }
 
+    @Override
     public void contractDetailsReceived(ContractDetails contractDetails) {
         Contract contract = contractDetails.contract();
 
@@ -257,11 +274,24 @@ public class ChainService extends AbstractService implements ConnectionListener 
         }
     }
 
-    public void chainsDataEndReceived(int requestId) {
-        pendingChainRequests.remove(requestId);
+    public void expirationsEndReceived(int requestId) {
+        pendingExpirationsRequests.remove(requestId);
+        log.info("expirationsEndReceived, requestId=" + requestId + ", remaining=" + pendingExpirationsRequests.size());
+        checkChainsRebuilt();
+    }
 
-        if (pendingChainRequests.isEmpty()) {
+    @Override
+    public void contractDetailsEndReceived(int requestId) {
+        pendingContractDetailsRequests.remove(requestId);
+        log.info("contractDetailsEndReceived, requestId=" + requestId + ", remaining=" + pendingContractDetailsRequests.size());
+        checkChainsRebuilt();
+    }
+
+    private void checkChainsRebuilt() {
+        if (pendingExpirationsRequests.isEmpty() && pendingContractDetailsRequests.isEmpty()) {
             chainsRebuilt.set(true);
+            log.info("chains rebuilt");
+            chainMap.keySet().forEach(key -> log.info(key + " -> " + chainMap.get(key).size() + " strikes"));
             messageSender.sendWsReloadRequestMessage(DataHolderType.CHAIN);
         }
     }

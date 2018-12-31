@@ -36,6 +36,7 @@ public class Underlying implements Serializable {
     private Integer displayRank;
     private Integer chainMultiplier;
     private boolean chainRoundStrikes;
+    @Enumerated(EnumType.STRING)
     private Exchange chainExchange;
 
     @Override

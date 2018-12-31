@@ -7,6 +7,7 @@ import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
 import com.highpowerbear.hpboptions.model.DataHolder;
 import com.highpowerbear.hpboptions.model.OptionDataHolder;
+import com.ib.client.ContractDetails;
 import com.ib.client.TickType;
 
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by robertk on 12/28/2018.
  */
-public abstract class AbstractService {
+public abstract class AbstractDataService implements DataService {
 
     protected final IbController ibController;
     protected final CoreDao coreDao;
@@ -23,7 +24,7 @@ public abstract class AbstractService {
 
     protected final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
 
-    public AbstractService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
+    public AbstractDataService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
         this.ibController = ibController;
         this.coreDao = coreDao;
         this.messageSender = messageSender;
@@ -48,6 +49,7 @@ public abstract class AbstractService {
         mktDataRequestMap.clear();
     }
 
+    @Override
     public void mktDataReceived(int requestId, int tickType, Number value) {
         DataHolder dataHolder = mktDataRequestMap.get(requestId);
         if (dataHolder == null) {
@@ -64,6 +66,7 @@ public abstract class AbstractService {
         DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> messageSender.sendWsMessage(dataHolder, derivedField));
     }
 
+    @Override
     public void optionDataReceived(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice) {
         if (tickType == TickType.LAST_OPTION) {
             return;
@@ -83,6 +86,13 @@ public abstract class AbstractService {
         }
     }
 
-    public void modelOptionDataReceived(OptionDataHolder optionDataHolder) {
+    @Override
+    public abstract void contractDetailsReceived(ContractDetails contractDetails);
+
+    @Override
+    public void contractDetailsEndReceived(int requestId) {
+    }
+
+    protected void modelOptionDataReceived(OptionDataHolder optionDataHolder) {
     }
 }

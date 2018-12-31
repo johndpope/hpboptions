@@ -12,7 +12,8 @@ Ext.define('HopGui.view.chain.ChainModel', {
     stores: {
         activeChainItems: {
             model: 'HopGui.model.ChainItem',
-            autoload: true
+            autoload: true,
+            pageSize: 1000 // disable
         }
     }
 });

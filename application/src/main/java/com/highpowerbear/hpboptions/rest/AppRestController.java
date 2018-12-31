@@ -1,12 +1,17 @@
 package com.highpowerbear.hpboptions.rest;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.logic.ChainService;
-import com.highpowerbear.hpboptions.logic.DataService;
+import com.highpowerbear.hpboptions.logic.RiskService;
 import com.highpowerbear.hpboptions.logic.OrderService;
-import com.highpowerbear.hpboptions.model.*;
+import com.highpowerbear.hpboptions.model.ChainItem;
+import com.highpowerbear.hpboptions.model.PositionDataHolder;
+import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.model.UnderlyingInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +31,14 @@ import java.util.Set;
 public class AppRestController {
 
     private final IbController ibController;
-    private final DataService dataService;
+    private final RiskService riskService;
     private final OrderService orderService;
     private final ChainService chainService;
 
     @Autowired
-    public AppRestController(IbController ibController, DataService dataService, OrderService orderService, ChainService chainService) {
+    public AppRestController(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService) {
         this.ibController = ibController;
-        this.dataService = dataService;
+        this.riskService = riskService;
         this.orderService = orderService;
         this.chainService = chainService;
     }
@@ -57,7 +62,7 @@ public class AppRestController {
 
     @RequestMapping("account-summary")
     public ResponseEntity<?> getAccountSummary() {
-        return ResponseEntity.ok(dataService.getAccountSummaryText());
+        return ResponseEntity.ok(riskService.getAccountSummaryText());
     }
 
     @RequestMapping("connection-info")
@@ -68,14 +73,14 @@ public class AppRestController {
     @RequestMapping("underlying-data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
 
-        List<UnderlyingDataHolder> underlyingDataHolders = dataService.getSortedUnderlyingDataHolders();
+        List<UnderlyingDataHolder> underlyingDataHolders = riskService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 
     @RequestMapping("position-data-holders")
     public ResponseEntity<?> getPositionDataHolders() {
 
-        List<PositionDataHolder> positionDataHolders = dataService.getSortedPositionDataHolders();
+        List<PositionDataHolder> positionDataHolders = riskService.getSortedPositionDataHolders();
         return ResponseEntity.ok(new RestList<>(positionDataHolders, positionDataHolders.size()));
     }
 
@@ -97,7 +102,7 @@ public class AppRestController {
     @RequestMapping(method = RequestMethod.PUT, value = "activate-chain/{underlyingConid}/{expiration}")
     public ResponseEntity<?> activateChain(
             @PathVariable("underlyingConid") int underlyingConid,
-            @PathVariable("expiration") LocalDate expiration) {
+            @PathVariable("expiration") @DateTimeFormat(pattern = CoreSettings.JSON_DATE_FORMAT) LocalDate expiration) {
 
         boolean success = chainService.activateChain(underlyingConid, expiration);
         return success ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();

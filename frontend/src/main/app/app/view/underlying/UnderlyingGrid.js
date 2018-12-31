@@ -203,7 +203,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: '',
+            html: 'Connection info N/A',
             width: 180,
             margin: '0 0 0 10',
             reference: 'ibConnectionInfo'
@@ -219,7 +219,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: '',
+            html: 'Account summary N/A',
             width: 500,
             margin: '0 0 0 10',
             reference: 'accountSummary'

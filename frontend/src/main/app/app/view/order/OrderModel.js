@@ -12,7 +12,8 @@ Ext.define('HopGui.view.order.OrderModel', {
     stores: {
         orders: {
             model: 'HopGui.model.Order',
-            autoload: true
+            autoload: true,
+            pageSize: 1000 // disable
         }
     }
 });

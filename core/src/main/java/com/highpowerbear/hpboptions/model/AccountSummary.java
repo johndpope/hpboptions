@@ -20,7 +20,7 @@ public class AccountSummary {
     private final int ibRequestId;
     private Set<AccountSummaryTag> tags = new LinkedHashSet<>();
     private Map<String, Map<AccountSummaryTag, Entry>> summaryMap = new HashMap<>(); // account -> (tag -> (value, currency))
-    private String text = "Account Summary";
+    private String text = "Account summary N/A";
 
     private class Entry {
         private double value;

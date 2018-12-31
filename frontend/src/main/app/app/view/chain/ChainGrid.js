@@ -223,43 +223,69 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         dock: 'bottom',
         displayInfo: true
     }, {
-        xtype: 'combobox',
-        editable: false,
-        queryMode: 'local',
-        displayField: 'symbol',
-        valueField: 'conid',
-        reference: 'underlyingCombo',
-        fieldLabel: 'Underlying',
-        width: 170,
-        labelWidth: 70,
-        store: Ext.create('Ext.data.ArrayStore', {
-            fields: ['symbol', 'conid'],
-            data: [
-                {"symbol": "symbol", "conid": "conid"}
-            ]
-        }),
-        margin: '0 0 0 10',
-        listeners: {
-            change: 'prepareExpirationCombo'
-        }
-    }, {
-        xtype: 'combobox',
-        editable: false,
-        queryMode: 'local',
-        displayField: 'formattedDate',
-        valueField: 'date',
-        reference: 'expirationCombo',
-        fieldLabel: 'Expiration',
-        width: 170,
-        labelWidth: 70,
-        store: Ext.create('Ext.data.ArrayStore', {
-            fields: ['formattedDate', 'date'],
-            data: [
-                {"formattedDate": "formattedDate", "date": "date"}
-            ]
-        }),
-        margin: '0 0 0 10'
-    }, {
-        // TODO activateChain button
+        xtype: 'toolbar',
+        items: [{
+            xtype: 'combobox',
+            editable: false,
+            queryMode: 'local',
+            displayField: 'symbol',
+            valueField: 'conid',
+            reference: 'underlyingCombo',
+            fieldLabel: 'Underlying',
+            width: 150,
+            labelWidth: 65,
+            store: Ext.create('Ext.data.ArrayStore', {
+                fields: ['symbol', 'conid'],
+                data: [
+                    {"symbol": "symbol", "conid": "conid"}
+                ]
+            }),
+            margin: '0 0 0 10',
+            listeners: {
+                change: 'prepareExpirationCombo'
+            }
+        }, {
+            xtype: 'combobox',
+            editable: false,
+            queryMode: 'local',
+            displayField: 'formattedDate',
+            valueField: 'date',
+            reference: 'expirationCombo',
+            fieldLabel: 'Expiration',
+            width: 180,
+            labelWidth: 60,
+            store: Ext.create('Ext.data.ArrayStore', {
+                fields: ['formattedDate', 'date'],
+                data: [
+                    {"formattedDate": "formattedDate", "date": "date"}
+                ]
+            }),
+            margin: '0 0 0 10'
+        }, {
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: 'Load',
+            handler: 'loadChain',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('download'));
+                }
+            }
+        }, {
+            xtype: 'tbtext',
+            html: 'Chain status N/A',
+            width: 150,
+            margin: '0 0 0 10',
+            reference: 'chainStatus'
+        }, {
+            xtype: 'tbtext',
+            flex: 1
+        }, {
+            xtype: 'tbtext',
+            html: 'WS status',
+            width: 120,
+            margin: '0 0 0 10',
+            reference: 'wsStatus'
+        }]
     }]
 });

@@ -12,7 +12,8 @@ Ext.define('HopGui.view.position.PositionModel', {
     stores: {
         positionDataHolders: {
             model: 'HopGui.model.PositionDataHolder',
-            autoload: true
+            autoload: true,
+            pageSize: 1000 // disable
         }
     }
 });

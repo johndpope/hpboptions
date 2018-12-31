@@ -5,6 +5,7 @@ import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
+import com.highpowerbear.hpboptions.logic.RiskService;
 import com.highpowerbear.hpboptions.logic.OrderService;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +22,15 @@ import java.util.Set;
 public class IbListener extends GenericIbListener {
 
     private final IbController ibController;
-    private final DataService dataService;
+    private final RiskService riskService;
     private final OrderService orderService;
     private final ChainService chainService;
     private final MessageSender messageSender;
 
     @Autowired
-    public IbListener(IbController ibController, DataService dataService, OrderService orderService, ChainService chainService, MessageSender messageSender) {
+    public IbListener(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService, MessageSender messageSender) {
         this.ibController = ibController;
-        this.dataService = dataService;
+        this.riskService = riskService;
         this.orderService = orderService;
         this.chainService = chainService;
         this.messageSender = messageSender;
@@ -81,41 +82,40 @@ public class IbListener extends GenericIbListener {
     @Override
     public void accountSummary(int reqId, String account, String tag, String value, String currency) {
         super.accountSummary(reqId, account, tag, value, currency);
-
-        dataService.accountSummaryReceived(account, tag, value, currency);
+        riskService.accountSummaryReceived(account, tag, value, currency);
     }
 
     @Override
     public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
-        dataService.mktDataReceived(requestId, tickType, price);
+        getDataService(requestId).mktDataReceived(requestId, tickType, price);
     }
 
     @Override
     public void tickSize(int requestId, int tickType, int size) {
-        dataService.mktDataReceived(requestId, tickType, size);
+        getDataService(requestId).mktDataReceived(requestId, tickType, size);
     }
 
     @Override
     public void tickGeneric(int requestId, int tickType, double value) {
-        dataService.mktDataReceived(requestId, tickType, value);
+        getDataService(requestId).mktDataReceived(requestId, tickType, value);
     }
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         //super.tickOptionComputation(requestId, tickType, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
-        dataService.optionDataReceived(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+        getDataService(requestId).optionDataReceived(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override
     public void historicalData(int requestId, Bar bar) {
         //super.historicalData(requestId, bar);
-        dataService.historicalDataReceived(requestId, bar);
+        riskService.historicalDataReceived(requestId, bar);
     }
 
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        dataService.historicalDataEndReceived(requestId);
+        riskService.historicalDataEndReceived(requestId);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
             return;
         }
-        dataService.positionReceived(contract, (int) pos);
+        riskService.positionReceived(contract, (int) pos);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void securityDefinitionOptionalParameterEnd(int requestId) {
         super.securityDefinitionOptionalParameterEnd(requestId);
-        chainService.chainsDataEndReceived(requestId);
+        chainService.expirationsEndReceived(requestId);
     }
 
     @Override
@@ -144,27 +144,24 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
             return;
         }
-        if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
-            chainService.contractDetailsReceived(contractDetails);
-        } else {
-            super.contractDetails(requestId, contractDetails);
-            dataService.contractDetailsReceived(contractDetails);
-        }
+        //super.contractDetails(requestId, contractDetails);
+        getDataService(requestId).contractDetailsReceived(contractDetails);
     }
 
     @Override
     public void	contractDetailsEnd(int requestId) {
         super.contractDetailsEnd(requestId);
-
-        if (requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL) {
-            chainService.chainsDataEndReceived(requestId);
-        }
+        getDataService(requestId).contractDetailsEndReceived(requestId);
     }
 
     @Override
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
 
-        dataService.unrealizedPnlReceived(requestId, unrealizedPnL);
+        riskService.unrealizedPnlReceived(requestId, unrealizedPnL);
+    }
+
+    private DataService getDataService(int requestId) {
+        return requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL ? chainService : riskService;
     }
 }

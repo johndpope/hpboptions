@@ -18,7 +18,7 @@ public class ChainDataHolder extends AbstractOptionDataHolder {
 
     @Override
     public String createMessage(DataField dataField) {
-        return getType().name().toLowerCase() + "-" + getInstrument().getStrike() + "," +
+        return getType().name().toLowerCase() + "-" + String.valueOf(getInstrument().getStrike()).replace(".", "-") + "," +
                 CoreUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," +
                 getOld(dataField) + "," +
                 getCurrent(dataField);

@@ -123,7 +123,7 @@ public class IbController {
     }
 
     public void requestMktData(int requestId, Contract contract, String genericTicks) {
-        log.info("requesting market data for requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) + ", genericTicks=" + genericTicks);
+        log.info("requesting market data for requestId=" + requestId + ", conid=" + contract.conid() + ", symbol=" + contract.localSymbol() + ", genericTicks=" + genericTicks);
 
         if (checkConnected()) {
             eClientSocket.reqMktData(requestId, contract, genericTicks, false, false, null);
@@ -139,7 +139,7 @@ public class IbController {
     }
 
     public void requestHistData(int requestId, Contract contract, String endDateTime, String durationString, String barSizeSetting, String whatToShow, int useRTH) {
-        log.info("requesting historical data, requestId=" + requestId + ", contract=" + CoreUtil.contractDetails(contract) +
+        log.info("requesting historical data, requestId=" + requestId + ", conid=" + contract.conid() + ", symbol=" + contract.localSymbol() +
                 ", endDateTime=" + endDateTime + ", durationString=" + durationString + ", barSizeSetting=" + barSizeSetting +
                 ", whatToShow=" + whatToShow + ", useRTH=" + useRTH);
 
@@ -165,7 +165,7 @@ public class IbController {
     }
 
     public void requestOptionChainParams(int requestId, String underlyingSymbol, Types.SecType underlyingSecType, int underlyingConId) {
-        log.info("requesting option chain parameters for requestId=" + requestId + ", symbol=" + underlyingSymbol);
+        log.info("requesting option chain parameters for requestId=" + requestId + ", underlying=" + underlyingSymbol);
 
         if (checkConnected()) {
             eClientSocket.reqSecDefOptParams(requestId, underlyingSymbol, "", underlyingSecType.name(), underlyingConId);
@@ -173,7 +173,7 @@ public class IbController {
     }
 
     public void requestContractDetails(int requestId, Contract contract) {
-        log.info("requesting contract details for requestId=" + requestId + ", symbol=" + contract.localSymbol());
+        log.info("requesting contract details for requestId=" + requestId + ", underlying=" + contract.symbol() + ", symbol=" + contract.localSymbol());
 
         if (checkConnected()) {
             eClientSocket.reqContractDetails(requestId, contract);

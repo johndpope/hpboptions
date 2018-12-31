@@ -15,7 +15,7 @@ public class ChainItem {
 
     public ChainItem(double strike) {
         this.strike = strike;
-        id = DataHolderType.CHAIN.name().toLowerCase() + "-" + strike;
+        id = DataHolderType.CHAIN.name().toLowerCase() + "-" + String.valueOf(strike).replace(".", "-");
     }
 
     public void setupDataHolder(ChainDataHolder dataHolder) {
