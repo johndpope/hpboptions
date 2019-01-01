@@ -116,22 +116,25 @@ Ext.define('HopGui.view.chain.ChainController', {
             url: HopGui.common.Definitions.urlPrefix + '/activate-chain/' + underlyingConid + '/' + expiration,
 
             success: function(response, opts) {
-                chainStatus.removeCls('hop-failure');
-                chainStatus.addCls('hop-success');
+                var status = response.responseText;
 
-                activeChainItems.load(function(records, operation, success) {
-                    if (success) {
-                        console.log('loaded activeChainItems');
-                        chainStatus.update("Chain loaded");
-                    }
-                });
-            },
-            failure: function() {
-                chainStatus.update("Chain not ready");
-                chainStatus.removeCls('hop-success');
-                chainStatus.addCls('hop-failure');
+                if (status === 'activated') {
+                    chainStatus.removeCls('hop-failure');
+                    chainStatus.addCls('hop-success');
 
-                activeChainItems.removeAll();
+                    activeChainItems.load(function (records, operation, success) {
+                        if (success) {
+                            console.log('loaded activeChainItems');
+                            chainStatus.update("Chain loaded");
+                        }
+                    });
+                } else {
+                    chainStatus.update("Chain not ready");
+                    chainStatus.removeCls('hop-success');
+                    chainStatus.addCls('hop-failure');
+
+                    activeChainItems.removeAll();
+                }
             }
         });
     },

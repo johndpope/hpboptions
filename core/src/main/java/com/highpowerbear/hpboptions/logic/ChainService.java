@@ -6,6 +6,7 @@ import com.highpowerbear.hpboptions.common.MessageSender;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
@@ -40,20 +41,20 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     private static final Logger log = LoggerFactory.getLogger(ChainService.class);
 
     private final RiskService riskService;
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 
     private final Map<Integer, Underlying> underlyingMap = new HashMap<>(); // conid -> underlying
     private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
     private final Map<Integer, UnderlyingMktData> underlyingMktDataMap = new HashMap<>(); // conid -> subset of mkt data
 
-    private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new ConcurrentHashMap<>(); // underlying conid -> chain expirations
+    private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new HashMap<>(); // underlying conid -> chain expirations
     private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainInfo -> (strike -> chainItem)
     private ChainKey activeChainKey;
     private final Map<ChainKey, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainInfo -> list of chain data holders
 
-    private final Map<Integer, Integer> pendingExpirationsRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
-    private final Map<Integer, Integer> pendingContractDetailsRequests = new ConcurrentHashMap<>(); // ib request id -> underlying conid
-    private final AtomicBoolean chainsRebuilt = new AtomicBoolean(false);
+    private final Map<Integer, Integer> expirationsRequestMap = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final Map<Integer, ChainKey> contractDetailsRequestMap = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final AtomicBoolean allChainsReady = new AtomicBoolean(false);
     private final ReentrantLock chainLock = new ReentrantLock();
 
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL);
@@ -95,6 +96,14 @@ public class ChainService extends AbstractDataService implements ConnectionListe
             return result;
         }
 
+        public int getUnderlyingConid() {
+            return underlyingConid;
+        }
+
+        public LocalDate getExpiration() {
+            return expiration;
+        }
+
         @Override
         public String toString() {
             return underlyingConid + "_" + expiration;
@@ -116,8 +125,11 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     @Override
     public void postConnect() {
-        if (!chainsRebuilt.get()) {
+        if (!allChainsReady.get()) {
+            expirationsRequestMap.clear();
+            contractDetailsRequestMap.clear();
             executor.schedule(this::rebuildChains, CoreSettings.CHAIN_UNDERLYING_DATA_DELAY_MILLIS, TimeUnit.MILLISECONDS);
+
         } else if (activeChainKey != null) {
             requestActiveChainMktData();
         }
@@ -125,6 +137,8 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     @Override
     public void preDisconnect() {
+        expirationsRequestMap.clear();
+        contractDetailsRequestMap.clear();
         cancelAllMktData();
     }
 
@@ -133,19 +147,19 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         executor.execute(this::rebuildChains);
     }
 
-    public boolean activateChain(int underlyingConid, LocalDate expiration) {
+    public ChainActivationStatus activateChain(int underlyingConid, LocalDate expiration) {
         chainLock.lock();
         try {
-            if (!chainsRebuilt.get()) {
-                return false;
-            }
             ChainKey chainKey = chainKey(underlyingConid, expiration);
-            if (chainKey == null) {
-                return false;
+            if (chainKey == null || chainMap.get(chainKey) == null) {
+                return ChainActivationStatus.NOT_READY;
+            }
+            if (activeChainKey != null && activeChainKey.equals(chainKey)) {
+                return ChainActivationStatus.ACTIVATED;
             }
             activeChainKey = chainKey;
             requestActiveChainMktData();
-            return true;
+            return ChainActivationStatus.ACTIVATED;
 
         } finally {
             chainLock.unlock();
@@ -155,8 +169,12 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     private void rebuildChains() {
         chainLock.lock();
         try {
+            if (!expirationsRequestMap.isEmpty() || !contractDetailsRequestMap.isEmpty()) {
+                log.info("chains rebuilding already in progress");
+                return;
+            }
             log.info("rebuilding chains");
-            chainsRebuilt.set(false);
+            allChainsReady.set(false);
             if (!ibController.isConnected()) {
                 return; // rebuild upon next connect
             }
@@ -166,28 +184,25 @@ public class ChainService extends AbstractDataService implements ConnectionListe
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
             chainDataHolderMap.clear();
-            pendingExpirationsRequests.clear();
-            pendingContractDetailsRequests.clear();
 
-            for (Underlying underlying : underlyingMap.values()) {
-                int underlyingConid = underlying.getConid();
+            for (UnderlyingInfo underlyingInfo : underlyingInfos) {
+                expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingInfo.getConid());
 
-                int expirationsRequestId = ibRequestIdGen.incrementAndGet();
-                int contractDetailsRequestId = ibRequestIdGen.incrementAndGet();
-
-                double underlyingPrice = riskService.getUnderlyingPrice(underlyingConid);
-                double underlyingOptionImpliedVol = riskService.getUnderlyingOptionImpliedVol(underlyingConid);
+                double underlyingPrice = riskService.getUnderlyingPrice(underlyingInfo.getConid());
+                double underlyingOptionImpliedVol = riskService.getUnderlyingOptionImpliedVol(underlyingInfo.getConid());
 
                 if (CoreUtil.isValidPrice(underlyingPrice) && CoreUtil.isValidPrice(underlyingOptionImpliedVol)) {
-                    underlyingMktDataMap.put(underlyingConid, new UnderlyingMktData(underlyingPrice, underlyingOptionImpliedVol));
+                    underlyingMktDataMap.put(underlyingInfo.getConid(), new UnderlyingMktData(underlyingPrice, underlyingOptionImpliedVol));
                 }
-
-                pendingExpirationsRequests.put(expirationsRequestId, underlyingConid);
-                pendingContractDetailsRequests.put(contractDetailsRequestId, underlyingConid);
-
-                ibController.requestOptionChainParams(expirationsRequestId, underlying.getSymbol(), underlying.getSecType(), underlyingConid);
-                ibController.requestContractDetails(contractDetailsRequestId, underlying.createChainRequestContract());
             }
+
+            for (int requestId : expirationsRequestMap.keySet()) {
+                int underlyingConid = expirationsRequestMap.get(requestId);
+
+                Underlying underlying = underlyingMap.get(underlyingConid);
+                ibController.requestOptionChainParams(requestId, underlying.getSymbol(), underlying.getSecType(), underlyingConid);
+            }
+
         } finally {
             chainLock.unlock();
         }
@@ -274,25 +289,51 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         }
     }
 
-    public void expirationsEndReceived(int requestId) {
-        pendingExpirationsRequests.remove(requestId);
-        log.info("expirationsEndReceived, requestId=" + requestId + ", remaining=" + pendingExpirationsRequests.size());
-        checkChainsRebuilt();
+    public void expirationsEndReceived(int expirationsRequestId) {
+        log.info("expirations received for underlyingConid=" + expirationsRequestMap.get(expirationsRequestId) + ", request=" + expirationsRequestId);
+        expirationsRequestMap.remove(expirationsRequestId);
+
+        if (expirationsRequestMap.isEmpty()) {
+            messageSender.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+            requestContractDetails();
+        }
+    }
+
+    private void requestContractDetails() {
+        for (int underlyingConid : expirationsMap.keySet()) {
+            for (LocalDate expiration : expirationsMap.get(underlyingConid)) {
+                contractDetailsRequestMap.put(ibRequestIdGen.incrementAndGet(), chainKey(underlyingConid, expiration));
+            }
+        }
+        // prioritize requests, earliest expirations first
+        Set<Integer> prioritizedRequests = new LinkedHashSet<>();
+
+        contractDetailsRequestMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator
+                        .comparing(ChainKey::getExpiration)
+                        .thenComparing(ChainKey::getUnderlyingConid)))
+                .forEachOrdered(entry -> prioritizedRequests.add(entry.getKey()));
+
+        // execute in a new thread
+        executor.execute(() -> {
+            for (int requestId : prioritizedRequests) {
+                ChainKey chainKey = contractDetailsRequestMap.get(requestId);
+                Underlying underlying = underlyingMap.get(chainKey.underlyingConid);
+
+                ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.expiration));
+                CoreUtil.waitMilliseconds(CoreSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);
+            }
+        });
     }
 
     @Override
-    public void contractDetailsEndReceived(int requestId) {
-        pendingContractDetailsRequests.remove(requestId);
-        log.info("contractDetailsEndReceived, requestId=" + requestId + ", remaining=" + pendingContractDetailsRequests.size());
-        checkChainsRebuilt();
-    }
+    public void contractDetailsEndReceived(int contractDetailsRequestId) {
+        log.info("contract details received for chainKey=" + contractDetailsRequestMap.get(contractDetailsRequestId) + ", requestId=" + contractDetailsRequestId);
+        contractDetailsRequestMap.remove(contractDetailsRequestId);
 
-    private void checkChainsRebuilt() {
-        if (pendingExpirationsRequests.isEmpty() && pendingContractDetailsRequests.isEmpty()) {
-            chainsRebuilt.set(true);
-            log.info("chains rebuilt");
-            chainMap.keySet().forEach(key -> log.info(key + " -> " + chainMap.get(key).size() + " strikes"));
-            messageSender.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+        if (contractDetailsRequestMap.isEmpty()) {
+            allChainsReady.set(true);
+            log.info("all chains ready");
         }
     }
 

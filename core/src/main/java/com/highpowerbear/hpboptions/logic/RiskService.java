@@ -315,13 +315,16 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         double bid = underlyingMap.get(conid).getBid();
         double ask = underlyingMap.get(conid).getAsk();
         double last = underlyingMap.get(conid).getLast();
+        double close = underlyingMap.get(conid).getClose();
 
         if (CoreUtil.isValidPrice(last)) {
             return last;
         } else if (CoreUtil.isValidPrice(bid) && CoreUtil.isValidPrice(ask)) {
             return (bid + ask) / 2d;
+        } else if (CoreUtil.isValidPrice(close)) {
+            return close;
         } else {
-            return CoreUtil.isValidPrice(bid) ? bid : ask;
+            return Double.NaN;
         }
     }
 

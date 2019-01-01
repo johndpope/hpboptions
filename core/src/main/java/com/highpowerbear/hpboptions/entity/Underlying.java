@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.entity;
 
+import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Contract;
@@ -7,6 +8,7 @@ import com.ib.client.Types;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -54,10 +56,11 @@ public class Underlying implements Serializable {
         return id != null ? id.hashCode() : 0;
     }
 
-    public Contract createChainRequestContract() {
+    public Contract createChainRequestContract(LocalDate expiration) {
         Contract contract = new Contract();
         contract.symbol(symbol);
         contract.secType(Types.SecType.OPT);
+        contract.lastTradeDateOrContractMonth(expiration.format(CoreSettings.IB_DATE_FORMATTER));
         contract.currency(currency.name());
         contract.exchange(chainExchange.name());
 

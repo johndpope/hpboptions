@@ -173,7 +173,7 @@ public class IbController {
     }
 
     public void requestContractDetails(int requestId, Contract contract) {
-        log.info("requesting contract details for requestId=" + requestId + ", underlying=" + contract.symbol() + ", symbol=" + contract.localSymbol());
+        log.info("requesting contract details for requestId=" + requestId + ", underlying=" + contract.symbol() + ", symbol=" + contract.localSymbol() + ", expiration=" + contract.lastTradeDateOrContractMonth());
 
         if (checkConnected()) {
             eClientSocket.reqContractDetails(requestId, contract);
