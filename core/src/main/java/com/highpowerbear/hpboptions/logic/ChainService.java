@@ -128,7 +128,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         if (!allChainsReady.get()) {
             expirationsRequestMap.clear();
             contractDetailsRequestMap.clear();
-            executor.schedule(this::rebuildChains, CoreSettings.CHAIN_UNDERLYING_DATA_DELAY_MILLIS, TimeUnit.MILLISECONDS);
+            executor.schedule(this::rebuildChains, CoreSettings.CHAIN_REBUILD_DELAY_MILLIS, TimeUnit.MILLISECONDS);
 
         } else if (activeChainKey != null) {
             requestActiveChainMktData();
@@ -244,9 +244,13 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirationsStringSet) {
         Underlying underlying = underlyingMap.get(underlyingConId);
+        LocalDate now = LocalDate.now();
 
         if (underlying.getChainExchange().name().equals(exchange) && multiplier == underlying.getChainMultiplier()) {
-            expirationsStringSet.forEach(expiration -> expirationsMap.get(underlyingConId).add(LocalDate.parse(expiration, CoreSettings.IB_DATE_FORMATTER)));
+            expirationsStringSet.stream()
+                    .map(exp -> LocalDate.parse(exp, CoreSettings.IB_DATE_FORMATTER))
+                    .filter(exp -> !now.isAfter(exp))
+                    .forEach(exp -> expirationsMap.get(underlyingConId).add(exp));
         }
     }
 

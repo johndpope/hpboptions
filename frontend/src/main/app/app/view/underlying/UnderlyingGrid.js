@@ -162,7 +162,8 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
-        flex: 1
+        flex: 1,
+        menuDisabled: true
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',

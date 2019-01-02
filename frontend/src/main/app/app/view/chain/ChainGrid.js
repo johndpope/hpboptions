@@ -46,14 +46,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 80,
+        width: 65,
         dataIndex: 'callBid',
         tdCls: 'callBid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 80,
+        width: 65,
         dataIndex: 'callAsk',
         tdCls: 'callAsk hop-price hop-unchanged',
         align: 'right',
@@ -66,58 +66,60 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Last',
-        width: 80,
+        text: 'Lst',
+        width: 65,
         dataIndex: 'callLast',
         tdCls: 'callLast hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ls',
-        width: 60,
+        width: 55,
         dataIndex: 'callLastSize',
         tdCls: 'callLastSize hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Volume',
-        width: 80,
+        text: 'Vlm',
+        width: 65,
         dataIndex: 'callVolume',
         tdCls: 'callVolume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
-        text: 'Close',
-        width: 80,
+        text: 'Cls',
+        width: 70,
         dataIndex: 'callClose',
         tdCls: 'callClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'Change',
-        width: 80,
+        text: 'Chg',
+        width: 75,
         dataIndex: 'callChangePct',
         tdCls: 'callChangePct hop-change-pct',
         align: 'right',
         renderer: 'changePctRenderer'
     }, {
-        text: 'ImpVol',
-        width: 80,
+        text: 'IV',
+        width: 60,
         dataIndex: 'callImpliedVol',
         tdCls: 'callImpliedVol hop-iv hop-unchanged',
         align: 'right',
         renderer: 'ivRenderer'
     }, {
-        text: 'OpInt',
-        width: 80,
+        text: 'OI',
+        width: 60,
         dataIndex: 'callOptionOpenInterest',
         tdCls: 'callOptionOpenInterest hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
         text: 'Strike',
-        width: 80,
-        dataIndex: 'strike'
+        width: 70,
+        dataIndex: 'strike',
+        tdCls: 'hop-chain-strike',
+        align: 'center'
     }, {
         text: 'TV',
         width: 60,
@@ -148,14 +150,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 80,
+        width: 65,
         dataIndex: 'putBid',
         tdCls: 'putBid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 80,
+        width: 65,
         dataIndex: 'putAsk',
         tdCls: 'putAsk hop-price hop-unchanged',
         align: 'right',
@@ -168,54 +170,57 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Last',
-        width: 80,
+        text: 'Lst',
+        width: 65,
         dataIndex: 'putLast',
         tdCls: 'putLast hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ls',
-        width: 60,
+        width: 55,
         dataIndex: 'putLastSize',
         tdCls: 'putLastSize hop-size hop-unchanged',
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Volume',
-        width: 80,
+        text: 'Vlm',
+        width: 65,
         dataIndex: 'putVolume',
         tdCls: 'putVolume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
-        text: 'Close',
-        width: 80,
+        text: 'Cls',
+        width: 70,
         dataIndex: 'putClose',
         tdCls: 'putClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'Change',
-        width: 80,
+        text: 'Chg',
+        width: 75,
         dataIndex: 'putChangePct',
         tdCls: 'putChangePct hop-change-pct',
         align: 'right',
         renderer: 'changePctRenderer'
     }, {
-        text: 'ImpVol',
-        width: 80,
+        text: 'IV',
+        width: 60,
         dataIndex: 'putImpliedVol',
         tdCls: 'putImpliedVol hop-iv hop-unchanged',
         align: 'right',
         renderer: 'ivRenderer'
     }, {
-        text: 'OpInt',
-        width: 80,
+        text: 'OI',
+        width: 60,
         dataIndex: 'putOptionOpenInterest',
         tdCls: 'putOptionOpenInterest hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
+    }, {
+        flex: 1,
+        menuDisabled: true
     }],
     dockedItems: [{
         xtype: 'pagingtoolbar',
