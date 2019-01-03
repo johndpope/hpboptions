@@ -47,8 +47,7 @@ public abstract class AbstractDataHolder implements DataHolder {
                 BasicMktDataField.BID_SIZE,
                 BasicMktDataField.ASK_SIZE,
                 BasicMktDataField.LAST_SIZE,
-                BasicMktDataField.VOLUME,
-                DerivedMktDataField.CHANGE_PCT
+                BasicMktDataField.VOLUME
         ).forEach(fieldsToDisplay::add);
 
         determineGenericTicks();
@@ -90,7 +89,16 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     @Override
     public void calculateField(DerivedMktDataField field) {
-        if (field == DerivedMktDataField.CHANGE_PCT) {
+        if (field == DerivedMktDataField.CHANGE) {
+            double l = getCurrent(BasicMktDataField.LAST).doubleValue();
+            double c = getCurrent(BasicMktDataField.CLOSE).doubleValue();
+
+            if (isValidPrice(l) && isValidPrice(c)) {
+                double value = l - c;
+                update(field, value);
+            }
+
+        } else if (field == DerivedMktDataField.CHANGE_PCT) {
             double l = getCurrent(BasicMktDataField.LAST).doubleValue();
             double c = getCurrent(BasicMktDataField.CLOSE).doubleValue();
 
@@ -223,6 +231,10 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     public int getVolume() {
         return getCurrent(BasicMktDataField.VOLUME).intValue();
+    }
+
+    public double getChange() {
+        return getCurrent(DerivedMktDataField.CHANGE).doubleValue();
     }
 
     public double getChangePct() {

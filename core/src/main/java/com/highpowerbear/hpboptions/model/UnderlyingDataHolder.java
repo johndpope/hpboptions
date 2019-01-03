@@ -32,6 +32,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
+                DerivedMktDataField.CHANGE_PCT,
                 BasicMktDataField.OPTION_IMPLIED_VOL,
                 DerivedMktDataField.IV_CHANGE_PCT,
                 DerivedMktDataField.IV_RANK,

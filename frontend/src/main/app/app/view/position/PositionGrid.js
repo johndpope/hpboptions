@@ -142,12 +142,12 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'Change',
-        width: 80,
-        dataIndex: 'changePct',
-        tdCls: 'changePct hop-change-pct',
+        text: 'Chg',
+        width: 70,
+        dataIndex: 'change',
+        tdCls: 'change hop-change',
         align: 'right',
-        renderer: 'changePctRenderer'
+        renderer: 'changeRenderer'
     }, {
         text: 'ImpVol',
         width: 80,

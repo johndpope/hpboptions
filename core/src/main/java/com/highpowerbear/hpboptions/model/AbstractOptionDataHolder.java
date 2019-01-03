@@ -41,6 +41,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
+                DerivedMktDataField.CHANGE,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
                 OptionDataField.DELTA,
                 OptionDataField.GAMMA,

@@ -19,6 +19,7 @@ Ext.define('HopGui.model.DataHolderBase', {
         'ask',
         'last',
         'close',
+        'change',
         'changePct',
         'bidSize',
         'askSize',

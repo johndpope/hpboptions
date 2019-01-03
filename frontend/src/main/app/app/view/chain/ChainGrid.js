@@ -25,7 +25,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'decimalRenderer'
     }, {
         text: 'TPct',
-        width: 70,
+        width: 75,
         dataIndex: 'callTimeValuePct',
         tdCls: 'callTimeValuePct hop-decimal-pct hop-unchanged',
         align: 'right',
@@ -88,18 +88,18 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'volumeRenderer'
     }, {
         text: 'Cls',
-        width: 70,
+        width: 65,
         dataIndex: 'callClose',
         tdCls: 'callClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Chg',
-        width: 75,
-        dataIndex: 'callChangePct',
-        tdCls: 'callChangePct hop-change-pct',
+        width: 65,
+        dataIndex: 'callChange',
+        tdCls: 'callChange hop-change',
         align: 'right',
-        renderer: 'changePctRenderer'
+        renderer: 'changeRenderer'
     }, {
         text: 'IV',
         width: 60,
@@ -129,7 +129,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'decimalRenderer'
     }, {
         text: 'TPct',
-        width: 70,
+        width: 75,
         dataIndex: 'putTimeValuePct',
         tdCls: 'putTimeValuePct hop-decimal-pct hop-unchanged',
         align: 'right',
@@ -192,18 +192,18 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'volumeRenderer'
     }, {
         text: 'Cls',
-        width: 70,
+        width: 65,
         dataIndex: 'putClose',
         tdCls: 'putClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Chg',
-        width: 75,
-        dataIndex: 'putChangePct',
-        tdCls: 'putChangePct hop-change-pct',
+        width: 65,
+        dataIndex: 'putChange',
+        tdCls: 'putChange hop-change',
         align: 'right',
-        renderer: 'changePctRenderer'
+        renderer: 'changeRenderer'
     }, {
         text: 'IV',
         width: 60,
