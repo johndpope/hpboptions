@@ -5,8 +5,8 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.enums.OrderStatus;
-import com.highpowerbear.hpboptions.enums.OrderType;
 import com.highpowerbear.hpboptions.enums.SubmitType;
+import com.ib.client.OrderType;
 import com.ib.client.Types;
 
 import javax.persistence.CascadeType;
@@ -42,7 +42,6 @@ public class IbOrder implements Serializable {
     private Long id;
     private Long permId;
     private Integer orderId;
-    private String ibAccountId;
     @Enumerated(EnumType.STRING)
     private Types.Action action;
     private Integer quantity;
@@ -130,14 +129,6 @@ public class IbOrder implements Serializable {
 
     public void setOrderId(Integer orderId) {
         this.orderId = orderId;
-    }
-
-    public String getIbAccountId() {
-        return ibAccountId;
-    }
-
-    public void setIbAccountId(String ibAccountId) {
-        this.ibAccountId = ibAccountId;
     }
 
     public Types.Action getAction() {

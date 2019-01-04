@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.DataService;
@@ -25,15 +25,15 @@ public class IbListener extends GenericIbListener {
     private final RiskService riskService;
     private final OrderService orderService;
     private final ChainService chainService;
-    private final MessageSender messageSender;
+    private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService, MessageSender messageSender) {
+    public IbListener(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService, MessageService messageService) {
         this.ibController = ibController;
         this.riskService = riskService;
         this.orderService = orderService;
         this.chainService = chainService;
-        this.messageSender = messageSender;
+        this.messageService = messageService;
 
         ibController.initialize(this);
     }
@@ -54,7 +54,7 @@ public class IbListener extends GenericIbListener {
     public void error(Exception e) {
         super.error(e);
         if (e instanceof SocketException && e.getMessage().equals("Socket closed")) {
-            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+            messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
         }
     }
 
@@ -63,20 +63,20 @@ public class IbListener extends GenericIbListener {
         super.error(id, errorCode, errorMsg);
         if (errorCode == 507) {
             ibController.connectionBroken();
-            messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+            messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
         }
     }
 
     @Override
     public void connectionClosed() {
         super.connectionClosed();
-        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+        messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
     }
 
     @Override
     public void connectAck() {
         super.connectAck();
-        messageSender.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+        messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
     }
 
     @Override

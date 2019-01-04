@@ -93,17 +93,13 @@ public class IbController {
 
     @Scheduled(fixedRate = 5000)
     private void reconnect() {
-        if (!isConnected() && isMarkConnected()) {
+        if (!isConnected() && markConnected) {
             connect();
         }
     }
 
     public Boolean isConnected() {
         return eClientSocket != null && eClientSocket.isConnected();
-    }
-
-    public boolean isMarkConnected() {
-        return markConnected;
     }
 
     public void requestAccountSummary(int requestId, String tags) {

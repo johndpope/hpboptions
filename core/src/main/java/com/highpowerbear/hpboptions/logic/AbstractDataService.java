@@ -1,6 +1,6 @@
 package com.highpowerbear.hpboptions.logic;
 
-import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
@@ -20,14 +20,14 @@ public abstract class AbstractDataService implements DataService {
 
     protected final IbController ibController;
     protected final CoreDao coreDao;
-    protected final MessageSender messageSender;
+    protected final MessageService messageService;
 
-    protected final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
+    private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
 
-    public AbstractDataService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
+    public AbstractDataService(IbController ibController, CoreDao coreDao, MessageService messageService) {
         this.ibController = ibController;
         this.coreDao = coreDao;
-        this.messageSender = messageSender;
+        this.messageService = messageService;
     }
 
     protected void requestMktData(DataHolder dataHolder) {
@@ -62,8 +62,8 @@ public abstract class AbstractDataService implements DataService {
         dataHolder.updateField(basicField, value);
         DerivedMktDataField.derivedFields(basicField).forEach(dataHolder::calculateField);
 
-        messageSender.sendWsMessage(dataHolder, basicField);
-        DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> messageSender.sendWsMessage(dataHolder, derivedField));
+        messageService.sendWsMessage(dataHolder, basicField);
+        DerivedMktDataField.derivedFields(basicField).forEach(derivedField -> messageService.sendWsMessage(dataHolder, derivedField));
     }
 
     @Override
@@ -80,7 +80,7 @@ public abstract class AbstractDataService implements DataService {
 
         if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
             optionDataHolder.recalculateOptionData();
-            OptionDataField.fields().forEach(field -> messageSender.sendWsMessage(dataHolder, field));
+            OptionDataField.fields().forEach(field -> messageService.sendWsMessage(dataHolder, field));
 
             modelOptionDataReceived(optionDataHolder);
         }

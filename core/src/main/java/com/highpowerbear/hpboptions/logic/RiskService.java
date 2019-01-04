@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.logic;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
@@ -38,8 +38,8 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_DATA_REQUEST_ID_INITIAL);
 
     @Autowired
-    public RiskService(IbController ibController, CoreDao coreDao, MessageSender messageSender) {
-        super(ibController, coreDao, messageSender);
+    public RiskService(IbController ibController, CoreDao coreDao, MessageService messageService) {
+        super(ibController, coreDao, messageService);
 
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
@@ -133,7 +133,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
         if (pdhs.isEmpty()) {
             udh.resetPortfolioOptionData();
-            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(udh, field));
+            UnderlyingDataField.portfolioFields().forEach(field -> messageService.sendWsMessage(udh, field));
 
         } else if (udh.isPortfolioOptionDataUpdateDue() &&
                 pdhs.stream().allMatch(AbstractOptionDataHolder::portfolioSourceFieldsReady)) {
@@ -153,7 +153,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
 
             udh.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
-            UnderlyingDataField.portfolioFields().forEach(field -> messageSender.sendWsMessage(udh, field));
+            UnderlyingDataField.portfolioFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }
 
@@ -170,7 +170,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
             udh.updatePortfolioPnl(unrealizedPnl);
         }
-        messageSender.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
+        messageService.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
     }
 
     @Override
@@ -182,7 +182,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
         accountSummary.update(account, tag, value, currency);
-        messageSender.sendWsMessage(WsTopic.ACCOUNT, accountSummary.getText());
+        messageService.sendWsMessage(WsTopic.ACCOUNT, accountSummary.getText());
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
@@ -197,7 +197,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
         udh.impliedVolatilityHistoryCompleted();
 
-        udh.getIvHistoryDependentFields().forEach(field -> messageSender.sendWsMessage(udh, field));
+        udh.getIvHistoryDependentFields().forEach(field -> messageService.sendWsMessage(udh, field));
     }
 
     public void positionReceived(Contract contract, int positionSize) {
@@ -228,7 +228,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             } else if (positionSize != 0) {
                 if (positionSize != pdh.getPositionSize()) {
                     pdh.updatePositionSize(positionSize);
-                    messageSender.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
+                    messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
 
                     recalculatePortfolioOptionData(pdh.getInstrument().getUnderlyingConid());
                 }
@@ -243,7 +243,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                 recalculatePortfolioOptionData(underlyingConid);
                 recalculatePortfolioPnl(underlyingConid);
 
-                messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
+                messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
             }
         } finally {
             positionLock.unlock();
@@ -276,7 +276,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             pdh.setDisplayRank(-1);
         }
 
-        messageSender.sendWsReloadRequestMessage(DataHolderType.POSITION);
+        messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
         requestMktData(pdh);
         requestPnlSingle(pdh);
     }
@@ -287,7 +287,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             return;
         }
         pdh.updateUnrealizedPnl(unrealizedPnL);
-        messageSender.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
+        messageService.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
         recalculatePortfolioPnl(pdh.getInstrument().getUnderlyingConid());
     }
 

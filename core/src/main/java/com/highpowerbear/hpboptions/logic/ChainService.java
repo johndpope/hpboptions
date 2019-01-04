@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.logic;
 
 import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
-import com.highpowerbear.hpboptions.common.MessageSender;
+import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.entity.Underlying;
@@ -111,8 +111,8 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     }
 
     @Autowired
-    public ChainService(IbController ibController, CoreDao coreDao, MessageSender messageSender, RiskService riskService) {
-        super(ibController, coreDao, messageSender);
+    public ChainService(IbController ibController, CoreDao coreDao, MessageService messageService, RiskService riskService) {
+        super(ibController, coreDao, messageService);
         this.riskService = riskService;
 
         ibController.addConnectionListener(this);
@@ -298,7 +298,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         expirationsRequestMap.remove(expirationsRequestId);
 
         if (expirationsRequestMap.isEmpty()) {
-            messageSender.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+            messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
             requestContractDetails();
         }
     }
