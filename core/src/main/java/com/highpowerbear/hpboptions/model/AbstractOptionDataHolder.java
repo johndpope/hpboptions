@@ -46,6 +46,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
                 OptionDataField.DELTA,
                 OptionDataField.GAMMA,
                 OptionDataField.IMPLIED_VOL,
+                OptionDataField.INTRINSIC_VALUE,
                 OptionDataField.TIME_VALUE,
                 OptionDataField.TIME_VALUE_PCT
         ).collect(Collectors.toSet()));
@@ -97,13 +98,15 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         double underlyingPriceIntpl = interpolate(Computation.UP);
 
         if (valid(optionPriceIntpl) && valid(underlyingPriceIntpl)) {
-            double timeValue = optionPriceIntpl - intrinsicValue(underlyingPriceIntpl);
+            double intrinsicValue = intrinsicValue(underlyingPriceIntpl);
+            double timeValue = optionPriceIntpl - intrinsicValue;
             double timeValuePct = getDaysToExpiration() > 0 ?
                     (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d :
                     Double.NaN;
 
             update(OptionDataField.OPTION_PRICE, optionPriceIntpl);
             update(OptionDataField.UNDERLYING_PRICE, underlyingPriceIntpl);
+            update(OptionDataField.INTRINSIC_VALUE, CoreUtil.round4(intrinsicValue));
             update(OptionDataField.TIME_VALUE, CoreUtil.round4(timeValue));
             update(OptionDataField.TIME_VALUE_PCT, CoreUtil.round4(timeValuePct));
         }
@@ -167,6 +170,10 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     public double getImpliedVol() {
         return getCurrent(OptionDataField.IMPLIED_VOL).doubleValue();
+    }
+
+    public double getIntrinsicValue() {
+        return getCurrent(OptionDataField.INTRINSIC_VALUE).doubleValue();
     }
 
     public double getTimeValue() {

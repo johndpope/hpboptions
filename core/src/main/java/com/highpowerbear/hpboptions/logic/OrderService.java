@@ -95,18 +95,14 @@ public class OrderService implements ConnectionListener {
             if (ibOrder.getStatus() != OrderStatus.SUBMITTED && ibOrder.getStatus() != OrderStatus.UPDATED) {
                 return;
             }
-            boolean update = true;
 
-            // if order already exists, check if the lmt/stp price has been updated
             if (order.orderType() == OrderType.LMT && ibOrder.getOrderPrice() != order.lmtPrice()) {
                 ibOrder.setOrderPrice(order.lmtPrice());
+                ibOrder.addEvent(OrderStatus.UPDATED, ibOrder.getOrderPrice());
+                coreDao.updateIbOrder(ibOrder);
+
             } else if (order.orderType() == OrderType.STP && ibOrder.getOrderPrice() != order.auxPrice()) {
                 ibOrder.setOrderPrice(order.auxPrice());
-            } else {
-                update = false;
-            }
-
-            if (update) {
                 ibOrder.addEvent(OrderStatus.UPDATED, ibOrder.getOrderPrice());
                 coreDao.updateIbOrder(ibOrder);
             }

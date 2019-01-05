@@ -17,14 +17,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         stripeRows: true
     },
     columns: [{
-        text: 'TV',
+        text: 'Tv',
         width: 60,
         dataIndex: 'callTimeValue',
         tdCls: 'callTimeValue hop-decimal hop-unchanged',
         align: 'right',
         renderer: 'decimalRenderer'
     }, {
-        text: 'TPct',
+        text: 'Tpct',
         width: 75,
         dataIndex: 'callTimeValuePct',
         tdCls: 'callTimeValuePct hop-decimal-pct hop-unchanged',
@@ -121,14 +121,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         tdCls: 'hop-chain-strike',
         align: 'center'
     }, {
-        text: 'TV',
+        text: 'Tv',
         width: 60,
         dataIndex: 'putTimeValue',
         tdCls: 'putTimeValue hop-decimal hop-unchanged',
         align: 'right',
         renderer: 'decimalRenderer'
     }, {
-        text: 'TPct',
+        text: 'Tpct',
         width: 75,
         dataIndex: 'putTimeValuePct',
         tdCls: 'putTimeValuePct hop-decimal-pct hop-unchanged',

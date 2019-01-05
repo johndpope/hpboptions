@@ -10,10 +10,7 @@ import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.model.ChainDataHolder;
-import com.highpowerbear.hpboptions.model.ChainItem;
-import com.highpowerbear.hpboptions.model.OptionInstrument;
-import com.highpowerbear.hpboptions.model.UnderlyingInfo;
+import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.Types;
@@ -66,47 +63,6 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         private UnderlyingMktData(double price, double optionImpliedVol) {
             this.price = price;
             this.optionImpliedVol = optionImpliedVol;
-        }
-    }
-
-    private class ChainKey {
-        private final int underlyingConid;
-        private final LocalDate expiration;
-
-        private ChainKey(int underlyingConid, LocalDate expiration) {
-            this.underlyingConid = underlyingConid;
-            this.expiration = expiration;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ChainKey chainKey = (ChainKey) o;
-
-            if (underlyingConid != chainKey.underlyingConid) return false;
-            return expiration.equals(chainKey.expiration);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = underlyingConid;
-            result = 31 * result + expiration.hashCode();
-            return result;
-        }
-
-        public int getUnderlyingConid() {
-            return underlyingConid;
-        }
-
-        public LocalDate getExpiration() {
-            return expiration;
-        }
-
-        @Override
-        public String toString() {
-            return underlyingConid + "_" + expiration;
         }
     }
 
@@ -322,9 +278,9 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         executor.execute(() -> {
             for (int requestId : prioritizedRequests) {
                 ChainKey chainKey = contractDetailsRequestMap.get(requestId);
-                Underlying underlying = underlyingMap.get(chainKey.underlyingConid);
+                Underlying underlying = underlyingMap.get(chainKey.getUnderlyingConid());
 
-                ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.expiration));
+                ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.getExpiration()));
                 CoreUtil.waitMilliseconds(CoreSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);
             }
         });
@@ -347,6 +303,10 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     public Set<LocalDate> getExpirations(int underlyingConid) {
         return expirationsMap.get(underlyingConid);
+    }
+
+    public ChainKey getActiveChainKey() {
+        return activeChainKey;
     }
 
     public Collection<ChainItem> getActiveChainItems() {

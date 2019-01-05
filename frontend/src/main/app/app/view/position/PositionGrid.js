@@ -65,14 +65,21 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
-        text: 'TV',
+        text: 'Int',
+        width: 60,
+        dataIndex: 'intrinsicValue',
+        tdCls: 'intrinsicValue hop-decimal hop-unchanged',
+        align: 'right',
+        renderer: 'decimalRenderer'
+    }, {
+        text: 'Tv',
         width: 60,
         dataIndex: 'timeValue',
         tdCls: 'timeValue hop-decimal hop-unchanged',
         align: 'right',
         renderer: 'decimalRenderer'
     }, {
-        text: 'TPct',
+        text: 'Tpct',
         width: 70,
         dataIndex: 'timeValuePct',
         tdCls: 'timeValuePct hop-decimal-pct hop-unchanged',

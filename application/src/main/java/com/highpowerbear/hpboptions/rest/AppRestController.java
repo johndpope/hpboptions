@@ -7,10 +7,7 @@ import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.logic.ChainService;
 import com.highpowerbear.hpboptions.logic.RiskService;
 import com.highpowerbear.hpboptions.logic.OrderService;
-import com.highpowerbear.hpboptions.model.ChainItem;
-import com.highpowerbear.hpboptions.model.PositionDataHolder;
-import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
-import com.highpowerbear.hpboptions.model.UnderlyingInfo;
+import com.highpowerbear.hpboptions.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -107,6 +104,12 @@ public class AppRestController {
 
         ChainActivationStatus chainActivationStatus = chainService.activateChain(underlyingConid, expiration);
         return ResponseEntity.ok(chainActivationStatus.name().toLowerCase());
+    }
+
+    @RequestMapping("active-chain-key")
+    public ResponseEntity<?> getActiveChainKey() {
+        ChainKey activeChainKey = chainService.getActiveChainKey();
+        return activeChainKey != null ? ResponseEntity.ok(chainService.getActiveChainKey()) : ResponseEntity.ok("NA");
     }
 
     @RequestMapping("active-chain-items")

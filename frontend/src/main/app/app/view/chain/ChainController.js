@@ -63,9 +63,20 @@ Ext.define('HopGui.view.chain.ChainController', {
                     comboData.push([infos[i].symbol, infos[i].conid]);
                 }
                 var comboStore = underlyingCombo.getStore();
-
                 comboStore.loadData(comboData);
-                underlyingCombo.select(comboStore.getAt(0));
+
+                Ext.Ajax.request({
+                    method: 'GET',
+                    url: HopGui.common.Definitions.urlPrefix + '/active-chain-key',
+
+                    success: function(response, opts) {
+                        if (response.responseText === 'NA') {
+                            underlyingCombo.setValue(comboStore.getAt(0));
+                        } else {
+                            underlyingCombo.setValue(Ext.decode(response.responseText).underlyingConid);
+                        }
+                    }
+                });
             }
         });
     },
@@ -93,9 +104,18 @@ Ext.define('HopGui.view.chain.ChainController', {
                 var comboStore = expirationCombo.getStore();
                 comboStore.loadData(comboData);
 
-                if (comboData.length >= 1) {
-                    expirationCombo.select(comboStore.getAt(0));
-                }
+                Ext.Ajax.request({
+                    method: 'GET',
+                    url: HopGui.common.Definitions.urlPrefix + '/active-chain-key',
+
+                    success: function(response, opts) {
+                        if (response.responseText === 'NA') {
+                            expirationCombo.setValue(comboStore.getAt(0));
+                        } else {
+                            expirationCombo.setValue(Ext.decode(response.responseText).expiration);
+                        }
+                    }
+                });
             }
         });
     },
