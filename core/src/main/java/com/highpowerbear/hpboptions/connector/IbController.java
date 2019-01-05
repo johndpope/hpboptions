@@ -197,8 +197,6 @@ public class IbController {
 
         if (checkConnected()) {
             eClientSocket.reqOpenOrders();
-            eClientSocket.reqAllOpenOrders();
-            eClientSocket.reqAutoOpenOrders(true);
         }
     }
 

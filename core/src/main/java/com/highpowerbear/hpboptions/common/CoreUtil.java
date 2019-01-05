@@ -19,7 +19,7 @@ public class CoreUtil {
         return CaseUtils.toCamelCase(name, false, '_');
     }
 
-    public static double round(double number, int decimalPlaces) {
+    private static double round(double number, int decimalPlaces) {
         double modifier = Math.pow(10.0, decimalPlaces);
         return Math.round(number * modifier) / modifier;
     }

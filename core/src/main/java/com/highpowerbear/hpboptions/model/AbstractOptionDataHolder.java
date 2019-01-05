@@ -15,15 +15,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.highpowerbear.hpboptions.enums.OptionDataField.*;
+
 /**
  * Created by robertk on 12/6/2018.
  */
 public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
 
-    private final Map<TickType, Map<Computation, Double>> computationMap = new HashMap<>();
-    private enum Computation {
-        D, G, V, T, IV, OP, UP
-    }
+    private final Map<TickType, Map<OptionDataField, Double>> computationMap = new HashMap<>();
 
     public AbstractOptionDataHolder(DataHolderType type, OptionInstrument instrument, int ibMktDataRequestId) {
         super(type, instrument, ibMktDataRequestId);
@@ -32,10 +31,10 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         computationMap.put(TickType.ASK_OPTION, new ConcurrentHashMap<>());
         computationMap.put(TickType.MODEL_OPTION, new ConcurrentHashMap<>());
 
-        for (Computation c : Computation.values()) {
-            computationMap.get(TickType.BID_OPTION).put(c, Double.NaN);
-            computationMap.get(TickType.ASK_OPTION).put(c, Double.NaN);
-            computationMap.get(TickType.MODEL_OPTION).put(c, Double.NaN);
+        for (OptionDataField field : OptionDataField.values()) {
+            computationMap.get(TickType.BID_OPTION).put(field, Double.NaN);
+            computationMap.get(TickType.ASK_OPTION).put(field, Double.NaN);
+            computationMap.get(TickType.MODEL_OPTION).put(field, Double.NaN);
         }
 
         OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -43,12 +42,12 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         addFieldsToDisplay(Stream.of(
                 DerivedMktDataField.CHANGE,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
-                OptionDataField.DELTA,
-                OptionDataField.GAMMA,
-                OptionDataField.IMPLIED_VOL,
-                OptionDataField.INTRINSIC_VALUE,
-                OptionDataField.TIME_VALUE,
-                OptionDataField.TIME_VALUE_PCT
+                DELTA,
+                GAMMA,
+                IMPLIED_VOL,
+                INTRINSIC_VALUE,
+                TIME_VALUE,
+                TIME_VALUE_PCT
         ).collect(Collectors.toSet()));
     }
 
@@ -59,56 +58,42 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
 
     @Override
     public void updateOptionData(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVol, double optionPrice, double underlyingPrice) {
-        Map<Computation, Double> m = computationMap.get(tickType);
+        Map<OptionDataField, Double> m = computationMap.get(tickType);
 
-        m.put(Computation.D, delta);
-        m.put(Computation.G, gamma);
-        m.put(Computation.V, vega);
-        m.put(Computation.T, theta);
-        m.put(Computation.IV, impliedVol);
-        m.put(Computation.OP, optionPrice);
-        m.put(Computation.UP, underlyingPrice);
+        m.put(DELTA, delta);
+        m.put(GAMMA, gamma);
+        m.put(VEGA, vega);
+        m.put(THETA, theta);
+        m.put(IMPLIED_VOL, impliedVol);
+        m.put(OPTION_PRICE, optionPrice);
+        m.put(UNDERLYING_PRICE, underlyingPrice);
     }
 
     @Override
     public void recalculateOptionData() {
-        double greekIntpl = interpolate(Computation.D);
-        if (valid(greekIntpl)) {
-            update(OptionDataField.DELTA, greekIntpl);
-        }
+        Stream.of(DELTA, GAMMA, VEGA, THETA, IMPLIED_VOL).forEach(field -> {
+            double value = CoreUtil.round4(interpolate(field));
+            if (valid(value)) {
+                update(field, value);
+            }
+        });
 
-        greekIntpl = interpolate(Computation.G);
-        if (valid(greekIntpl)) {
-            update(OptionDataField.GAMMA, greekIntpl);
-        }
-
-        greekIntpl = interpolate(Computation.V);
-        if (valid(greekIntpl)) {
-            update(OptionDataField.VEGA, greekIntpl);
-        }
-
-        greekIntpl = interpolate(Computation.T);
-        if (valid(greekIntpl)) {
-            update(OptionDataField.THETA, greekIntpl);
-        }
-
-        update(OptionDataField.IMPLIED_VOL, interpolate(Computation.IV));
-
-        double optionPriceIntpl = interpolate(Computation.OP);
-        double underlyingPriceIntpl = interpolate(Computation.UP);
+        double optionPriceIntpl = interpolate(OPTION_PRICE);
+        double underlyingPriceIntpl = interpolate(UNDERLYING_PRICE);
 
         if (valid(optionPriceIntpl) && valid(underlyingPriceIntpl)) {
             double intrinsicValue = intrinsicValue(underlyingPriceIntpl);
             double timeValue = optionPriceIntpl - intrinsicValue;
+
             double timeValuePct = getDaysToExpiration() > 0 ?
                     (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d :
                     Double.NaN;
 
-            update(OptionDataField.OPTION_PRICE, optionPriceIntpl);
-            update(OptionDataField.UNDERLYING_PRICE, underlyingPriceIntpl);
-            update(OptionDataField.INTRINSIC_VALUE, CoreUtil.round4(intrinsicValue));
-            update(OptionDataField.TIME_VALUE, CoreUtil.round4(timeValue));
-            update(OptionDataField.TIME_VALUE_PCT, CoreUtil.round4(timeValuePct));
+            update(OPTION_PRICE, CoreUtil.round4(optionPriceIntpl));
+            update(UNDERLYING_PRICE, CoreUtil.round4(underlyingPriceIntpl));
+            update(INTRINSIC_VALUE, CoreUtil.round4(intrinsicValue));
+            update(TIME_VALUE, CoreUtil.round4(timeValue));
+            update(TIME_VALUE_PCT, CoreUtil.round4(timeValuePct));
         }
     }
 
@@ -125,14 +110,14 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         }
     }
 
-    private double interpolate(Computation c) {
-        double cb = computationMap.get(TickType.BID_OPTION).get(c);
-        double ca = computationMap.get(TickType.ASK_OPTION).get(c);
-        double cm = computationMap.get(TickType.MODEL_OPTION).get(c);
+    private double interpolate(OptionDataField field) {
+        double computationBid = computationMap.get(TickType.BID_OPTION).get(field);
+        double computationAsk = computationMap.get(TickType.ASK_OPTION).get(field);
+        double computationModel = computationMap.get(TickType.MODEL_OPTION).get(field);
 
-        return valid(cb) && valid(ca) ?
-                (cb + ca) / 2d :
-                (valid(cm) ? cm : Double.NaN);
+        return valid(computationBid) && valid(computationAsk) ?
+                (computationBid + computationAsk) / 2d :
+                (valid(computationModel) ? computationModel : Double.NaN);
     }
 
     private boolean valid(double value) {
@@ -153,42 +138,42 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     public double getDelta() {
-        return getCurrent(OptionDataField.DELTA).doubleValue();
+        return getCurrent(DELTA).doubleValue();
     }
 
     public double getGamma() {
-        return getCurrent(OptionDataField.GAMMA).doubleValue();
+        return getCurrent(GAMMA).doubleValue();
     }
 
     public double getVega() {
-        return getCurrent(OptionDataField.VEGA).doubleValue();
+        return getCurrent(VEGA).doubleValue();
     }
 
     public double getTheta() {
-        return getCurrent(OptionDataField.THETA).doubleValue();
+        return getCurrent(THETA).doubleValue();
     }
 
     public double getImpliedVol() {
-        return getCurrent(OptionDataField.IMPLIED_VOL).doubleValue();
+        return getCurrent(IMPLIED_VOL).doubleValue();
     }
 
     public double getIntrinsicValue() {
-        return getCurrent(OptionDataField.INTRINSIC_VALUE).doubleValue();
+        return getCurrent(INTRINSIC_VALUE).doubleValue();
     }
 
     public double getTimeValue() {
-        return getCurrent(OptionDataField.TIME_VALUE).doubleValue();
+        return getCurrent(TIME_VALUE).doubleValue();
     }
 
     public double getTimeValuePct() {
-        return getCurrent(OptionDataField.TIME_VALUE_PCT).doubleValue();
+        return getCurrent(TIME_VALUE_PCT).doubleValue();
     }
 
     public double getOptionPrice() {
-        return getCurrent(OptionDataField.OPTION_PRICE).doubleValue();
+        return getCurrent(OPTION_PRICE).doubleValue();
     }
 
     public double getUnderlyingPrice() {
-        return getCurrent(OptionDataField.UNDERLYING_PRICE).doubleValue();
+        return getCurrent(UNDERLYING_PRICE).doubleValue();
     }
 }
