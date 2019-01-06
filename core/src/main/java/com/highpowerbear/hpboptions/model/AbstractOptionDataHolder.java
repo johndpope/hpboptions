@@ -125,8 +125,8 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     @Override
-    public boolean portfolioSourceFieldsReady() {
-        return OptionDataField.portfolioSourceFields().stream().allMatch(field -> valid(getCurrent(field).doubleValue()));
+    public boolean riskDataSourceFieldsReady() {
+        return OptionDataField.riskDataSourceFields().stream().allMatch(field -> valid(getCurrent(field).doubleValue()));
     }
 
     public long getDaysToExpiration() {

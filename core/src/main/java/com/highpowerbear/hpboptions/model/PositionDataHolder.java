@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.PositionDataField;
 import com.ib.client.Types;
@@ -23,8 +24,32 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
 
         addFieldsToDisplay(Stream.of(
                 PositionDataField.POSITION_SIZE,
-                PositionDataField.UNREALIZED_PNL
+                PositionDataField.UNREALIZED_PNL,
+                PositionDataField.MARGIN
         ).collect(Collectors.toSet()));
+    }
+
+    public void recalculateMargin() {
+        double optonPrice = getOptionPrice();
+        double underlyingPrice = getUnderlyingPrice();
+
+        double margin = (optonPrice + Math.max((0.2 * underlyingPrice - otmAmount()), (0.1 * underlyingPrice))) * getPositionSize();
+        update(PositionDataField.MARGIN, CoreUtil.round4(margin));
+    }
+
+    private double otmAmount() {
+        double underlyingPrice = getUnderlyingPrice();
+
+        Types.Right right = getInstrument().getRight();
+        double strike = getInstrument().getStrike();
+
+        if (right == Types.Right.Call && underlyingPrice < strike) {
+            return strike - underlyingPrice;
+        } else if (right == Types.Right.Put && underlyingPrice > strike) {
+            return underlyingPrice - strike;
+        } else {
+            return 0d;
+        }
     }
 
     @JsonIgnore
@@ -60,5 +85,9 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
 
     public double getUnrealizedPnl() {
         return getCurrent(PositionDataField.UNREALIZED_PNL).doubleValue();
+    }
+
+    public double getMargin() {
+        return getCurrent(PositionDataField.MARGIN).doubleValue();
     }
 }

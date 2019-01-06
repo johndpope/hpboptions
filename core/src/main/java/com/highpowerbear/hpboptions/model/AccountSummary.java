@@ -19,18 +19,11 @@ public class AccountSummary {
 
     private final int ibRequestId;
     private Set<AccountSummaryTag> tags = new LinkedHashSet<>();
-    private Map<String, Map<AccountSummaryTag, Entry>> summaryMap = new HashMap<>(); // account -> (tag -> (value, currency))
+
+    private String account;
+    private Currency baseCurrency;
+    private Map<AccountSummaryTag, Double> summaryMap = new HashMap<>(); // tag -> value
     private String text = "Account summary N/A";
-
-    private class Entry {
-        private double value;
-        private Currency currency;
-
-        private Entry(double value, Currency currency) {
-            this.value = value;
-            this.currency = currency;
-        }
-    }
 
     public AccountSummary(int ibRequestId) {
         this.ibRequestId = ibRequestId;
@@ -43,10 +36,20 @@ public class AccountSummary {
     }
 
     public void update(String account, String tag, String value, String currency) {
-        AccountSummaryTag summaryTag = AccountSummaryTag.valueOf(tag);
+        if (this.account == null) {
+            this.account = account;
+        } else if (!this.account.equals(account)) {
+            throw new IllegalStateException("received account summary update for account " + account);
+        }
 
-        summaryMap.putIfAbsent(account, new HashMap<>());
-        summaryMap.get(account).put(summaryTag, new Entry(Double.valueOf(value), Currency.valueOf(currency)));
+        if (baseCurrency == null) {
+            baseCurrency = Currency.valueOf(currency);
+        } else if (baseCurrency != Currency.valueOf(currency)) {
+            throw new IllegalStateException("received account summary update for currency " + currency);
+        }
+
+        AccountSummaryTag summaryTag = AccountSummaryTag.valueOf(tag);
+        summaryMap.put(summaryTag, Double.valueOf(value));
 
         updateText();
     }
@@ -59,19 +62,25 @@ public class AccountSummary {
         return text;
     }
 
+    public Double getNetLiquidationValue() {
+        return summaryMap.get(NetLiquidation);
+    }
+
+    public Currency getBaseCurrency() {
+        return baseCurrency;
+    }
+
+    public boolean isReady() {
+        return account != null && baseCurrency != null && getNetLiquidationValue() != null;
+    }
+
     private void updateText() {
         StringBuilder sb = new StringBuilder();
+        sb.append(account).append(": ");
 
-        for (String account : summaryMap.keySet()) {
-            sb.append(account).append(": ");
-
-            Map<AccountSummaryTag, Entry> map = summaryMap.get(account);
-
-            for (AccountSummaryTag tag : tags) {
-                Entry entry = map.get(tag);
-                if (entry != null) {
-                    sb.append(tag.name()).append(" ").append(Math.round(entry.value)).append(" ").append(entry.currency.name()).append(", ");
-                }
+        for (AccountSummaryTag tag : tags) {
+            if (summaryMap.get(tag) != null) {
+                sb.append(tag.name()).append(" ").append(Math.round(summaryMap.get(tag))).append(" ").append(baseCurrency.name()).append(", ");
             }
         }
         text = sb.toString().replaceAll(", $", "");

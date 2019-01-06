@@ -27,17 +27,19 @@ public enum OptionDataField implements DataField {
     }
 
     private static List<OptionDataField> fields = Arrays.asList(OptionDataField.values());
-    private static List<OptionDataField> portfolioSourceFields = Stream.of(
+    private static List<OptionDataField> riskDataSourceFields = Stream.of(
             DELTA,
             GAMMA,
             VEGA,
             THETA,
-            TIME_VALUE).collect(Collectors.toList());
+            TIME_VALUE,
+            OPTION_PRICE,
+            UNDERLYING_PRICE).collect(Collectors.toList());
 
     public static List<OptionDataField> fields() {
         return fields;
     }
 
-    public static List<OptionDataField> portfolioSourceFields() {
-        return portfolioSourceFields;
+    public static List<OptionDataField> riskDataSourceFields() {
+        return riskDataSourceFields;
     }}

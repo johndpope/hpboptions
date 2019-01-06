@@ -2,6 +2,8 @@ package com.highpowerbear.hpboptions.common;
 
 import org.apache.commons.text.CaseUtils;
 
+import java.time.LocalDate;
+
 /**
  * Created by robertk on 10/28/2018.
  */
@@ -38,5 +40,9 @@ public class CoreUtil {
 
     public static boolean isRound(double value) {
         return value == Math.round(value);
+    }
+
+    public static String formatExchangeRateDate(final LocalDate localDate) {
+        return localDate.format(CoreSettings.EXCHANGE_RATE_DATE_FORMATTER);
     }
 }

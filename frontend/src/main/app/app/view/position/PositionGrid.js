@@ -65,7 +65,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
-        text: 'Int',
+        text: 'Itm',
         width: 60,
         dataIndex: 'intrinsicValue',
         tdCls: 'intrinsicValue hop-decimal hop-unchanged',

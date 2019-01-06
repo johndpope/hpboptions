@@ -23,7 +23,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
-    private long lastPortfolioOptionDataUpdateTime;
+    private long lastRiskUpdateTime;
 
     public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
@@ -129,8 +129,8 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
-    public void updatePortfolioOptionData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars) {
-        lastPortfolioOptionDataUpdateTime = System.currentTimeMillis();
+    public void updateRiskData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars, double exposurePct) {
+        lastRiskUpdateTime = System.currentTimeMillis();
 
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
         update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
@@ -138,22 +138,23 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
         update(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS, deltaDollars);
+        update(UnderlyingDataField.EXPOSURE_PCT, exposurePct);
     }
 
-    public void resetPortfolioOptionData() {
-        lastPortfolioOptionDataUpdateTime = 0;
-        UnderlyingDataField.portfolioFields().forEach(field -> update(field, field.getInitialValue()));
+    public void resetRiskData() {
+        lastRiskUpdateTime = 0;
+        UnderlyingDataField.riskDataFields().forEach(field -> update(field, field.getInitialValue()));
     }
 
-    public boolean isPortfolioOptionDataUpdateDue() {
-        return (System.currentTimeMillis() - lastPortfolioOptionDataUpdateTime) > CoreSettings.PORTFOLIO_OPTION_DATA_UPDATE_INTERVAL_MILLIS;
+    public boolean isRiskDataUpdateDue() {
+        return (System.currentTimeMillis() - lastRiskUpdateTime) > CoreSettings.RISK_DATA_UPDATE_INTERVAL_MILLIS;
     }
 
-    public void updatePortfolioPnl(double unrealizedPnl) {
+    public void updateUnrealizedPnl(double unrealizedPnl) {
         update(UnderlyingDataField.UNREALIZED_PNL, unrealizedPnl);
     }
 
-    public void resetPortfolioPnl() {
+    public void resetUnrealizedPnl() {
         UnderlyingDataField field = UnderlyingDataField.UNREALIZED_PNL;
         update(field, field.getInitialValue());
     }

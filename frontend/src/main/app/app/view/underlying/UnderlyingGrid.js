@@ -148,7 +148,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'TV',
+        text: 'Tv',
         width: 60,
         dataIndex: 'portfolioTimeValue',
         tdCls: 'portfolioTimeValue hop-whole',

@@ -16,6 +16,7 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_THETA,
     PORTFOLIO_TIME_VALUE,
     PORTFOLIO_DELTA_DOLLARS,
+    EXPOSURE_PCT,
     UNREALIZED_PNL;
 
     @Override
@@ -24,7 +25,7 @@ public enum UnderlyingDataField implements DataField {
     }
 
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
-    private static List<UnderlyingDataField> portfolioFields = Stream.of(
+    private static List<UnderlyingDataField> riskDataFields = Stream.of(
             PORTFOLIO_DELTA,
             PORTFOLIO_GAMMA,
             PORTFOLIO_VEGA,
@@ -36,6 +37,6 @@ public enum UnderlyingDataField implements DataField {
         return fields;
     }
 
-    public static List<UnderlyingDataField> portfolioFields() {
-        return portfolioFields;
+    public static List<UnderlyingDataField> riskDataFields() {
+        return riskDataFields;
     }}

@@ -4,15 +4,23 @@ import com.highpowerbear.hpboptions.common.CoreSettings;
 import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
+import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.entity.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.*;
-import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.model.*;
-import com.ib.client.*;
+import com.ib.client.Bar;
+import com.ib.client.Contract;
+import com.ib.client.ContractDetails;
+import com.ib.client.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +33,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RiskService extends AbstractDataService implements ConnectionListener {
+    private static final Logger log = LoggerFactory.getLogger(RiskService.class);
 
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
@@ -37,6 +46,10 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_DATA_REQUEST_ID_INITIAL);
 
+    @Value("${fixer.access-key}") private String fixerAccessKey;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private ExchangeRates exchangeRates;
+
     @Autowired
     public RiskService(IbController ibController, CoreDao coreDao, MessageService messageService) {
         super(ibController, coreDao, messageService);
@@ -44,6 +57,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
         initUnderlyings();
+        retrieveExchangeRates();
     }
 
     private void initUnderlyings() {
@@ -87,6 +101,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
     @Scheduled(cron="0 0 6 * * MON-FRI")
     private void performStartOfDayTasks() {
+        retrieveExchangeRates();
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
         ibController.requestPositions();
         ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
@@ -124,7 +139,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         pnlRequestMap.remove(requestId);
     }
 
-    private void recalculatePortfolioOptionData(int underlyingConid) {
+    private void recalculateRiskDataPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
@@ -132,13 +147,12 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
-            udh.resetPortfolioOptionData();
-            UnderlyingDataField.portfolioFields().forEach(field -> messageService.sendWsMessage(udh, field));
+            udh.resetRiskData();
+            UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
 
-        } else if (udh.isPortfolioOptionDataUpdateDue() &&
-                pdhs.stream().allMatch(AbstractOptionDataHolder::portfolioSourceFieldsReady)) {
+        } else if (udh.isRiskDataUpdateDue() && pdhs.stream().allMatch(AbstractOptionDataHolder::riskDataSourceFieldsReady)) {
 
-            double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d;
+            double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
 
             for (PositionDataHolder pdh : pdhs) {
                 int multiplier = pdh.getInstrument().getMultiplier();
@@ -148,16 +162,31 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                 vega += pdh.getVega() * pdh.getPositionSize() * multiplier;
                 theta += pdh.getTheta() * pdh.getPositionSize() * multiplier;
                 timeValue += pdh.getTimeValue() * Math.abs(pdh.getPositionSize()) * multiplier;
+
+                if (pdh.getInstrument().getRight() == Types.Right.Call) {
+                    callMargin += pdh.getMargin();
+                } else if (pdh.getInstrument().getRight() == Types.Right.Put) {
+                    putMargin += pdh.getMargin();
+                }
             }
             double lastPrice = udh.getLast();
             double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
+            double margin  = Math.max(callMargin, putMargin);
+            double exposurePct = Double.NaN;
 
-            udh.updatePortfolioOptionData(delta, gamma, vega, theta, timeValue, deltaDollars);
-            UnderlyingDataField.portfolioFields().forEach(field -> messageService.sendWsMessage(udh, field));
+            if (accountSummary.isReady() && exchangeRates != null && Currency.valueOf(exchangeRates.getBase()) == accountSummary.getBaseCurrency()) {
+                Currency transactionCurrency = udh.getInstrument().getCurrency();
+                double exchangeRate = exchangeRates.getRate(transactionCurrency);
+                double netLiqValue = accountSummary.getNetLiquidationValue();
+                exposurePct = CoreUtil.round4(margin / (netLiqValue * exchangeRate) * 100d);
+            }
+
+            udh.updateRiskData(delta, gamma, vega, theta, timeValue, deltaDollars, exposurePct);
+            UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }
 
-    private void recalculatePortfolioPnl(int underlyingConid) {
+    private void recalculateUnrealizedPnlPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
@@ -165,18 +194,32 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
-            udh.resetPortfolioPnl();
+            udh.resetUnrealizedPnl();
         } else {
             double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
-            udh.updatePortfolioPnl(unrealizedPnl);
+            udh.updateUnrealizedPnl(unrealizedPnl);
         }
         messageService.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
+    }
+
+    private void retrieveExchangeRates() {
+        String date = CoreUtil.formatExchangeRateDate(LocalDate.now());
+        String query = CoreSettings.EXCHANGE_RATES_URL + "/" + date + "?access_key=" + fixerAccessKey + "&symbols=" + CoreSettings.EXCHANGE_RATES_SYMBOLS;
+
+        exchangeRates = restTemplate.getForObject(query, ExchangeRates.class);
+        if (exchangeRates != null) {
+            log.info(exchangeRates.toString());
+        }
     }
 
     @Override
     public void modelOptionDataReceived(OptionDataHolder optionDataHolder) {
         if (optionDataHolder.getType() == DataHolderType.POSITION) {
-            recalculatePortfolioOptionData(optionDataHolder.getInstrument().getUnderlyingConid());
+            PositionDataHolder pdh = (PositionDataHolder) optionDataHolder;
+            pdh.recalculateMargin();
+            messageService.sendWsMessage(pdh, PositionDataField.MARGIN);
+
+            recalculateRiskDataPerUnderlying(optionDataHolder.getInstrument().getUnderlyingConid());
         }
     }
 
@@ -230,7 +273,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                     pdh.updatePositionSize(positionSize);
                     messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
 
-                    recalculatePortfolioOptionData(pdh.getInstrument().getUnderlyingConid());
+                    recalculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
                 }
             } else {
                 cancelMktData(pdh);
@@ -240,8 +283,8 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                 positionMap.remove(conid);
                 underlyingPositionMap.get(underlyingConid).remove(conid);
 
-                recalculatePortfolioOptionData(underlyingConid);
-                recalculatePortfolioPnl(underlyingConid);
+                recalculateRiskDataPerUnderlying(underlyingConid);
+                recalculateUnrealizedPnlPerUnderlying(underlyingConid);
 
                 messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
             }
@@ -288,7 +331,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         }
         pdh.updateUnrealizedPnl(unrealizedPnL);
         messageService.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
-        recalculatePortfolioPnl(pdh.getInstrument().getUnderlyingConid());
+        recalculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
     }
 
     public String getAccountSummaryText() {
@@ -301,7 +344,6 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     }
 
     public List<PositionDataHolder> getSortedPositionDataHolders() {
-
         return positionMap.values().stream()
                 .sorted(Comparator
                         .comparing(PositionDataHolder::getDaysToExpiration)
