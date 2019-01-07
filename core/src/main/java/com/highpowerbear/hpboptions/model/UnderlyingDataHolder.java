@@ -41,6 +41,8 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 UnderlyingDataField.IV_CLOSE,
                 UnderlyingDataField.PORTFOLIO_DELTA,
                 UnderlyingDataField.PORTFOLIO_GAMMA,
+                UnderlyingDataField.PORTFOLIO_VEGA,
+                UnderlyingDataField.PORTFOLIO_THETA,
                 UnderlyingDataField.PORTFOLIO_TIME_VALUE,
                 UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS,
                 UnderlyingDataField.ALLOCATION_PCT,

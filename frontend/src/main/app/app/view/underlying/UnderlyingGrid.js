@@ -148,6 +148,20 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
+        text: 'Vg',
+        width: 60,
+        dataIndex: 'portfolioVega',
+        tdCls: 'portfolioVega hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
+        text: 'Th',
+        width: 60,
+        dataIndex: 'portfolioTheta',
+        tdCls: 'portfolioTheta hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
         text: 'Tv',
         width: 60,
         dataIndex: 'portfolioTimeValue',

@@ -14,6 +14,8 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'optionOpenInterest',
         'portfolioDelta',
         'portfolioGamma',
+        'portfolioVega',
+        'portfolioTheta',
         'portfolioTimeValue',
         'portfolioDeltaDollars',
         'allocationPct',
