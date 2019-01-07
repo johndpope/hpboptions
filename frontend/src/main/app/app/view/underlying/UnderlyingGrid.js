@@ -155,6 +155,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
+        text: 'Allc',
+        width: 70,
+        dataIndex: 'allocationPct',
+        tdCls: 'allocationPct hop-decimal-pct hop-unchanged',
+        align: 'right',
+        renderer: 'decimalPctRenderer'
+    }, {
         text: 'PnL',
         width: 60,
         dataIndex: 'unrealizedPnl',

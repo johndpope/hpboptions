@@ -11,6 +11,7 @@ Ext.define('HopGui.model.PositionDataHolder', {
         'daysToExpiration',
         'positionSize',
         'unrealizedPnl',
+        'margin',
         'intrinsicValue',
         'timeValue',
         'timeValuePct',

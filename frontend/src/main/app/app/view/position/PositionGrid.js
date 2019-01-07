@@ -65,6 +65,13 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
+        text: 'Mrg',
+        width: 60,
+        dataIndex: 'margin',
+        tdCls: 'margin hop-whole',
+        align: 'right',
+        renderer: 'wholeRenderer'
+    }, {
         text: 'Itm',
         width: 60,
         dataIndex: 'intrinsicValue',

@@ -16,6 +16,7 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'portfolioGamma',
         'portfolioTimeValue',
         'portfolioDeltaDollars',
+        'allocationPct',
         'unrealizedPnl'
     ]
 });

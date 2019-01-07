@@ -129,7 +129,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
-    public void updateRiskData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars, double exposurePct) {
+    public void updateRiskData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars, double allocationPct) {
         lastRiskUpdateTime = System.currentTimeMillis();
 
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
@@ -138,7 +138,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
         update(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS, deltaDollars);
-        update(UnderlyingDataField.EXPOSURE_PCT, exposurePct);
+        update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
     }
 
     public void resetRiskData() {
@@ -213,6 +213,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public double getPortfolioDeltaDollars() {
         return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS).doubleValue();
+    }
+
+    public double getAllocationPct() {
+        return getCurrent(UnderlyingDataField.ALLOCATION_PCT).doubleValue();
     }
 
     public double getUnrealizedPnl() {

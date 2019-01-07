@@ -172,16 +172,16 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             double lastPrice = udh.getLast();
             double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
             double margin  = Math.max(callMargin, putMargin);
-            double exposurePct = Double.NaN;
+            double allocationPct = Double.NaN;
 
             if (accountSummary.isReady() && exchangeRates != null && Currency.valueOf(exchangeRates.getBase()) == accountSummary.getBaseCurrency()) {
                 Currency transactionCurrency = udh.getInstrument().getCurrency();
                 double exchangeRate = exchangeRates.getRate(transactionCurrency);
                 double netLiqValue = accountSummary.getNetLiquidationValue();
-                exposurePct = CoreUtil.round4(margin / (netLiqValue * exchangeRate) * 100d);
+                allocationPct = CoreUtil.round4(margin / (netLiqValue * exchangeRate) * 100d);
             }
 
-            udh.updateRiskData(delta, gamma, vega, theta, timeValue, deltaDollars, exposurePct);
+            udh.updateRiskData(delta, gamma, vega, theta, timeValue, deltaDollars, allocationPct);
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }

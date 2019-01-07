@@ -16,7 +16,7 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_THETA,
     PORTFOLIO_TIME_VALUE,
     PORTFOLIO_DELTA_DOLLARS,
-    EXPOSURE_PCT,
+    ALLOCATION_PCT,
     UNREALIZED_PNL;
 
     @Override
