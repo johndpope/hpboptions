@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +58,6 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
         initUnderlyings();
-        retrieveExchangeRates();
     }
 
     private void initUnderlyings() {
@@ -76,6 +76,11 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
         }
+    }
+
+    @PostConstruct
+    private void init() {
+        retrieveExchangeRates();
     }
 
     @Override
@@ -174,11 +179,11 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             double margin  = Math.max(callMargin, putMargin);
             double allocationPct = Double.NaN;
 
-            if (accountSummary.isReady() && exchangeRates != null && Currency.valueOf(exchangeRates.getBase()) == accountSummary.getBaseCurrency()) {
+            if (accountSummary.isReady() && exchangeRates != null && exchangeRates.getBaseCurrency() == accountSummary.getBaseCurrency()) {
                 Currency transactionCurrency = udh.getInstrument().getCurrency();
                 double exchangeRate = exchangeRates.getRate(transactionCurrency);
                 double netLiqValue = accountSummary.getNetLiquidationValue();
-                allocationPct = CoreUtil.round4(margin / (netLiqValue * exchangeRate) * 100d);
+                allocationPct = margin / (netLiqValue * exchangeRate) * 100d;
             }
 
             udh.updateRiskData(delta, gamma, vega, theta, timeValue, deltaDollars, allocationPct);
@@ -207,9 +212,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         String query = CoreSettings.EXCHANGE_RATES_URL + "/" + date + "?access_key=" + fixerAccessKey + "&symbols=" + CoreSettings.EXCHANGE_RATES_SYMBOLS;
 
         exchangeRates = restTemplate.getForObject(query, ExchangeRates.class);
-        if (exchangeRates != null) {
-            log.info(exchangeRates.toString());
-        }
+        log.info("retrieved exchange rates " + exchangeRates);
     }
 
     @Override

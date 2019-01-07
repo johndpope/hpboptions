@@ -30,6 +30,11 @@ public class ExchangeRates {
         return base;
     }
 
+    @JsonIgnore
+    public Currency getBaseCurrency() {
+        return base != null ? Currency.valueOf(base) : null;
+    }
+
     public String getDate() {
         return date;
     }

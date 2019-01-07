@@ -1,6 +1,5 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.common.CoreUtil;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
@@ -72,7 +71,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     @Override
     public void recalculateOptionData() {
         Stream.of(DELTA, GAMMA, VEGA, THETA, IMPLIED_VOL).forEach(field -> {
-            double value = CoreUtil.round4(interpolate(field));
+            double value = interpolate(field);
             if (valid(value)) {
                 update(field, value);
             }
@@ -89,11 +88,11 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
                     (timeValue / getInstrument().getStrike()) * (365 / (double) getDaysToExpiration()) * 100d :
                     Double.NaN;
 
-            update(OPTION_PRICE, CoreUtil.round4(optionPriceIntpl));
-            update(UNDERLYING_PRICE, CoreUtil.round4(underlyingPriceIntpl));
-            update(INTRINSIC_VALUE, CoreUtil.round4(intrinsicValue));
-            update(TIME_VALUE, CoreUtil.round4(timeValue));
-            update(TIME_VALUE_PCT, CoreUtil.round4(timeValuePct));
+            update(OPTION_PRICE, optionPriceIntpl);
+            update(UNDERLYING_PRICE, underlyingPriceIntpl);
+            update(INTRINSIC_VALUE, intrinsicValue);
+            update(TIME_VALUE, timeValue);
+            update(TIME_VALUE_PCT, timeValuePct);
         }
     }
 

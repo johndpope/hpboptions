@@ -31,7 +31,8 @@ public enum UnderlyingDataField implements DataField {
             PORTFOLIO_VEGA,
             PORTFOLIO_THETA,
             PORTFOLIO_TIME_VALUE,
-            PORTFOLIO_DELTA_DOLLARS).collect(Collectors.toList());
+            PORTFOLIO_DELTA_DOLLARS,
+            ALLOCATION_PCT).collect(Collectors.toList());
 
     public static List<UnderlyingDataField> fields() {
         return fields;

@@ -104,7 +104,7 @@ public abstract class AbstractDataHolder implements DataHolder {
 
             if (isValidPrice(l) && isValidPrice(c)) {
                 double value = ((l - c) / c) * 100d;
-                update(field, CoreUtil.round4(value));
+                update(field, value);
             }
 
         } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
@@ -125,7 +125,7 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     protected void update(DataField field, Number value) {
-        valueMap.get(field).add(value);
+        valueMap.get(field).add(value instanceof Double ? CoreUtil.round4(value.doubleValue()) : value);
     }
 
     protected CircularFifoQueue<Number> createValueQueue(Number initialValue) {

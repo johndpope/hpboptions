@@ -7,14 +7,14 @@ import java.util.Collection;
  */
 public class RestList<T> {
     private final Collection<T> items;
-    private final Integer total;
+    private final int total;
 
-    public RestList(Collection<T> items, Integer total) {
+    public RestList(Collection<T> items, int total) {
         this.items = items;
         this.total = total;
     }
 
-    public Integer getTotal() {
+    public int getTotal() {
         return total;
     }
 

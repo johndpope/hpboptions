@@ -43,6 +43,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 UnderlyingDataField.PORTFOLIO_GAMMA,
                 UnderlyingDataField.PORTFOLIO_TIME_VALUE,
                 UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS,
+                UnderlyingDataField.ALLOCATION_PCT,
                 UnderlyingDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
 
@@ -94,7 +95,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivClose)) {
             double value = ((ivCurrent - ivClose) / ivClose) * 100d;
-            update(DerivedMktDataField.IV_CHANGE_PCT, CoreUtil.round4(value));
+            update(DerivedMktDataField.IV_CHANGE_PCT, value);
         }
     }
 
@@ -124,7 +125,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         double ivYearHigh = ivYearHighOptional.getAsDouble();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
-            double ivRank = CoreUtil.round4(100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow));
+            double ivRank = 100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow);
             update(DerivedMktDataField.IV_RANK, ivRank);
         }
     }
