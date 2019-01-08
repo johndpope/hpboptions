@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.logic;
+package com.highpowerbear.hpboptions.service;
 
 import com.ib.client.ContractDetails;
 import com.ib.client.TickType;

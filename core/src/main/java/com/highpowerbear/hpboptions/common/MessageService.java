@@ -36,8 +36,8 @@ public class MessageService {
 
         SimpleMailMessage message = new SimpleMailMessage();
 
-        message.setFrom(CoreSettings.EMAIL_FROM);
-        message.setTo(CoreSettings.EMAIL_TO);
+        message.setFrom(HopSettings.EMAIL_FROM);
+        message.setTo(HopSettings.EMAIL_TO);
         message.setSubject(subject);
         message.setText(text);
 
@@ -51,11 +51,11 @@ public class MessageService {
     }
 
     public void sendWsMessage(WsTopic topic, String message) {
-        simpMessagingTemplate.convertAndSend(CoreSettings.WS_TOPIC_PREFIX + topic.suffix(), message);
+        simpMessagingTemplate.convertAndSend(HopSettings.WS_TOPIC_PREFIX + topic.suffix(), message);
     }
 
     public void sendWsMessage(DataHolderType type, String message) {
-        String prefix = CoreSettings.WS_TOPIC_PREFIX;
+        String prefix = HopSettings.WS_TOPIC_PREFIX;
         String topic;
 
         switch (type) {

@@ -7,7 +7,7 @@ import java.time.LocalDate;
 /**
  * Created by robertk on 10/28/2018.
  */
-public class CoreUtil {
+public class HopUtil {
 
     public static void waitMilliseconds(int milliseconds) {
         try {
@@ -43,6 +43,6 @@ public class CoreUtil {
     }
 
     public static String formatExchangeRateDate(final LocalDate localDate) {
-        return localDate.format(CoreSettings.EXCHANGE_RATE_DATE_FORMATTER);
+        return localDate.format(HopSettings.EXCHANGE_RATE_DATE_FORMATTER);
     }
 }

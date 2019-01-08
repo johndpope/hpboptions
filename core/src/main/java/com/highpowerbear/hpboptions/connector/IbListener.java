@@ -1,12 +1,12 @@
 package com.highpowerbear.hpboptions.connector;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
+import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.enums.WsTopic;
-import com.highpowerbear.hpboptions.logic.ChainService;
-import com.highpowerbear.hpboptions.logic.DataService;
-import com.highpowerbear.hpboptions.logic.RiskService;
-import com.highpowerbear.hpboptions.logic.OrderService;
+import com.highpowerbear.hpboptions.service.ChainService;
+import com.highpowerbear.hpboptions.service.DataService;
+import com.highpowerbear.hpboptions.service.RiskService;
+import com.highpowerbear.hpboptions.service.OrderService;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -36,18 +36,6 @@ public class IbListener extends GenericIbListener {
         this.messageService = messageService;
 
         ibController.initialize(this);
-    }
-
-    @Override
-    public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
-        super.openOrder(orderId, contract, order, orderState);
-        orderService.openOrderReceived(orderId, contract, order);
-    }
-
-    @Override
-    public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
-        super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
-        orderService.orderStatusReceived(status, remaining, avgFillPrice, permId);
     }
 
     @Override
@@ -161,7 +149,25 @@ public class IbListener extends GenericIbListener {
         riskService.unrealizedPnlReceived(requestId, unrealizedPnL);
     }
 
+    @Override
+    public void nextValidId(int orderId) {
+        super.nextValidId(orderId);
+        orderService.nextValidIdReceived(orderId);
+    }
+
+    @Override
+    public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
+        super.openOrder(orderId, contract, order, orderState);
+        orderService.openOrderReceived(orderId, contract, order);
+    }
+
+    @Override
+    public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
+        super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
+        orderService.orderStatusReceived(status, remaining, avgFillPrice, permId);
+    }
+
     private DataService getDataService(int requestId) {
-        return requestId > CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL ? chainService : riskService;
+        return requestId > HopSettings.CHAIN_IB_REQUEST_ID_INITIAL ? chainService : riskService;
     }
 }

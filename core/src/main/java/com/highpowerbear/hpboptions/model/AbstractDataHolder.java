@@ -1,6 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
@@ -125,7 +125,7 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     protected void update(DataField field, Number value) {
-        valueMap.get(field).add(value instanceof Double ? CoreUtil.round4(value.doubleValue()) : value);
+        valueMap.get(field).add(value instanceof Double ? HopUtil.round4(value.doubleValue()) : value);
     }
 
     protected CircularFifoQueue<Number> createValueQueue(Number initialValue) {
@@ -145,11 +145,11 @@ public abstract class AbstractDataHolder implements DataHolder {
     }
 
     protected boolean isValidPrice(double d) {
-        return CoreUtil.isValidPrice(d);
+        return HopUtil.isValidPrice(d);
     }
 
     protected boolean isValidSize(int i) {
-        return CoreUtil.isValidSize(i);
+        return HopUtil.isValidSize(i);
     }
 
     @Override
@@ -178,7 +178,7 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     @Override
     public String createMessage(DataField dataField) {
-        return id + "," + CoreUtil.toCamelCase(dataField.name()) + "," + getOld(dataField) + "," + getCurrent(dataField);
+        return id + "," + HopUtil.toCamelCase(dataField.name()) + "," + getOld(dataField) + "," + getCurrent(dataField);
     }
 
     @Override

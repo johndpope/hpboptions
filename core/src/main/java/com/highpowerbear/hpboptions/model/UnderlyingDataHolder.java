@@ -1,8 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
@@ -150,7 +149,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     }
 
     public boolean isRiskDataUpdateDue() {
-        return (System.currentTimeMillis() - lastRiskUpdateTime) > CoreSettings.RISK_DATA_UPDATE_INTERVAL_MILLIS;
+        return (System.currentTimeMillis() - lastRiskUpdateTime) > HopSettings.RISK_DATA_UPDATE_INTERVAL_MILLIS;
     }
 
     public void updateUnrealizedPnl(double unrealizedPnl) {

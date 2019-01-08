@@ -1,6 +1,6 @@
-package com.highpowerbear.hpboptions.entity;
+package com.highpowerbear.hpboptions.database;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
+import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Contract;
@@ -60,7 +60,7 @@ public class Underlying implements Serializable {
         Contract contract = new Contract();
         contract.symbol(symbol);
         contract.secType(Types.SecType.OPT);
-        contract.lastTradeDateOrContractMonth(expiration.format(CoreSettings.IB_DATE_FORMATTER));
+        contract.lastTradeDateOrContractMonth(expiration.format(HopSettings.IB_DATE_FORMATTER));
         contract.currency(currency.name());
         contract.exchange(chainExchange.name());
 

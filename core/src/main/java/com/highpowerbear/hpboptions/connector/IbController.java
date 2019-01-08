@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.connector;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +21,9 @@ public class IbController {
 
     private AtomicBoolean initialized = new AtomicBoolean(false);
 
-    private final String host = CoreSettings.IB_HOST;
-    private final Integer port = CoreSettings.IB_PORT;
-    private final Integer clientId = CoreSettings.IB_CLIENT_ID;
+    private final String host = HopSettings.IB_HOST;
+    private final Integer port = HopSettings.IB_PORT;
+    private final Integer clientId = HopSettings.IB_CLIENT_ID;
 
     private EReaderSignal eReaderSignal;
     private EClientSocket eClientSocket;
@@ -51,7 +51,7 @@ public class IbController {
         if (!isConnected()) {
             log.info("connecting " + getConnectionInfo());
             eClientSocket.eConnect(host, port, clientId);
-            CoreUtil.waitMilliseconds(1000);
+            HopUtil.waitMilliseconds(1000);
 
             if (isConnected()) {
                 log.info("successfully connected " + getConnectionInfo());
@@ -82,7 +82,7 @@ public class IbController {
         if (isConnected()) {
             log.info("disconnecting " + getConnectionInfo());
             eClientSocket.eDisconnect();
-            CoreUtil.waitMilliseconds(1000);
+            HopUtil.waitMilliseconds(1000);
 
             if (!isConnected()) {
                 log.info("successfully disconnected " + getConnectionInfo());

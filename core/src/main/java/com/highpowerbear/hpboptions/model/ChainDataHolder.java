@@ -1,6 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
@@ -19,7 +19,7 @@ public class ChainDataHolder extends AbstractOptionDataHolder {
     @Override
     public String createMessage(DataField dataField) {
         return getType().name().toLowerCase() + "-" + String.valueOf(getInstrument().getStrike()).replace(".", "-") + "," +
-                CoreUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," +
+                HopUtil.toCamelCase(getInstrument().getRight().name() + "_" + dataField.name()) + "," +
                 getOld(dataField) + "," +
                 getCurrent(dataField);
     }

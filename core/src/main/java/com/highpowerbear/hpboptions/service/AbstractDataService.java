@@ -1,7 +1,8 @@
-package com.highpowerbear.hpboptions.logic;
+package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.IbController;
+import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
@@ -19,14 +20,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractDataService implements DataService {
 
     protected final IbController ibController;
-    protected final CoreDao coreDao;
+    protected final HopDao hopDao;
     protected final MessageService messageService;
 
     private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
 
-    public AbstractDataService(IbController ibController, CoreDao coreDao, MessageService messageService) {
+    public AbstractDataService(IbController ibController, HopDao hopDao, MessageService messageService) {
         this.ibController = ibController;
-        this.coreDao = coreDao;
+        this.hopDao = hopDao;
         this.messageService = messageService;
     }
 
@@ -87,7 +88,8 @@ public abstract class AbstractDataService implements DataService {
     }
 
     @Override
-    public abstract void contractDetailsReceived(ContractDetails contractDetails);
+    public void contractDetailsReceived(ContractDetails contractDetails) {
+    }
 
     @Override
     public void contractDetailsEndReceived(int requestId) {

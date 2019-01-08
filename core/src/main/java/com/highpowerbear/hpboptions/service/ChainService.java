@@ -1,11 +1,12 @@
-package com.highpowerbear.hpboptions.logic;
+package com.highpowerbear.hpboptions.service;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.database.HopDao;
+import com.highpowerbear.hpboptions.database.Underlying;
 import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
@@ -42,7 +43,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     private final Map<Integer, Underlying> underlyingMap = new HashMap<>(); // conid -> underlying
     private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
-    private final Map<Integer, UnderlyingMktData> underlyingMktDataMap = new HashMap<>(); // conid -> subset of mkt data
+    private final Map<Integer, UnderlyingMktDataSnapshot> underlyingMktDataSnapshotMap = new HashMap<>(); // conid -> subset of mkt data
 
     private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new HashMap<>(); // underlying conid -> chain expirations
     private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainInfo -> (strike -> chainItem)
@@ -54,25 +55,25 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     private final AtomicBoolean allChainsReady = new AtomicBoolean(false);
     private final ReentrantLock chainLock = new ReentrantLock();
 
-    private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_CHAIN_REQUEST_ID_INITIAL);
+    private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.CHAIN_IB_REQUEST_ID_INITIAL);
 
-    private class UnderlyingMktData {
+    private class UnderlyingMktDataSnapshot {
         private double price;
         private double optionImpliedVol;
 
-        private UnderlyingMktData(double price, double optionImpliedVol) {
+        private UnderlyingMktDataSnapshot(double price, double optionImpliedVol) {
             this.price = price;
             this.optionImpliedVol = optionImpliedVol;
         }
     }
 
     @Autowired
-    public ChainService(IbController ibController, CoreDao coreDao, MessageService messageService, RiskService riskService) {
-        super(ibController, coreDao, messageService);
+    public ChainService(IbController ibController, HopDao hopDao, MessageService messageService, RiskService riskService) {
+        super(ibController, hopDao, messageService);
         this.riskService = riskService;
 
         ibController.addConnectionListener(this);
-        for (Underlying u : coreDao.getActiveUnderlyings()) {
+        for (Underlying u : hopDao.getActiveUnderlyings()) {
             underlyingMap.put(u.getConid(), u);
             underlyingInfos.add(new UnderlyingInfo(u.getConid(), u.getSymbol()));
             expirationsMap.put(u.getConid(), new TreeSet<>());
@@ -84,7 +85,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         if (!allChainsReady.get()) {
             expirationsRequestMap.clear();
             contractDetailsRequestMap.clear();
-            executor.schedule(this::rebuildChains, CoreSettings.CHAIN_REBUILD_DELAY_MILLIS, TimeUnit.MILLISECONDS);
+            executor.schedule(this::rebuildChains, HopSettings.CHAIN_REBUILD_DELAY_MILLIS, TimeUnit.MILLISECONDS);
 
         } else if (activeChainKey != null) {
             requestActiveChainMktData();
@@ -136,7 +137,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
             }
             cancelAllMktData();
             activeChainKey = null;
-            underlyingMktDataMap.clear();
+            underlyingMktDataSnapshotMap.clear();
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
             chainDataHolderMap.clear();
@@ -147,8 +148,8 @@ public class ChainService extends AbstractDataService implements ConnectionListe
                 double underlyingPrice = riskService.getUnderlyingPrice(underlyingInfo.getConid());
                 double underlyingOptionImpliedVol = riskService.getUnderlyingOptionImpliedVol(underlyingInfo.getConid());
 
-                if (CoreUtil.isValidPrice(underlyingPrice) && CoreUtil.isValidPrice(underlyingOptionImpliedVol)) {
-                    underlyingMktDataMap.put(underlyingInfo.getConid(), new UnderlyingMktData(underlyingPrice, underlyingOptionImpliedVol));
+                if (HopUtil.isValidPrice(underlyingPrice) && HopUtil.isValidPrice(underlyingOptionImpliedVol)) {
+                    underlyingMktDataSnapshotMap.put(underlyingInfo.getConid(), new UnderlyingMktDataSnapshot(underlyingPrice, underlyingOptionImpliedVol));
                 }
             }
 
@@ -185,15 +186,15 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         int underlyingConId = cdh.getInstrument().getUnderlyingConid();
 
         Underlying underlying = underlyingMap.get(underlyingConId);
-        UnderlyingMktData umd = underlyingMktDataMap.get(cdh.getInstrument().getUnderlyingConid());
+        UnderlyingMktDataSnapshot snapshot = underlyingMktDataSnapshotMap.get(cdh.getInstrument().getUnderlyingConid());
         double strike = cdh.getInstrument().getStrike();
 
-        if (umd == null || underlying.isChainRoundStrikes() && !CoreUtil.isRound(strike)) {
+        if (snapshot == null || underlying.isChainRoundStrikes() && !HopUtil.isRound(strike)) {
             return false;
         }
-        double priceStdDev = umd.price * umd.optionImpliedVol * Math.sqrt((double) cdh.getDaysToExpiration() / 365);
-        double lowerStrike = umd.price - (priceStdDev * CoreSettings.CHAIN_STRIKES_STD_DEVIATIONS);
-        double upperStrike = umd.price + (priceStdDev * CoreSettings.CHAIN_STRIKES_STD_DEVIATIONS);
+        double priceStdDev = snapshot.price * snapshot.optionImpliedVol * Math.sqrt((double) cdh.getDaysToExpiration() / 365);
+        double lowerStrike = snapshot.price - (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
+        double upperStrike = snapshot.price + (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
 
         return strike >= lowerStrike && strike <= upperStrike;
     }
@@ -204,7 +205,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
         if (underlying.getChainExchange().name().equals(exchange) && multiplier == underlying.getChainMultiplier()) {
             expirationsStringSet.stream()
-                    .map(exp -> LocalDate.parse(exp, CoreSettings.IB_DATE_FORMATTER))
+                    .map(exp -> LocalDate.parse(exp, HopSettings.IB_DATE_FORMATTER))
                     .filter(exp -> !now.isAfter(exp))
                     .forEach(exp -> expirationsMap.get(underlyingConId).add(exp));
         }
@@ -228,7 +229,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
         Types.Right right = contract.right();
         double strike = contract.strike();
-        LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
+        LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
 
         OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
         instrument.setExchange(exchange);
@@ -281,7 +282,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
                 Underlying underlying = underlyingMap.get(chainKey.getUnderlyingConid());
 
                 ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.getExpiration()));
-                CoreUtil.waitMilliseconds(CoreSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);
+                HopUtil.waitMilliseconds(HopSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);
             }
         });
     }

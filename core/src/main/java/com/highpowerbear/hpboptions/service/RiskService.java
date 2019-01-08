@@ -1,11 +1,12 @@
-package com.highpowerbear.hpboptions.logic;
+package com.highpowerbear.hpboptions.service;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.entity.Underlying;
+import com.highpowerbear.hpboptions.database.HopDao;
+import com.highpowerbear.hpboptions.database.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.model.*;
@@ -45,15 +46,15 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final Map<Integer, PositionDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> positionDataHolder
 
-    private final AtomicInteger ibRequestIdGen = new AtomicInteger(CoreSettings.IB_DATA_REQUEST_ID_INITIAL);
+    private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.RISK_IB_REQUEST_ID_INITIAL);
 
     @Value("${fixer.access-key}") private String fixerAccessKey;
     private final RestTemplate restTemplate = new RestTemplate();
     private ExchangeRates exchangeRates;
 
     @Autowired
-    public RiskService(IbController ibController, CoreDao coreDao, MessageService messageService) {
-        super(ibController, coreDao, messageService);
+    public RiskService(IbController ibController, HopDao hopDao, MessageService messageService) {
+        super(ibController, hopDao, messageService);
 
         ibController.addConnectionListener(this);
         accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
@@ -61,7 +62,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     }
 
     private void initUnderlyings() {
-        List<Underlying> underlyings = coreDao.getActiveUnderlyings();
+        List<Underlying> underlyings = hopDao.getActiveUnderlyings();
 
         for (Underlying underlying : underlyings) {
             int conid = underlying.getConid();
@@ -123,7 +124,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         ibController.requestHistData(
                 udh.getIbHistDataRequestId(),
                 udh.createIbContract(),
-                LocalDate.now().atStartOfDay().format(CoreSettings.IB_DATETIME_FORMATTER),
+                LocalDate.now().atStartOfDay().format(HopSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),
                 IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
@@ -175,7 +176,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                 }
             }
             double lastPrice = udh.getLast();
-            double deltaDollars = CoreUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
+            double deltaDollars = HopUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
             double margin  = Math.max(callMargin, putMargin);
             double allocationPct = Double.NaN;
 
@@ -208,8 +209,8 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     }
 
     private void retrieveExchangeRates() {
-        String date = CoreUtil.formatExchangeRateDate(LocalDate.now());
-        String query = CoreSettings.EXCHANGE_RATES_URL + "/" + date + "?access_key=" + fixerAccessKey + "&symbols=" + CoreSettings.EXCHANGE_RATES_SYMBOLS;
+        String date = HopUtil.formatExchangeRateDate(LocalDate.now());
+        String query = HopSettings.EXCHANGE_RATES_URL + "/" + date + "?access_key=" + fixerAccessKey + "&symbols=" + HopSettings.EXCHANGE_RATES_SYMBOLS;
 
         exchangeRates = restTemplate.getForObject(query, ExchangeRates.class);
         log.info("retrieved exchange rates " + exchangeRates);
@@ -234,7 +235,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     public void historicalDataReceived(int requestId, Bar bar) {
         UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
 
-        LocalDate date = LocalDate.parse(bar.time(), CoreSettings.IB_DATE_FORMATTER);
+        LocalDate date = LocalDate.parse(bar.time(), HopSettings.IB_DATE_FORMATTER);
         double value = bar.close();
         udh.addImpliedVolatility(date, value);
     }
@@ -262,7 +263,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
                     Types.Right right = contract.right();
                     double strike = contract.strike();
-                    LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), CoreSettings.IB_DATE_FORMATTER);
+                    LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
 
                     OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
@@ -362,11 +363,11 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         double last = underlyingMap.get(conid).getLast();
         double close = underlyingMap.get(conid).getClose();
 
-        if (CoreUtil.isValidPrice(last)) {
+        if (HopUtil.isValidPrice(last)) {
             return last;
-        } else if (CoreUtil.isValidPrice(bid) && CoreUtil.isValidPrice(ask)) {
+        } else if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
             return (bid + ask) / 2d;
-        } else if (CoreUtil.isValidPrice(close)) {
+        } else if (HopUtil.isValidPrice(close)) {
             return close;
         } else {
             return Double.NaN;

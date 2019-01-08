@@ -1,12 +1,12 @@
 package com.highpowerbear.hpboptions.rest;
 
-import com.highpowerbear.hpboptions.common.CoreSettings;
-import com.highpowerbear.hpboptions.common.CoreUtil;
+import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
-import com.highpowerbear.hpboptions.logic.ChainService;
-import com.highpowerbear.hpboptions.logic.RiskService;
-import com.highpowerbear.hpboptions.logic.OrderService;
+import com.highpowerbear.hpboptions.service.ChainService;
+import com.highpowerbear.hpboptions.service.RiskService;
+import com.highpowerbear.hpboptions.service.OrderService;
 import com.highpowerbear.hpboptions.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -53,7 +53,7 @@ public class AppRestController {
     public ResponseEntity<?> disconnect() {
         if (ibController.isConnected()) {
             ibController.disconnect();
-            CoreUtil.waitMilliseconds(1000);
+            HopUtil.waitMilliseconds(1000);
         }
         return ResponseEntity.ok("connected=" + ibController.isConnected());
     }
@@ -100,7 +100,7 @@ public class AppRestController {
     @RequestMapping(method = RequestMethod.PUT, value = "activate-chain/{underlyingConid}/{expiration}")
     public ResponseEntity<?> activateChain(
             @PathVariable("underlyingConid") int underlyingConid,
-            @PathVariable("expiration") @DateTimeFormat(pattern = CoreSettings.JSON_DATE_FORMAT) LocalDate expiration) {
+            @PathVariable("expiration") @DateTimeFormat(pattern = HopSettings.JSON_DATE_FORMAT) LocalDate expiration) {
 
         ChainActivationStatus chainActivationStatus = chainService.activateChain(underlyingConid, expiration);
         return ResponseEntity.ok(chainActivationStatus.name().toLowerCase());
