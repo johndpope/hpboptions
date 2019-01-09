@@ -4,7 +4,6 @@ import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.ib.client.Contract;
 
 /**
  * Created by robertk on 12/3/2018.
@@ -20,5 +19,4 @@ public interface DataHolder {
     String createMessage(DataField dataField);
     boolean isSendMessage(DataField dataField);
     String getGenericTicks();
-    Contract createIbContract();
 }

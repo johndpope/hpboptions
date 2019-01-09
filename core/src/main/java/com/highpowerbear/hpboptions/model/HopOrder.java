@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
 import com.ib.client.Types;
@@ -20,14 +21,24 @@ public class HopOrder {
     private double fillPrice;
     private OrderStatus ibStatus;
     private int heartbeatCount;
-    private Instrument instrument;
-
-    public boolean isActive() {
-        return ibStatus != null && ibStatus != ApiCancelled && ibStatus != Cancelled && ibStatus != Filled && ibStatus != Inactive && ibStatus != Unknown;
-    }
 
     public HopOrder(int orderId) {
         this.orderId = orderId;
+    }
+
+    public boolean isActive() {
+        return ibStatus == null || ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted;
+    }
+
+    public Order createIbOrder() {
+        Order order = new Order();
+        order.action(action);
+        order.totalQuantity(quantity);
+        order.orderType(orderType);
+        order.lmtPrice(limitPrice);
+        order.tif(Types.TimeInForce.DAY);
+
+        return order;
     }
 
     public int getOrderId() {
@@ -98,11 +109,8 @@ public class HopOrder {
         this.heartbeatCount = heartbeatCount;
     }
 
-    public Instrument getInstrument() {
-        return instrument;
-    }
-
-    public void setInstrument(Instrument instrument) {
-        this.instrument = instrument;
+    @Override
+    public String toString() {
+        return orderId + ", " + action + ", " + quantity + ", " + limitPrice;
     }
 }

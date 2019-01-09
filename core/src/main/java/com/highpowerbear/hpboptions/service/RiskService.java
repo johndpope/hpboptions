@@ -123,7 +123,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
         ibController.requestHistData(
                 udh.getIbHistDataRequestId(),
-                udh.createIbContract(),
+                udh.getInstrument().createIbContract(),
                 LocalDate.now().atStartOfDay().format(HopSettings.IB_DATETIME_FORMATTER),
                 IbDurationUnit.YEAR_1.getValue(),
                 IbBarSize.DAY_1.getValue(),

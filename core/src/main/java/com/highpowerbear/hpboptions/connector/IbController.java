@@ -2,6 +2,8 @@ package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
+import com.highpowerbear.hpboptions.model.HopOrder;
+import com.highpowerbear.hpboptions.model.Instrument;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -197,6 +199,22 @@ public class IbController {
 
         if (checkConnected()) {
             eClientSocket.reqOpenOrders();
+        }
+    }
+
+    public void placeOrder(HopOrder hopOrder, Instrument instrument) {
+        log.info("placing order " + hopOrder);
+
+        if (checkConnected()) {
+            eClientSocket.placeOrder(hopOrder.getOrderId(), instrument.createIbContract(), hopOrder.createIbOrder());
+        }
+    }
+
+    public void cancelOrder(int orderId) {
+        log.info("canceling order " + orderId);
+
+        if (checkConnected()) {
+            eClientSocket.cancelOrder(orderId);
         }
     }
 

@@ -6,12 +6,14 @@ import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.model.HopOrder;
 import com.highpowerbear.hpboptions.model.Instrument;
+import com.highpowerbear.hpboptions.model.OrderDataHolder;
 import com.ib.client.Contract;
 import com.ib.client.OrderStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.ib.client.OrderType;
+import com.ib.client.Types;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,10 +27,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class OrderService extends AbstractDataService implements ConnectionListener {
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private final Map<Integer, HopOrder> orderMap = new HashMap<>();
+    private final Map<Integer, OrderDataHolder> orderMap = new TreeMap<>(); // sorted by orderId
 
+    private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.ORDER_IB_REQUEST_ID_INITIAL);
     private final AtomicInteger ibOrderIdGenerator = new AtomicInteger();
 
     @Autowired
@@ -41,31 +43,58 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     @Override
     public void postConnect() {
         ibController.requestOpenOrders();
+        cancelAllMktData();
+        orderMap.values().forEach(this::requestMktData);
     }
 
-    public HopOrder createOrder(Instrument instrument) {
-        HopOrder hopOrder = new HopOrder(ibOrderIdGenerator.incrementAndGet());
-        // TODO
+    public void createOrder(Types.Action action, int quantity, double limitPrice, Instrument instrument) {
+        int orderId = ibOrderIdGenerator.incrementAndGet();
 
-        // TODO send ws message
-        return null;
+        HopOrder hopOrder = new HopOrder(orderId);
+        hopOrder.setAction(action);
+        hopOrder.setQuantity(quantity);
+        hopOrder.setOrderType(OrderType.LMT);
+        hopOrder.setLimitPrice(limitPrice);
+
+        OrderDataHolder odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
+        orderMap.put(orderId, odh);
+        requestMktData(odh);
+
+        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
-    public void submitOrder(HopOrder hopOrder) {
-        // TODO
+    public void placeOrder(int orderId, int quantity, double limitPrice) { // submit or modify
+        OrderDataHolder odh = orderMap.get(orderId);
+
+        if (odh != null) {
+            odh.getHopOrder().setQuantity(quantity);
+            odh.getHopOrder().setLimitPrice(limitPrice);
+
+            ibController.placeOrder(odh.getHopOrder(), odh.getInstrument());
+        }
     }
 
-    public void modifyOrder(HopOrder hopOrder) {
-        // TODO
+    public void cancelOrder(int orderId) {
+        OrderDataHolder odh = orderMap.get(orderId);
+
+        if (odh != null) {
+            ibController.cancelOrder(odh.getHopOrder().getOrderId());
+        }
     }
 
-    public void cancelOrder(HopOrder hopOrder) {
-        // TODO
+    public void removeInactiveOrders() {
+        for (OrderDataHolder odh : new ArrayList<>(orderMap.values())) {
+            if (!odh.getHopOrder().isActive()) {
+                orderMap.remove(odh.getHopOrder().getOrderId());
+                cancelMktData(odh);
+            }
+        }
+        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)
     private void updateHeartbeats() {
-        List<HopOrder> activeOrders = orderMap.values().stream().filter(HopOrder::isActive).collect(Collectors.toList());
+        List<HopOrder> activeOrders = orderMap.values().stream().map(OrderDataHolder::getHopOrder).filter(HopOrder::isActive).collect(Collectors.toList());
 
         for (HopOrder hopOrder : activeOrders) {
             if (hopOrder.getHeartbeatCount() <= 0) {
@@ -73,8 +102,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             } else {
                 hopOrder.setHeartbeatCount(hopOrder.getHeartbeatCount() - 1);
             }
-            // TODO send ws message
         }
+        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
     public void nextValidIdReceived(int nextValidOrderId) {
@@ -82,43 +111,44 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     }
 
     public void openOrderReceived(int orderId, Contract contract, com.ib.client.Order order) {
-        HopOrder hopOrder = orderMap.get(order.permId());
+        OrderDataHolder odh = orderMap.get(orderId);
 
-        if (hopOrder == null) { // potential open orders received upon application restart
-            hopOrder = new HopOrder(orderId);
-
+        // potential open orders received upon application restart
+        if (odh == null) {
+            HopOrder hopOrder = new HopOrder(orderId);
             hopOrder.setPermId(order.permId());
             hopOrder.setAction(order.action());
             hopOrder.setQuantity((int) order.totalQuantity());
             hopOrder.setOrderType(order.orderType());
             hopOrder.setLimitPrice(order.lmtPrice());
             hopOrder.setHeartbeatCount(HopSettings.HEARTBEAT_COUNT_INITIAL);
-            hopOrder.setInstrument(new Instrument(contract.conid(), contract.secType(), contract.localSymbol(), Currency.valueOf(contract.currency())));
 
-            orderMap.put(hopOrder.getOrderId(), hopOrder);
-            // TODO subscribe mkt data
-            // TODO send ws message
+            Instrument instrument = new Instrument(contract.conid(), contract.secType(), contract.localSymbol(), Currency.valueOf(contract.currency()));
+
+            odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
+
+            orderMap.put(hopOrder.getOrderId(), odh);
+            requestMktData(odh);
+            messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
         }
     }
 
-    public void orderStatusReceived(String status, double remaining, double avgFillPrice, int permId) {
-        HopOrder hopOrder = orderMap.get(permId);
-        if (hopOrder == null) {
-            return;
-        }
+    public void orderStatusReceived(int orderId, String status, double remaining, double avgFillPrice) {
+        OrderDataHolder odh = orderMap.get(orderId);
 
-        hopOrder.setIbStatus(OrderStatus.get(status));
-        hopOrder.setHeartbeatCount(HopSettings.HEARTBEAT_COUNT_INITIAL);
+        if (odh != null) {
+            HopOrder hopOrder = odh.getHopOrder();
+            hopOrder.setIbStatus(OrderStatus.get(status));
+            hopOrder.setHeartbeatCount(HopSettings.HEARTBEAT_COUNT_INITIAL);
 
-        if (OrderStatus.get(status) == OrderStatus.Filled && remaining == 0) {
-            hopOrder.setFillPrice(avgFillPrice);
+            if (OrderStatus.get(status) == OrderStatus.Filled && remaining == 0) {
+                hopOrder.setFillPrice(avgFillPrice);
+            }
+            messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
         }
-        // TODO send ws message
     }
 
-    public List<HopOrder> getSortedOrders() {
-        return orderMap.values().stream()
-                .sorted(Comparator.comparingInt(HopOrder::getOrderId))
-                .collect(Collectors.toList());
+    public Collection<OrderDataHolder> getOrderDataHolders() {
+        return orderMap.values();
     }
 }

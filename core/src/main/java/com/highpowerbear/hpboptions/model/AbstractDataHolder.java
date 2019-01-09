@@ -5,7 +5,6 @@ import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.ib.client.Contract;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 
@@ -189,16 +188,6 @@ public abstract class AbstractDataHolder implements DataHolder {
     @Override
     public String getGenericTicks() {
         return genericTicks;
-    }
-
-    @Override
-    public Contract createIbContract() {
-        Contract contract = new Contract();
-        contract.conid(instrument.getConid());
-        contract.localSymbol(instrument.getSymbol());
-        contract.exchange(instrument.getExchange().name());
-
-        return contract;
     }
 
     public double getBid() {

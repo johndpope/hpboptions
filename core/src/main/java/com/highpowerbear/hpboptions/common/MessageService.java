@@ -60,6 +60,7 @@ public class MessageService {
 
         switch (type) {
             case UNDERLYING: topic = prefix + WsTopic.UNDERLYING.suffix(); break;
+            case ORDER: topic = prefix + WsTopic.ORDER.suffix(); break;
             case POSITION: topic = prefix + WsTopic.POSITION.suffix(); break;
             case CHAIN: topic = prefix + WsTopic.CHAIN.suffix(); break;
             default: throw new IllegalStateException("no ws topic for " + type);

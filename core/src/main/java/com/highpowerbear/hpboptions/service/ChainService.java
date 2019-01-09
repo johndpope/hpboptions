@@ -115,7 +115,9 @@ public class ChainService extends AbstractDataService implements ConnectionListe
                 return ChainActivationStatus.ACTIVATED;
             }
             activeChainKey = chainKey;
-            requestActiveChainMktData();
+            if (ibController.isConnected()) {
+                requestActiveChainMktData();
+            }
             return ChainActivationStatus.ACTIVATED;
 
         } finally {
@@ -166,10 +168,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     }
 
     private void requestActiveChainMktData() {
-        if (!ibController.isConnected()) {
-            return;
-        }
-        log.info("requestActiveChainMktData for chainKey=" + activeChainKey);
+        log.info("requesting active chain mkt data for chainKey=" + activeChainKey);
         cancelAllMktData();
         chainDataHolderMap.get(activeChainKey).forEach(this::requestMktData);
     }

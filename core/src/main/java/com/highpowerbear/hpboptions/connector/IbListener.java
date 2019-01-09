@@ -164,10 +164,16 @@ public class IbListener extends GenericIbListener {
     @Override
     public void orderStatus(int orderId, String status, double filled, double remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
         super.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
-        orderService.orderStatusReceived(status, remaining, avgFillPrice, permId);
+        orderService.orderStatusReceived(orderId, status, remaining, avgFillPrice);
     }
 
     private DataService getDataService(int requestId) {
-        return requestId > HopSettings.CHAIN_IB_REQUEST_ID_INITIAL ? chainService : riskService;
+        if (requestId >= HopSettings.RISK_IB_REQUEST_ID_INITIAL && requestId < HopSettings.ORDER_IB_REQUEST_ID_INITIAL) {
+            return riskService;
+        } else if (requestId >= HopSettings.ORDER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.CHAIN_IB_REQUEST_ID_INITIAL) {
+            return orderService;
+        } else {
+            return chainService;
+        }
     }
 }

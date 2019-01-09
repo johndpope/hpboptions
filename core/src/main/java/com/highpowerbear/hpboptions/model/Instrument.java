@@ -2,6 +2,7 @@ package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
+import com.ib.client.Contract;
 import com.ib.client.Types;
 
 /**
@@ -21,6 +22,17 @@ public class Instrument {
         this.secType = secType;
         this.symbol = symbol;
         this.currency = currency;
+    }
+
+    public Contract createIbContract() {
+        Contract contract = new Contract();
+        contract.conid(conid);
+        contract.secType(secType);
+        contract.localSymbol(symbol);
+        contract.currency(currency.name());
+        contract.exchange(exchange.name());
+
+        return contract;
     }
 
     public int getConid() {
@@ -53,5 +65,10 @@ public class Instrument {
 
     public void setPrimaryExchange(Exchange primaryExchange) {
         this.primaryExchange = primaryExchange;
+    }
+
+    @Override
+    public String toString() {
+        return conid + ", " + secType + ", " + symbol + ", " + currency + ", " + exchange;
     }
 }

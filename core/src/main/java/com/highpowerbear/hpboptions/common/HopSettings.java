@@ -11,6 +11,7 @@ public class HopSettings {
     public static final int IB_CLIENT_ID = 1;
     public static final int HEARTBEAT_COUNT_INITIAL = 5;
     public static final int RISK_IB_REQUEST_ID_INITIAL = 0;
+    public static final int ORDER_IB_REQUEST_ID_INITIAL = 500000;
     public static final int CHAIN_IB_REQUEST_ID_INITIAL = 1000000;
     public static final int RISK_DATA_UPDATE_INTERVAL_MILLIS = 2000;
     public static final int CHAIN_REBUILD_DELAY_MILLIS = 20000;

@@ -5,6 +5,7 @@ package com.highpowerbear.hpboptions.enums;
  */
 public enum DataHolderType {
     UNDERLYING,
+    ORDER,
     POSITION,
     CHAIN
 }

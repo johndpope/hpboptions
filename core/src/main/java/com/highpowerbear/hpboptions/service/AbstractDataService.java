@@ -35,7 +35,7 @@ public abstract class AbstractDataService implements DataService {
         int requestId = dataHolder.getIbMktDataRequestId();
 
         mktDataRequestMap.put(requestId, dataHolder);
-        ibController.requestMktData(requestId, dataHolder.createIbContract(), dataHolder.getGenericTicks());
+        ibController.requestMktData(requestId, dataHolder.getInstrument().createIbContract(), dataHolder.getGenericTicks());
     }
 
     protected void cancelMktData(DataHolder dataHolder) {
