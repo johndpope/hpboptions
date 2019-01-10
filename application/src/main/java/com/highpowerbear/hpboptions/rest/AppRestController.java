@@ -3,7 +3,6 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
 import com.highpowerbear.hpboptions.rest.model.ModifyOrderParams;
 import com.highpowerbear.hpboptions.rest.model.RestList;
@@ -169,8 +168,8 @@ public class AppRestController {
             @PathVariable("underlyingConid") int underlyingConid,
             @PathVariable("expiration") @DateTimeFormat(pattern = HopSettings.JSON_DATE_FORMAT) LocalDate expiration) {
 
-        ChainActivationStatus chainActivationStatus = chainService.activateChain(underlyingConid, expiration);
-        return ResponseEntity.ok(chainActivationStatus.name().toLowerCase());
+        ChainActivationResult chainActivationResult = chainService.activateChain(underlyingConid, expiration);
+        return ResponseEntity.ok(chainActivationResult);
     }
 
     @RequestMapping("chain/active/key")

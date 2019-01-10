@@ -242,7 +242,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
             store: Ext.create('Ext.data.ArrayStore', {
                 fields: ['symbol', 'conid'],
                 data: [
-                    {"symbol": "symbol", "conid": "conid"}
+                    {'symbol': 'symbol', 'conid': 'conid'}
                 ]
             }),
             margin: '0 0 0 10',
@@ -262,7 +262,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
             store: Ext.create('Ext.data.ArrayStore', {
                 fields: ['formattedDate', 'date'],
                 data: [
-                    {"formattedDate": "formattedDate", "date": "date"}
+                    {'formattedDate': 'formattedDate', 'date': 'date'}
                 ]
             }),
             margin: '0 0 0 10'

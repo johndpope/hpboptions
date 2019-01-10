@@ -24,8 +24,8 @@ Ext.define('HopGui.view.position.PositionController', {
         var stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function(frame) {
-            console.log("WS position connected");
-            wsStatusField.update("WS connected");
+            console.log('WS position connected');
+            wsStatusField.update('WS connected');
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/position', function(message) {
@@ -37,9 +37,9 @@ Ext.define('HopGui.view.position.PositionController', {
             });
 
         }, function() {
-            console.log("WS position disconnected");
+            console.log('WS position disconnected');
 
-            wsStatusField.update("WS disconnected");
+            wsStatusField.update('WS disconnected');
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');
         });

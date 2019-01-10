@@ -6,7 +6,6 @@ import com.ib.client.Types;
  * Created by robertk on 1/10/2019.
  */
 public class CreateOrderParams {
-
     private int conid;
     private Types.Action action;
 

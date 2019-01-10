@@ -25,8 +25,8 @@ Ext.define('HopGui.view.chain.ChainController', {
         var stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function(frame) {
-            console.log("WS chain connected");
-            wsStatusField.update("WS connected");
+            console.log('WS chain connected');
+            wsStatusField.update('WS connected');
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/chain', function(message) {
@@ -39,9 +39,9 @@ Ext.define('HopGui.view.chain.ChainController', {
             });
 
         }, function() {
-            console.log("WS chain disconnected");
+            console.log('WS chain disconnected');
 
-            wsStatusField.update("WS disconnected");
+            wsStatusField.update('WS disconnected');
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');
         });
@@ -71,9 +71,10 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
-                            underlyingCombo.setValue(comboStore.getAt(0));
+                            underlyingCombo.select(comboStore.getAt(0));
                         } else {
-                            underlyingCombo.setValue(Ext.decode(response.responseText).underlyingConid);
+                            var activeUnderlyingConid = Ext.decode(response.responseText).underlyingConid;
+                            underlyingCombo.select(activeUnderlyingConid);
                         }
                     }
                 });
@@ -96,9 +97,8 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                 for (var i = 0; i < expirations.length; i++) {
                     var date = expirations[i]; // yyyy-MM-dd
-                    var dateArr = date.split('-');
+                    var formattedDate = me.formatDate(date); // MM/dd/yyyy
 
-                    var formattedDate = dateArr[1] +'/' + dateArr[2] + '/' + dateArr[0]; // MM/dd/yyyy
                     comboData.push([formattedDate, date]);
                 }
                 var comboStore = expirationCombo.getStore();
@@ -110,14 +110,32 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
-                            expirationCombo.setValue(comboStore.getAt(0));
+                            expirationCombo.select(comboStore.getAt(0));
                         } else {
-                            expirationCombo.setValue(Ext.decode(response.responseText).expiration);
+                            var activeExpiration = Ext.decode(response.responseText).expiration;
+                            var match = false;
+
+                            for (var i = 0; i < expirations.length; i++) {
+                                if (expirations[i] === activeExpiration) {
+                                    match = true;
+                                    break;
+                                }
+                            }
+                            if (match) {
+                                expirationCombo.select(activeExpiration);
+                            } else {
+                                expirationCombo.select(comboStore.getAt(0));
+                            }
                         }
                     }
                 });
             }
         });
+    },
+
+    formatDate: function(date) { // yyyy-MM-dd
+        var dateArr = date.split('-');
+        return dateArr[1] +'/' + dateArr[2] + '/' + dateArr[0]; // MM/dd/yyyy
     },
 
     loadChain: function() {
@@ -136,20 +154,20 @@ Ext.define('HopGui.view.chain.ChainController', {
             url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration,
 
             success: function(response, opts) {
-                var status = response.responseText;
+                var chainActivationResult = Ext.decode(response.responseText)
 
-                if (status === 'activated') {
+                if (chainActivationResult.success) {
                     chainStatus.removeCls('hop-failure');
                     chainStatus.addCls('hop-success');
 
                     activeChainItems.load(function (records, operation, success) {
                         if (success) {
                             console.log('loaded activeChainItems');
-                            chainStatus.update("Chain loaded");
+                            chainStatus.update('Chain loaded ' + chainActivationResult.underlyingSymbol +' ' + me.formatDate(chainActivationResult.expiration));
                         }
                     });
                 } else {
-                    chainStatus.update("Chain not ready");
+                    chainStatus.update('Chain not ready');
                     chainStatus.removeCls('hop-success');
                     chainStatus.addCls('hop-failure');
 

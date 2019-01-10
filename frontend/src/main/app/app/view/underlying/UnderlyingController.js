@@ -27,8 +27,8 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         var stompClient = Stomp.over(socket);
 
         stompClient.connect({}, function(frame) {
-            console.log("WS underlying connected");
-            wsStatusField.update("WS connected");
+            console.log('WS underlying connected');
+            wsStatusField.update('WS connected');
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/ib_connection', function(message) {
@@ -45,9 +45,9 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             });
 
         }, function() {
-            console.log("WS underlying disconnected");
+            console.log('WS underlying disconnected');
 
-            wsStatusField.update("WS disconnected");
+            wsStatusField.update('WS disconnected');
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');
         });
@@ -98,7 +98,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         var me = this,
             infoField = me.lookupReference('ibConnectionInfo');
 
-        var arr = message.split(","),
+        var arr = message.split(','),
             info = arr[0],
             connected = arr[1];
 

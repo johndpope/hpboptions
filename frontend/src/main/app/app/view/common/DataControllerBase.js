@@ -170,7 +170,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
 
     updateData: function(msg) {
         var me = this,
-            arr = msg.split(","),
+            arr = msg.split(','),
             id = arr[0],
             field = arr[1],
             oldVal = arr[2],

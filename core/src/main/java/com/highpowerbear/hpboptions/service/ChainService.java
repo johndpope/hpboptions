@@ -7,7 +7,6 @@ import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.Underlying;
-import com.highpowerbear.hpboptions.enums.ChainActivationStatus;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
@@ -105,22 +104,20 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         executor.execute(this::rebuildChains);
     }
 
-    public ChainActivationStatus activateChain(int underlyingConid, LocalDate expiration) {
+    public ChainActivationResult activateChain(int underlyingConid, LocalDate expiration) {
         chainLock.lock();
         try {
             ChainKey chainKey = chainKey(underlyingConid, expiration);
             if (chainKey == null || chainMap.get(chainKey) == null) {
-                return ChainActivationStatus.NOT_READY;
+                return new ChainActivationResult(false, null, null, null);
             }
-            if (activeChainKey != null && activeChainKey.equals(chainKey)) {
-                return ChainActivationStatus.ACTIVATED;
+            if (activeChainKey == null || !activeChainKey.equals(chainKey)) {
+                activeChainKey = chainKey;
+                if (ibController.isConnected()) {
+                    requestActiveChainMktData();
+                }
             }
-            activeChainKey = chainKey;
-            if (ibController.isConnected()) {
-                requestActiveChainMktData();
-            }
-            return ChainActivationStatus.ACTIVATED;
-
+            return new ChainActivationResult(true, underlyingConid, underlyingMap.get(underlyingConid).getSymbol(), expiration);
         } finally {
             chainLock.unlock();
         }
