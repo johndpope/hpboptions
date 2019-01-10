@@ -11,6 +11,8 @@ import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class OrderService extends AbstractDataService implements ConnectionListener {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final RiskService riskService;
     private final ChainService chainService;
@@ -54,7 +57,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         orderMap.values().forEach(this::requestMktData);
     }
 
-    public void createOrderFromPosition(Types.Action action, int conid) {
+    public void createOrderFromPosition(int conid, Types.Action action) {
         PositionDataHolder pdh = riskService.getPositionDataHolder(conid);
 
         if (pdh != null) {
@@ -67,15 +70,19 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                 quantity = positionSize > 0 ? Math.abs(positionSize) : 1;
             }
             createOrder(pdh.getInstrument(), pdh.getInstrument().getMinTick(), pdh.getBid(), pdh.getAsk(), action, quantity);
+        } else {
+            log.warn("cannot create order from position, no conid " + conid + " found");
         }
     }
 
-    public void createOrderFromChain(Types.Action action, int conid) {
+    public void createOrderFromChain(int conid, Types.Action action) {
         ChainDataHolder cdh = chainService.getChainDataHolder(conid);
 
         if (cdh != null) {
             int quantity = 1;
             createOrder(cdh.getInstrument(), cdh.getInstrument().getMinTick(), cdh.getBid(), cdh.getAsk(), action, quantity);
+        } else {
+            log.warn("cannot create order from chain, no conid " + conid + " found");
         }
     }
 
@@ -103,8 +110,6 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         OrderDataHolder odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
         orderMap.put(orderId, odh);
         requestMktData(odh);
-
-        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
     public void submitOrder(int orderId, int quantity, double limitPrice) {
@@ -115,6 +120,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             if (hopOrder.isNew()) {
                 placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
+            } else {
+                log.warn("order not new " + orderId + ", cannot submit");
             }
         }
     }
@@ -127,6 +134,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             if (hopOrder.isActive()) {
                 placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
+            } else {
+                log.warn("order not active " + orderId + ", cannot modify");
             }
         }
     }
@@ -145,6 +154,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                 odh.getHopOrder().setLimitPrice(limitPrice);
 
                 ibController.placeOrder(hopOrder, odh.getInstrument());
+            } else {
+                log.warn("order not active " + orderId + ", cannot modifyOrderToMoreAggressive");
             }
         }
     }
@@ -161,29 +172,39 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     public void cancelOrder(int orderId) {
         OrderDataHolder odh = orderMap.get(orderId);
 
-        if (odh != null && odh.getHopOrder().isActive()) {
-            ibController.cancelOrder(odh.getHopOrder().getOrderId());
+        if (odh != null) {
+            HopOrder hopOrder = odh.getHopOrder();
+
+            if (hopOrder.isActive()) {
+                ibController.cancelOrder(orderId);
+            } else {
+                log.warn("order not active " + orderId + ", cannot cancel");
+            }
         }
     }
 
-    public void discardNewOrder(int orderId) {
+    public void discardOrder(int orderId) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null && odh.getHopOrder().isNew()) {
-            orderMap.remove(orderId);
-            cancelMktData(odh);
+            HopOrder hopOrder = odh.getHopOrder();
+
+            if (hopOrder.isNew()) {
+                orderMap.remove(orderId);
+                cancelMktData(odh);
+            } else {
+                log.warn("order not new " + orderId + ", cannot discard");
+            }
         }
     }
 
     public void removeCompletedOrders() {
-        for (OrderDataHolder odh : new ArrayList<>(orderMap.values())) {
+        log.info("removing completed orders");
 
-            if (odh.getHopOrder().isCompleted()) {
-                orderMap.remove(odh.getHopOrder().getOrderId());
-                cancelMktData(odh);
-            }
-        }
-        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
+        new ArrayList<>(orderMap.values()).stream().filter(odh -> odh.getHopOrder().isCompleted()).forEach(odh -> {
+            orderMap.remove(odh.getHopOrder().getOrderId());
+            cancelMktData(odh);
+        });
     }
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)

@@ -16,7 +16,7 @@ Ext.define('HopGui.view.position.PositionController', {
             wsStatusField = me.lookupReference('wsStatus');
 
         if (positionDataHolders) {
-            positionDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/position-data-holders');
+            positionDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/position/data-holders');
             me.loadPositionDataHolders();
         }
 

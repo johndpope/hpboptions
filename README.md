@@ -1,2 +1,2 @@
 # hpboptions
-Options trading support system and risk management
+Options trading decision support, risk management and execution system

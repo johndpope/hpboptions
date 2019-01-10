@@ -19,7 +19,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         me.refreshAccountSummary();
 
         if (underlyingDataHolders) {
-            underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying-data-holders');
+            underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying/data-holders');
             me.loadUnderlyingDataHolders();
         }
 
@@ -69,7 +69,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/connect',
+            url: HopGui.common.Definitions.urlPrefix + '/connection/connect',
             success: function(response) {
                 box.hide();
             },
@@ -84,7 +84,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/disconnect',
+            url: HopGui.common.Definitions.urlPrefix + '/connection/disconnect',
             success: function(response) {
                 box.hide();
             },
@@ -113,7 +113,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         Ext.Ajax.request({
             method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/connection-info',
+            url: HopGui.common.Definitions.urlPrefix + '/connection/info',
             success: function(response) {
                 me.updateIbConnectionInfo(response.responseText);
             }
@@ -131,7 +131,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
         Ext.Ajax.request({
             method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/account-summary',
+            url: HopGui.common.Definitions.urlPrefix + '/account/summary',
             success: function(response) {
                 me.updateAccountSummary(response.responseText);
             }

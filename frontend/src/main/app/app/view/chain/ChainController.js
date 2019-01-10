@@ -17,7 +17,7 @@ Ext.define('HopGui.view.chain.ChainController', {
             wsStatusField = me.lookupReference('wsStatus');
 
         if (activeChainItems) {
-            activeChainItems.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/active-chain-items');
+            activeChainItems.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/chain/active/items');
         }
         me.prepareUnderlyingCombo();
 
@@ -53,7 +53,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
         Ext.Ajax.request({
             method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/underlying-infos',
+            url: HopGui.common.Definitions.urlPrefix + '/chain/underlying-infos',
 
             success: function(response, opts) {
                 var infos = Ext.decode(response.responseText).items;
@@ -67,7 +67,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                 Ext.Ajax.request({
                     method: 'GET',
-                    url: HopGui.common.Definitions.urlPrefix + '/active-chain-key',
+                    url: HopGui.common.Definitions.urlPrefix + '/chain/active/key',
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
@@ -88,7 +88,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
         Ext.Ajax.request({
             method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/expirations/' + underlyingCombo.getValue(),
+            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingCombo.getValue() + '/expirations',
 
             success: function(response, opts) {
                 var expirations = Ext.decode(response.responseText).items;
@@ -106,7 +106,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                 Ext.Ajax.request({
                     method: 'GET',
-                    url: HopGui.common.Definitions.urlPrefix + '/active-chain-key',
+                    url: HopGui.common.Definitions.urlPrefix + '/chain/active/key',
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
@@ -133,7 +133,7 @@ Ext.define('HopGui.view.chain.ChainController', {
         }
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/activate-chain/' + underlyingConid + '/' + expiration,
+            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration,
 
             success: function(response, opts) {
                 var status = response.responseText;

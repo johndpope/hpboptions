@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.rest;
+package com.highpowerbear.hpboptions.rest.model;
 
 import java.util.Collection;
 
