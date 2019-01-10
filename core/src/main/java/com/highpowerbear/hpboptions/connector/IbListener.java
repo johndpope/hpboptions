@@ -133,7 +133,7 @@ public class IbListener extends GenericIbListener {
             return;
         }
         //super.contractDetails(requestId, contractDetails);
-        getDataService(requestId).contractDetailsReceived(contractDetails);
+        getDataService(requestId).contractDetailsReceived(requestId, contractDetails);
     }
 
     @Override

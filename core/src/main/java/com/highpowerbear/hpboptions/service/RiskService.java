@@ -256,14 +256,13 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             if (pdh == null) {
                 if (positionSize != 0) {
                     Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
-                    String underlyingSymbol = contract.symbol();
                     String symbol = contract.localSymbol();
                     Currency currency = Currency.valueOf(contract.currency());
-                    int multiplier = Integer.valueOf(contract.multiplier());
-
                     Types.Right right = contract.right();
                     double strike = contract.strike();
                     LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
+                    int multiplier = Integer.valueOf(contract.multiplier());
+                    String underlyingSymbol = contract.symbol();
 
                     OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
@@ -298,7 +297,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     }
 
     @Override
-    public void contractDetailsReceived(ContractDetails contractDetails) {
+    public void contractDetailsReceived(int requestId, ContractDetails contractDetails) {
         Contract contract = contractDetails.contract();
 
         int conid = contract.conid();
@@ -338,23 +337,8 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         recalculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
     }
 
-    public String getAccountSummaryText() {
-        return accountSummary.getText();
-    }
-
-    public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
-        return underlyingMap.values().stream().sorted(Comparator
-                        .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
-    }
-
-    public List<PositionDataHolder> getSortedPositionDataHolders() {
-        return positionMap.values().stream()
-                .sorted(Comparator
-                        .comparing(PositionDataHolder::getDaysToExpiration)
-                        .thenComparing(PositionDataHolder::getDisplayRank)
-                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
-                        .thenComparing(PositionDataHolder::getRight)
-                        .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
+    public PositionDataHolder getPositionDataHolder(int conid) {
+        return positionMap.get(conid);
     }
 
     public double getUnderlyingPrice(int conid) {
@@ -376,5 +360,24 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
     public double getUnderlyingOptionImpliedVol(int conid) {
         return underlyingMap.get(conid).getOptionImpliedVol();
+    }
+
+    public String getAccountSummaryText() {
+        return accountSummary.getText();
+    }
+
+    public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
+        return underlyingMap.values().stream().sorted(Comparator
+                .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
+    }
+
+    public List<PositionDataHolder> getSortedPositionDataHolders() {
+        return positionMap.values().stream()
+                .sorted(Comparator
+                        .comparing(PositionDataHolder::getDaysToExpiration)
+                        .thenComparing(PositionDataHolder::getDisplayRank)
+                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                        .thenComparing(PositionDataHolder::getRight)
+                        .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
     }
 }

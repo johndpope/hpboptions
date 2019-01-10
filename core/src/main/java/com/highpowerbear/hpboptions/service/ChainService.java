@@ -46,12 +46,13 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     private final Map<Integer, UnderlyingMktDataSnapshot> underlyingMktDataSnapshotMap = new HashMap<>(); // conid -> subset of mkt data
 
     private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new HashMap<>(); // underlying conid -> chain expirations
-    private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainInfo -> (strike -> chainItem)
+    private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainKey -> (strike -> chainItem)
     private ChainKey activeChainKey;
-    private final Map<ChainKey, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainInfo -> list of chain data holders
+    private final Map<ChainKey, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainKey -> list of chain data holders
+    private final Map<Integer, ChainDataHolder> conidMap = new HashMap<>(); // conid -> chainDataHolder
 
     private final Map<Integer, Integer> expirationsRequestMap = new ConcurrentHashMap<>(); // ib request id -> underlying conid
-    private final Map<Integer, ChainKey> contractDetailsRequestMap = new ConcurrentHashMap<>(); // ib request id -> underlying conid
+    private final Map<Integer, ChainKey> contractDetailsRequestMap = new ConcurrentHashMap<>(); // ib request id -> chainKey
     private final AtomicBoolean allChainsReady = new AtomicBoolean(false);
     private final ReentrantLock chainLock = new ReentrantLock();
 
@@ -143,6 +144,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
             chainDataHolderMap.clear();
+            conidMap.clear();
 
             for (UnderlyingInfo underlyingInfo : underlyingInfos) {
                 expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingInfo.getConid());
@@ -210,48 +212,9 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         }
     }
 
-    @Override
-    public void contractDetailsReceived(ContractDetails contractDetails) {
-        Contract contract = contractDetails.contract();
-
-        int conid = contract.conid();
-        Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
-        String underlyingSymbol = contract.symbol();
-        String symbol = contract.localSymbol();
-        Currency currency = Currency.valueOf(contract.currency());
-        int multiplier = Integer.valueOf(contract.multiplier());
-        Exchange exchange = Exchange.valueOf(contract.exchange());
-
-        double minTick = contractDetails.minTick();
-        int underlyingConid = contractDetails.underConid();
-        Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
-
-        Types.Right right = contract.right();
-        double strike = contract.strike();
-        LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
-
-        OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
-        instrument.setExchange(exchange);
-        instrument.setMinTick(minTick);
-        instrument.setUnderlyingConid(underlyingConid);
-        instrument.setUnderlyingSecType(underlyingSecType);
-
-        ChainDataHolder chainDataHolder = new ChainDataHolder(instrument, ibRequestIdGen.incrementAndGet());
-        if (isEligibleToAdd(chainDataHolder)) {
-            ChainKey chainKey = chainKey(underlyingConid, expiration);
-
-            chainMap.putIfAbsent(chainKey, new TreeMap<>());
-            chainMap.get(chainKey).putIfAbsent(strike, new ChainItem(strike));
-            chainDataHolderMap.putIfAbsent(chainKey, new ArrayList<>());
-
-            chainMap.get(chainKey).get(strike).setupDataHolder(chainDataHolder);
-            chainDataHolderMap.get(chainKey).add(chainDataHolder);
-        }
-    }
-
-    public void expirationsEndReceived(int expirationsRequestId) {
-        log.info("expirations received for underlyingConid=" + expirationsRequestMap.get(expirationsRequestId) + ", request=" + expirationsRequestId);
-        expirationsRequestMap.remove(expirationsRequestId);
+    public void expirationsEndReceived(int requestId) {
+        log.info("expirations received for underlyingConid=" + expirationsRequestMap.get(requestId) + ", request=" + requestId);
+        expirationsRequestMap.remove(requestId);
 
         if (expirationsRequestMap.isEmpty()) {
             messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
@@ -287,14 +250,58 @@ public class ChainService extends AbstractDataService implements ConnectionListe
     }
 
     @Override
-    public void contractDetailsEndReceived(int contractDetailsRequestId) {
-        log.info("contract details received for chainKey=" + contractDetailsRequestMap.get(contractDetailsRequestId) + ", requestId=" + contractDetailsRequestId);
-        contractDetailsRequestMap.remove(contractDetailsRequestId);
+    public void contractDetailsReceived(int requestId, ContractDetails contractDetails) {
+        Contract contract = contractDetails.contract();
+
+        int conid = contract.conid();
+        Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+        String underlyingSymbol = contract.symbol();
+        String symbol = contract.localSymbol();
+        Currency currency = Currency.valueOf(contract.currency());
+        int multiplier = Integer.valueOf(contract.multiplier());
+        Exchange exchange = Exchange.valueOf(contract.exchange());
+
+        double minTick = contractDetails.minTick();
+        int underlyingConid = contractDetails.underConid();
+        Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
+
+        Types.Right right = contract.right();
+        double strike = contract.strike();
+        LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
+
+        OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
+        instrument.setExchange(exchange);
+        instrument.setMinTick(minTick);
+        instrument.setUnderlyingConid(underlyingConid);
+        instrument.setUnderlyingSecType(underlyingSecType);
+
+        ChainDataHolder chainDataHolder = new ChainDataHolder(instrument, ibRequestIdGen.incrementAndGet());
+        if (isEligibleToAdd(chainDataHolder)) {
+            ChainKey chainKey = chainKey(underlyingConid, expiration);
+
+            chainMap.putIfAbsent(chainKey, new TreeMap<>());
+            chainMap.get(chainKey).putIfAbsent(strike, new ChainItem(strike));
+            chainDataHolderMap.putIfAbsent(chainKey, new ArrayList<>());
+
+            chainMap.get(chainKey).get(strike).setupDataHolder(chainDataHolder);
+            chainDataHolderMap.get(chainKey).add(chainDataHolder);
+            conidMap.put(conid, chainDataHolder);
+        }
+    }
+
+    @Override
+    public void contractDetailsEndReceived(int requestId) {
+        log.info("contract details received for chainKey=" + contractDetailsRequestMap.get(requestId) + ", requestId=" + requestId);
+        contractDetailsRequestMap.remove(requestId);
 
         if (contractDetailsRequestMap.isEmpty()) {
             allChainsReady.set(true);
             log.info("all chains ready");
         }
+    }
+
+    public ChainDataHolder getChainDataHolder(int conid) {
+        return conidMap.get(conid);
     }
 
     public List<UnderlyingInfo> getUnderlyingInfos() {

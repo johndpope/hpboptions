@@ -88,7 +88,7 @@ public abstract class AbstractDataService implements DataService {
     }
 
     @Override
-    public void contractDetailsReceived(ContractDetails contractDetails) {
+    public void contractDetailsReceived(int requestId, ContractDetails contractDetails) {
     }
 
     @Override

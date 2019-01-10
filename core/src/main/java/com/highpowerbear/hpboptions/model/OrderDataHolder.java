@@ -9,12 +9,17 @@ public class OrderDataHolder extends AbstractDataHolder {
 
     private final HopOrder hopOrder;
 
-    public OrderDataHolder(Instrument instrument, int ibMktDataRequestId, HopOrder hopOrder) {
+    public OrderDataHolder(OptionInstrument instrument, int ibMktDataRequestId, HopOrder hopOrder) {
         super(DataHolderType.ORDER, instrument, ibMktDataRequestId);
         this.hopOrder = hopOrder;
     }
 
     public HopOrder getHopOrder() {
         return hopOrder;
+    }
+
+    @Override
+    public OptionInstrument getInstrument() {
+        return (OptionInstrument) instrument;
     }
 }

@@ -13,21 +13,32 @@ import static com.ib.client.OrderStatus.*;
 public class HopOrder {
 
     private final int orderId;
+    private final Types.Action action;
+    private final OrderType orderType;
+
     private int permId;
-    private Types.Action action;
     private int quantity;
-    private OrderType orderType;
     private double limitPrice;
     private double fillPrice;
     private OrderStatus ibStatus;
     private int heartbeatCount;
 
-    public HopOrder(int orderId) {
+    public HopOrder(int orderId, Types.Action action, OrderType orderType) {
         this.orderId = orderId;
+        this.action = action;
+        this.orderType = orderType;
+    }
+
+    public boolean isNew() {
+        return ibStatus == null;
     }
 
     public boolean isActive() {
-        return ibStatus == null || ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted;
+        return ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted;
+    }
+
+    public boolean isCompleted() {
+        return ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown;
     }
 
     public Order createIbOrder() {
@@ -57,10 +68,6 @@ public class HopOrder {
         return action;
     }
 
-    public void setAction(Types.Action action) {
-        this.action = action;
-    }
-
     public int getQuantity() {
         return quantity;
     }
@@ -71,10 +78,6 @@ public class HopOrder {
 
     public OrderType getOrderType() {
         return orderType;
-    }
-
-    public void setOrderType(OrderType orderType) {
-        this.orderType = orderType;
     }
 
     public double getLimitPrice() {
