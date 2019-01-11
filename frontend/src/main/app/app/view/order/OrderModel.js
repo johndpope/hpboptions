@@ -4,14 +4,14 @@
 Ext.define('HopGui.view.order.OrderModel', {
     extend: 'Ext.app.ViewModel',
     requires: [
-        'HopGui.model.Order'
+        'HopGui.model.OrderDataHolder'
     ],
 
     alias: 'viewmodel.hop-order',
 
     stores: {
-        orders: {
-            model: 'HopGui.model.Order',
+        orderDataHolders: {
+            model: 'HopGui.model.OrderDataHolder',
             autoload: true,
             pageSize: 1000 // disable
         }

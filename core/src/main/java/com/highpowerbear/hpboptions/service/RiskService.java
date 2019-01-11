@@ -156,7 +156,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
             udh.resetRiskData();
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
 
-        } else if (udh.isRiskDataUpdateDue() && pdhs.stream().allMatch(AbstractOptionDataHolder::riskDataSourceFieldsReady)) {
+        } else if (udh.isRiskDataUpdateDue() && pdhs.stream().allMatch(PositionDataHolder::riskDataSourceFieldsReady)) {
 
             double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
 

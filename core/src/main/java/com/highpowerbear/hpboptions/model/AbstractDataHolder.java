@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractDataHolder implements DataHolder {
 
-    private final String id;
+    protected String id;
     private final DataHolderType type;
     protected final Instrument instrument;
     private final int ibMktDataRequestId;

@@ -1,6 +1,8 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.enums.HopOrderState;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
@@ -17,6 +19,7 @@ public class HopOrder {
     private final Types.Action action;
     private final OrderType orderType;
 
+    private HopOrderState state;
     private Integer permId;
     private int quantity;
     private double limitPrice;
@@ -29,6 +32,7 @@ public class HopOrder {
         this.action = action;
         this.orderType = orderType;
 
+        state = HopOrderState.NEW;
         permId = null;
         quantity = 0;
         limitPrice = Double.NaN;
@@ -37,16 +41,19 @@ public class HopOrder {
         heartbeatCount = HopSettings.HEARTBEAT_COUNT_INITIAL;
     }
 
+    @JsonIgnore
     public boolean isNew() {
-        return ibStatus == null;
+        return state == HopOrderState.NEW;
     }
 
+    @JsonIgnore
     public boolean isActive() {
-        return ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted;
+        return state == HopOrderState.ACTIVE;
     }
 
+    @JsonIgnore
     public boolean isCompleted() {
-        return ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown;
+        return state == HopOrderState.COMPLETED;
     }
 
     public Order createIbOrder() {
@@ -70,6 +77,10 @@ public class HopOrder {
 
     public OrderType getOrderType() {
         return orderType;
+    }
+
+    public HopOrderState getState() {
+        return state;
     }
 
     public Integer getPermId() {
@@ -110,6 +121,14 @@ public class HopOrder {
 
     public void setIbStatus(OrderStatus ibStatus) {
         this.ibStatus = ibStatus;
+
+        if (ibStatus == null) {
+            state = HopOrderState.NEW;
+        } else if (ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted) {
+            state = HopOrderState.ACTIVE;
+        } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
+            state = HopOrderState.COMPLETED;
+        }
     }
 
     public int getHeartbeatCount() {

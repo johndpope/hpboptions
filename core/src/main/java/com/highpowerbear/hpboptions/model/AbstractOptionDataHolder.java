@@ -123,7 +123,6 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
         return !Double.isNaN(value) && !Double.isInfinite(value) && value != Double.MAX_VALUE;
     }
 
-    @Override
     public boolean riskDataSourceFieldsReady() {
         return OptionDataField.riskDataSourceFields().stream().allMatch(field -> valid(getCurrent(field).doubleValue()));
     }
