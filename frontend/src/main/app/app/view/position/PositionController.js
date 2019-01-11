@@ -56,7 +56,24 @@ Ext.define('HopGui.view.position.PositionController', {
         });
     },
 
-    placeOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
-        // TODO
+    createOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
+        var dataIndex = e.position.column.dataIndex;
+        if (dataIndex !== 'bid' && dataIndex !== 'ask') {
+            return;
+        }
+        var action = dataIndex === 'ask' ? 'BUY' : 'SELL';
+
+        console.log('requesting position order creation ' + action + ' ' + record.data.symbol);
+        Ext.Ajax.request({
+            method: 'POST',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/position',
+            jsonData: {
+                conid: record.data.conid,
+                action: action
+            },
+            success: function(response, opts) {
+                //
+            }
+        });
     }
 });

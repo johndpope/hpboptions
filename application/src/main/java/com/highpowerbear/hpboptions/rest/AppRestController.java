@@ -119,11 +119,19 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify/aggressive")
-    public ResponseEntity<?> modifyOrderToMoreAggressive(
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify/limit/increase")
+    public ResponseEntity<?> modifyOrderIncreaseLimit(
             @PathVariable("orderId") int orderId) {
 
-        orderService.modifyOrderToMoreAggressive(orderId);
+        orderService.modifyOrderIncreaseLimit(orderId);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify/limit/decrease")
+    public ResponseEntity<?> modifyOrderDecreaseLimit(
+            @PathVariable("orderId") int orderId) {
+
+        orderService.modifyOrderDecreaseLimit(orderId);
         return ResponseEntity.ok().build();
     }
 

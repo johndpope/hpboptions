@@ -177,7 +177,36 @@ Ext.define('HopGui.view.chain.ChainController', {
         });
     },
 
-    placeOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
-        // TODO
+    createOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
+        var dataIndex = e.position.column.dataIndex;
+        if (dataIndex !== 'callBid' && dataIndex !== 'callAsk' && dataIndex !== 'putBid' && dataIndex !== 'putAsk') {
+            return;
+        }
+
+        var isAsk = dataIndex === 'callAsk' || dataIndex === 'putAsk';
+        var isCall = dataIndex === 'callBid' || dataIndex === 'callAsk';
+
+        var callConid = record.data.call.instrument.conid;
+        var callSymbol = record.data.call.instrument.symbol;
+
+        var putConid = record.data.put.instrument.conid;
+        var putSymbol = record.data.put.instrument.symbol;
+
+        var action = isAsk ? 'BUY' : 'SELL';
+        var conid = isCall ? callConid : putConid;
+        var symbol = isCall ? callSymbol : putSymbol;
+
+        console.log('requesting chain order creation ' + action + ' ' + symbol);
+        Ext.Ajax.request({
+            method: 'POST',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/chain',
+            jsonData: {
+                conid: conid,
+                action: action
+            },
+            success: function(response, opts) {
+                //
+            }
+        });
     }
 });

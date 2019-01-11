@@ -11,7 +11,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
     ],
     bind: '{activeChainItems}',
     listeners: {
-        cellclick: 'placeOrder'
+        cellclick: 'createOrder'
     },
     viewConfig: {
         stripeRows: true

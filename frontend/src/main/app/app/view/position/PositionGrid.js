@@ -10,7 +10,7 @@ Ext.define('HopGui.view.position.PositionGrid', {
     ],
     bind: '{positionDataHolders}',
     listeners: {
-        cellclick: 'placeOrder'
+        cellclick: 'createOrder'
     },
     viewConfig: {
         stripeRows: true
@@ -58,19 +58,19 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'positionRenderer'
     }, {
-        text: 'PnL',
-        width: 60,
-        dataIndex: 'unrealizedPnl',
-        tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
-        align: 'right',
-        renderer: 'pnlRenderer'
-    }, {
         text: 'Mrg',
         width: 60,
         dataIndex: 'margin',
         tdCls: 'margin hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
+    }, {
+        text: 'PnL',
+        width: 60,
+        dataIndex: 'unrealizedPnl',
+        tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
+        align: 'right',
+        renderer: 'pnlRenderer'
     }, {
         text: 'Itm',
         width: 60,

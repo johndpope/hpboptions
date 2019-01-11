@@ -87,20 +87,21 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     }
 
     private void createOrder(OptionInstrument instrument, double minTick, double bid, double ask, Types.Action action, int quantity) {
+        log.info("creating order " + action + " " + quantity + " " + instrument.getSymbol() + ", conid=" + instrument.getConid());
+
         int orderId = ibOrderIdGenerator.incrementAndGet();
         double limitPrice = Double.NaN;
 
         if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
-            RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
-            int priceScale = BigDecimal.valueOf(minTick).scale();
-
-            limitPrice = BigDecimal.valueOf((bid + ask) / 2d).setScale(priceScale, roundingMode).doubleValue();
+            limitPrice = scaleLimitPrice((bid + ask) / 2d, action, minTick);
 
             if (action == Types.Action.BUY && limitPrice >= ask) {
                 limitPrice -= minTick;
+
             } else if (action == Types.Action.SELL && limitPrice <= bid) {
                 limitPrice += minTick;
             }
+            limitPrice = scaleLimitPrice(limitPrice, action, minTick);
         }
 
         HopOrder hopOrder = new HopOrder(orderId, action, OrderType.LMT);
@@ -110,6 +111,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         OrderDataHolder odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
         orderMap.put(orderId, odh);
         requestMktData(odh);
+
+        messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
     public void submitOrder(int orderId, int quantity, double limitPrice) {
@@ -119,9 +122,10 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isNew()) {
+                log.info("submitting order " + orderId);
                 placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
             } else {
-                log.warn("order not new " + orderId + ", cannot submit");
+                log.warn("cannot submit order " + orderId + ", not new");
             }
         }
     }
@@ -133,39 +137,50 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isActive()) {
+                log.info("modifying order " + orderId);
                 placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
             } else {
-                log.warn("order not active " + orderId + ", cannot modify");
+                log.warn("cannot modify order " + orderId + ", not active");
             }
         }
     }
 
-    public void modifyOrderToMoreAggressive(int orderId) {
+    public void modifyOrderIncreaseLimit(int orderId) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null) {
+            log.info("increasing limit for order " + orderId);
             HopOrder hopOrder = odh.getHopOrder();
-
-            if (hopOrder.isActive()) {
-                double minTick = odh.getInstrument().getMinTick();
-                Types.Action action = odh.getHopOrder().getAction();
-
-                double limitPrice = odh.getHopOrder().getLimitPrice() + (action == Types.Action.BUY ? minTick : -minTick);
-                odh.getHopOrder().setLimitPrice(limitPrice);
-
-                ibController.placeOrder(hopOrder, odh.getInstrument());
-            } else {
-                log.warn("order not active " + orderId + ", cannot modifyOrderToMoreAggressive");
-            }
+            modifyOrder(orderId, hopOrder.getQuantity(), hopOrder.getLimitPrice() + odh.getInstrument().getMinTick());
         }
     }
 
-    private void placeOrder(HopOrder hopOrder, Instrument instrument, int quantity, double limitPrice) {
-        if (quantity > 0 && !Double.isNaN(limitPrice)) {
+    public void modifyOrderDecreaseLimit(int orderId) {
+        OrderDataHolder odh = orderMap.get(orderId);
+
+        if (odh != null) {
+            log.info("decreasing limit for order " + orderId);
+            HopOrder hopOrder = odh.getHopOrder();
+            modifyOrder(orderId, hopOrder.getQuantity(), hopOrder.getLimitPrice() - odh.getInstrument().getMinTick());
+        }
+    }
+
+    private double scaleLimitPrice(double limitPrice, Types.Action action, double minTick) {
+        RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
+        int priceScale = BigDecimal.valueOf(minTick).scale();
+
+        return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
+    }
+
+    private void placeOrder(HopOrder hopOrder, OptionInstrument instrument, int quantity, double limitPrice) {
+        if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
             hopOrder.setQuantity(quantity);
+            limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
             hopOrder.setLimitPrice(limitPrice);
 
             ibController.placeOrder(hopOrder, instrument);
+        } else {
+            log.warn("cannot place order, quantity or limitPrice not valid, orderId=" + hopOrder.getOrderId() + ", quantity=" + quantity + ", limitPrice=" + limitPrice);
         }
     }
 
@@ -176,9 +191,10 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isActive()) {
+                log.info("canceling order " + orderId);
                 ibController.cancelOrder(orderId);
             } else {
-                log.warn("order not active " + orderId + ", cannot cancel");
+                log.warn("cannot cancel order " + orderId + ", not active");
             }
         }
     }
@@ -190,10 +206,11 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isNew()) {
+                log.info("discarding order " + orderId);
                 orderMap.remove(orderId);
                 cancelMktData(odh);
             } else {
-                log.warn("order not new " + orderId + ", cannot discard");
+                log.warn("cannot discard order " + orderId + ", not new");
             }
         }
     }
@@ -234,7 +251,6 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             hopOrder.setPermId(order.permId());
             hopOrder.setQuantity((int) order.totalQuantity());
             hopOrder.setLimitPrice(order.lmtPrice());
-            hopOrder.setHeartbeatCount(HopSettings.HEARTBEAT_COUNT_INITIAL);
 
             int conid = contract.conid();
             Types.SecType secType = Types.SecType.valueOf(contract.getSecType());

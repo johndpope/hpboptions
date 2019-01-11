@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.highpowerbear.hpboptions.common.HopSettings;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
@@ -16,7 +17,7 @@ public class HopOrder {
     private final Types.Action action;
     private final OrderType orderType;
 
-    private int permId;
+    private Integer permId;
     private int quantity;
     private double limitPrice;
     private double fillPrice;
@@ -27,6 +28,13 @@ public class HopOrder {
         this.orderId = orderId;
         this.action = action;
         this.orderType = orderType;
+
+        permId = null;
+        quantity = 0;
+        limitPrice = Double.NaN;
+        fillPrice = Double.NaN;
+        ibStatus = null;
+        heartbeatCount = HopSettings.HEARTBEAT_COUNT_INITIAL;
     }
 
     public boolean isNew() {
@@ -56,16 +64,20 @@ public class HopOrder {
         return orderId;
     }
 
-    public int getPermId() {
+    public Types.Action getAction() {
+        return action;
+    }
+
+    public OrderType getOrderType() {
+        return orderType;
+    }
+
+    public Integer getPermId() {
         return permId;
     }
 
-    public void setPermId(int permId) {
+    public void setPermId(Integer permId) {
         this.permId = permId;
-    }
-
-    public Types.Action getAction() {
-        return action;
     }
 
     public int getQuantity() {
@@ -74,10 +86,6 @@ public class HopOrder {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
-    }
-
-    public OrderType getOrderType() {
-        return orderType;
     }
 
     public double getLimitPrice() {

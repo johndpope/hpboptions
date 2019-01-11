@@ -19,6 +19,11 @@ public class OrderDataHolder extends AbstractDataHolder {
     }
 
     @Override
+    public String getId() {
+        return super.getId() + "-" + hopOrder.getOrderId();
+    }
+
+    @Override
     public OptionInstrument getInstrument() {
         return (OptionInstrument) instrument;
     }
