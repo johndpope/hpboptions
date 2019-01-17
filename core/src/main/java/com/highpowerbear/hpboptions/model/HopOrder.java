@@ -32,28 +32,28 @@ public class HopOrder {
         this.action = action;
         this.orderType = orderType;
 
-        state = HopOrderState.NEW;
+        state = HopOrderState.New;
         permId = null;
         quantity = 0;
-        limitPrice = Double.NaN;
-        fillPrice = Double.NaN;
+        limitPrice = 0d;
+        fillPrice = 0d;
         ibStatus = null;
         heartbeatCount = HopSettings.HEARTBEAT_COUNT_INITIAL;
     }
 
     @JsonIgnore
     public boolean isNew() {
-        return state == HopOrderState.NEW;
+        return state == HopOrderState.New;
     }
 
     @JsonIgnore
     public boolean isActive() {
-        return state == HopOrderState.ACTIVE;
+        return state == HopOrderState.Active;
     }
 
     @JsonIgnore
     public boolean isCompleted() {
-        return state == HopOrderState.COMPLETED;
+        return state == HopOrderState.Completed;
     }
 
     public Order createIbOrder() {
@@ -119,11 +119,11 @@ public class HopOrder {
         this.ibStatus = ibStatus;
 
         if (ibStatus == null) {
-            state = HopOrderState.NEW;
+            state = HopOrderState.New;
         } else if (ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted) {
-            state = HopOrderState.ACTIVE;
+            state = HopOrderState.Active;
         } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
-            state = HopOrderState.COMPLETED;
+            state = HopOrderState.Completed;
         }
     }
 

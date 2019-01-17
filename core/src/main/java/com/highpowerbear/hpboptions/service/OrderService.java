@@ -122,7 +122,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
-    public void placeOrder(int orderId, int quantity, double limitPrice) {
+    public void submitOrModifyOrder(int orderId, int quantity, double limitPrice) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null) {
@@ -138,10 +138,10 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
                     ibController.placeOrder(hopOrder, instrument);
                 } else {
-                    log.warn("cannot place order " + orderId + ", quantity or limitPrice not valid, quantity=" + quantity + ", limitPrice=" + limitPrice);
+                    log.warn("cannot submit or modify order " + orderId + ", quantity or limitPrice not valid, quantity=" + quantity + ", limitPrice=" + limitPrice);
                 }
             } else {
-                log.warn("cannot place order " + orderId + ", not new or active");
+                log.warn("cannot submit or modify order " + orderId + ", not new or active");
             }
         }
     }
@@ -180,12 +180,13 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         ibOrderIdGenerator.set(Math.max(nextValidOrderId, orderMap.keySet().stream().reduce(Integer::max).orElse(0)));
     }
 
-    public void openOrderReceived(int orderId, Contract contract, com.ib.client.Order order) {
+    public void openOrderReceived(int orderId, Contract contract, Order order) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         // potential open orders received upon application restart
         if (odh == null) {
             HopOrder hopOrder = new HopOrder(orderId, order.action(), order.orderType());
+
             hopOrder.setPermId(order.permId());
             hopOrder.setQuantity((int) order.totalQuantity());
             hopOrder.setLimitPrice(order.lmtPrice());
@@ -206,8 +207,15 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             int requestId = ibRequestIdGen.incrementAndGet();
             contractDetailsRequestMap.put(requestId, odh);
-
             ibController.requestContractDetails(requestId, contract);
+
+        } else {
+            HopOrder hopOrder = odh.getHopOrder();
+
+            if (hopOrder.getPermId() == null) {
+                hopOrder.setPermId(order.permId());
+                messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
+            }
         }
     }
 

@@ -6,15 +6,19 @@ Ext.define('HopGui.view.order.OrderGrid', {
     xtype: 'hop-order-grid',
     requires: [
         'Ext.grid.column.Date',
-        'Ext.toolbar.Paging'
+        'Ext.form.field.Number',
+        'Ext.toolbar.Paging',
+        'Ext.grid.plugin.CellEditing'
     ],
     bind: '{orderDataHolders}',
-    listeners: {
-        cellclick: 'submitOrder'
-    },
     viewConfig: {
         stripeRows: true
     },
+    selType: 'cellmodel',
+    plugins: [{
+        ptype: 'cellediting',
+        clicksToEdit: 1
+    }],
     columns: [{
         text: 'Sec',
         width: 60,
@@ -88,13 +92,66 @@ Ext.define('HopGui.view.order.OrderGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
+        text: 'OrdId',
+        width: 80,
+        dataIndex: 'orderId',
+        align: 'right'
+    }, {
+        text: 'PermId',
+        width: 100,
+        dataIndex: 'permId',
+        align: 'right'
+    }, {
+        text: 'Action',
+        width: 70,
+        dataIndex: 'action'
+    }, {
+        text: 'Qnt',
+        width: 60,
+        dataIndex: 'quantity',
+        align: 'right'
+    }, {
+        text: 'Type',
+        width: 70,
+        dataIndex: 'orderType'
+    }, {
+        text: 'Lmt',
+        width: 100,
+        dataIndex: 'limitPrice',
+        align: 'right',
+        editor: {
+            xtype: 'numberfield',
+            minValue: 0,
+            step: 0.01,
+            allowDecimals: true
+        }
+    }, {
+        text: 'IB Status',
+        width: 110,
+        dataIndex: 'ibStatus'
+    }, {
+        text: 'State',
+        width: 90,
+        dataIndex: 'state'
+    }, {
+        text: 'Fill',
+        width: 80,
+        dataIndex: 'fillPrice',
+        align: 'right',
+        renderer: 'orderPriceRenderer'
+    }, {
+        text: 'Hbc',
+        width: 60,
+        dataIndex: 'heartbeatCount',
+        align: 'right'
+    }, {
         xtype: 'widgetcolumn',
         width : 50,
         widget: {
             xtype: 'button',
             width: 30,
             tooltip: 'Place Order',
-            handler: 'placeOrder',
+            handler: 'submitOrModifyOrder',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('send'));

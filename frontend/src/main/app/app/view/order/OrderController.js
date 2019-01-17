@@ -57,9 +57,11 @@ Ext.define('HopGui.view.order.OrderController', {
         });
     },
 
-    placeOrder: function (button) {
+    submitOrModifyOrder: function (button) {
         var me = this,
             orderId = button.getWidgetRecord().data.orderId;
+
+        // TODO
     },
 
     cancelOrRemoveOrder: function (button) {
@@ -74,5 +76,10 @@ Ext.define('HopGui.view.order.OrderController', {
                 orderDataHolders.reload();
             }
         });
+    },
+
+    orderPriceRenderer: function(val, metadata, record) {
+        var me = this;
+        return me.formatPrice(val);
     }
 });

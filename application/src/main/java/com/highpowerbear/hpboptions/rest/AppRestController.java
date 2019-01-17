@@ -101,12 +101,12 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/place")
-    public ResponseEntity<?> placeOrder(
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/submit-or-modify")
+    public ResponseEntity<?> submitOrModifyOrder(
             @PathVariable("orderId") int orderId,
             @RequestBody OrderPlaceParams orderPlaceParams) {
 
-        orderService.placeOrder(orderId, orderPlaceParams.getQuantity(), orderPlaceParams.getLimitPrice());
+        orderService.submitOrModifyOrder(orderId, orderPlaceParams.getQuantity(), orderPlaceParams.getLimitPrice());
         return ResponseEntity.ok().build();
     }
 
