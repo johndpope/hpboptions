@@ -105,7 +105,7 @@ public class RiskService extends AbstractDataService implements ConnectionListen
         ibController.cancelAccountSummary(accountSummary.getIbRequestId());
     }
 
-    @Scheduled(cron="0 0 6 * * MON-FRI")
+    @Scheduled(cron="0 0 7 * * MON-FRI")
     private void performStartOfDayTasks() {
         retrieveExchangeRates();
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
@@ -284,7 +284,9 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
                 int underlyingConid = pdh.getInstrument().getUnderlyingConid();
                 positionMap.remove(conid);
-                underlyingPositionMap.get(underlyingConid).remove(conid);
+                if (underlyingPositionMap.get(underlyingConid) != null) {
+                    underlyingPositionMap.get(underlyingConid).remove(conid);
+                }
 
                 recalculateRiskDataPerUnderlying(underlyingConid);
                 recalculateUnrealizedPnlPerUnderlying(underlyingConid);

@@ -3,8 +3,8 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
-import com.highpowerbear.hpboptions.rest.model.ModifyOrderParams;
+import com.highpowerbear.hpboptions.rest.model.OrderCreateParams;
+import com.highpowerbear.hpboptions.rest.model.OrderPlaceParams;
 import com.highpowerbear.hpboptions.rest.model.RestList;
 import com.highpowerbear.hpboptions.service.ChainService;
 import com.highpowerbear.hpboptions.service.RiskService;
@@ -87,73 +87,34 @@ public class AppRestController {
 
     @RequestMapping(method = RequestMethod.POST, value = "order/create/from/position")
     public ResponseEntity<?> createOrderFromPosition(
-            @RequestBody CreateOrderParams createOrderParams) {
+            @RequestBody OrderCreateParams orderCreateParams) {
 
-        orderService.createOrderFromPosition(createOrderParams.getConid(), createOrderParams.getAction());
+        orderService.createOrderFromPosition(orderCreateParams.getConid(), orderCreateParams.getAction());
         return ResponseEntity.ok().build();
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "order/create/from/chain")
     public ResponseEntity<?> createOrderFromChain(
-            @RequestBody CreateOrderParams createOrderParams) {
+            @RequestBody OrderCreateParams orderCreateParams) {
 
-        orderService.createOrderFromChain(createOrderParams.getConid(), createOrderParams.getAction());
+        orderService.createOrderFromChain(orderCreateParams.getConid(), orderCreateParams.getAction());
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/submit")
-    public ResponseEntity<?> submitOrder(
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/place")
+    public ResponseEntity<?> placeOrder(
             @PathVariable("orderId") int orderId,
-            @RequestBody ModifyOrderParams modifyOrderParams) {
+            @RequestBody OrderPlaceParams orderPlaceParams) {
 
-        orderService.submitOrder(orderId, modifyOrderParams.getQuantity(), modifyOrderParams.getLimitPrice());
+        orderService.placeOrder(orderId, orderPlaceParams.getQuantity(), orderPlaceParams.getLimitPrice());
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify")
-    public ResponseEntity<?> modifyOrder(
-            @PathVariable("orderId") int orderId,
-            @RequestBody ModifyOrderParams modifyOrderParams) {
-
-        orderService.modifyOrder(orderId, modifyOrderParams.getQuantity(), modifyOrderParams.getLimitPrice());
-        return ResponseEntity.ok().build();
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify/limit/increase")
-    public ResponseEntity<?> modifyOrderIncreaseLimit(
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/cancel-or-remove")
+    public ResponseEntity<?> cancelOrRemoveOrder(
             @PathVariable("orderId") int orderId) {
 
-        orderService.modifyOrderIncreaseLimit(orderId);
-        return ResponseEntity.ok().build();
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/modify/limit/decrease")
-    public ResponseEntity<?> modifyOrderDecreaseLimit(
-            @PathVariable("orderId") int orderId) {
-
-        orderService.modifyOrderDecreaseLimit(orderId);
-        return ResponseEntity.ok().build();
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/cancel")
-    public ResponseEntity<?> cancelOrder(
-            @PathVariable("orderId") int orderId) {
-
-        orderService.cancelOrder(orderId);
-        return ResponseEntity.ok().build();
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/discard")
-    public ResponseEntity<?> discardOrder(
-            @PathVariable("orderId") int orderId) {
-
-        orderService.discardOrder(orderId);
-        return ResponseEntity.ok().build();
-    }
-
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/remove-completed")
-    public ResponseEntity<?> removeCompletedOrders() {
-        orderService.removeCompletedOrders();
+        orderService.cancelOrRemoveOrder(orderId);
         return ResponseEntity.ok().build();
     }
 

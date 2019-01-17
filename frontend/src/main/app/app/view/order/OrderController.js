@@ -57,31 +57,22 @@ Ext.define('HopGui.view.order.OrderController', {
         });
     },
 
-    submitOrder: function (button) {
-        // TODO
+    placeOrder: function (button) {
+        var me = this,
+            orderId = button.getWidgetRecord().data.orderId;
     },
 
-    modifyOrder: function (button) {
-        // TODO
-    },
+    cancelOrRemoveOrder: function (button) {
+        var me = this,
+            orderDataHolders = me.getStore('orderDataHolders'),
+            orderId = button.getWidgetRecord().data.orderId;
 
-    modifyOrderIncreaseLimit: function (button) {
-        // TODO
-    },
-
-    modifyOrderDecreaseLimit: function (button) {
-        // TODO
-    },
-
-    cancelOrder: function (button) {
-        // TODO
-    },
-
-    discardOrder: function (button) {
-        // TODO
-    },
-
-    removeCompletedOrders: function(button, evt) {
-
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/order/' + orderId + '/cancel-or-remove',
+            success: function(response) {
+                orderDataHolders.reload();
+            }
+        });
     }
 });

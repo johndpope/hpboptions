@@ -19,12 +19,12 @@ public class HopOrder {
     private final Types.Action action;
     private final OrderType orderType;
 
-    private HopOrderState state;
     private Integer permId;
     private int quantity;
     private double limitPrice;
     private double fillPrice;
     private OrderStatus ibStatus;
+    private HopOrderState state;
     private int heartbeatCount;
 
     public HopOrder(int orderId, Types.Action action, OrderType orderType) {
@@ -79,10 +79,6 @@ public class HopOrder {
         return orderType;
     }
 
-    public HopOrderState getState() {
-        return state;
-    }
-
     public Integer getPermId() {
         return permId;
     }
@@ -129,6 +125,10 @@ public class HopOrder {
         } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
             state = HopOrderState.COMPLETED;
         }
+    }
+
+    public HopOrderState getState() {
+        return state;
     }
 
     public int getHeartbeatCount() {

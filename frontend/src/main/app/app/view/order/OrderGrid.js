@@ -88,6 +88,34 @@ Ext.define('HopGui.view.order.OrderGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
+        xtype: 'widgetcolumn',
+        width : 50,
+        widget: {
+            xtype: 'button',
+            width: 30,
+            tooltip: 'Place Order',
+            handler: 'placeOrder',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('send'));
+                }
+            }
+        }
+    }, {
+        xtype: 'widgetcolumn',
+        width : 50,
+        widget: {
+            xtype: 'button',
+            width: 30,
+            tooltip: 'Cancel or Remove Order',
+            handler: 'cancelOrRemoveOrder',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
+                }
+            }
+        }
+    }, {
         flex: 1,
         menuDisabled: true
     }],

@@ -6,22 +6,13 @@ Ext.define('HopGui.common.Glyphs', {
 
     config: {
         webFont: 'FontAwesome',
-        add: 'xf067',
-        edit: 'xf040',
-        delete: 'xf1f8',
-        save: 'xf00c',
-        cancel: 'xf0e2',
         refresh: 'xf021',
-        barchart: 'xf080',
-        orderedlist: 'xf0cb',
-        money: 'xf0d6',
-        gear: 'xf013',
-        destroy: 'xf1f8',
         download: 'xf019',
         play: 'xf04b',
         times: 'xf00d',
         list: 'xf03a',
-        chain: 'xf0c1'
+        chain: 'xf0c1',
+        send: 'xf1d8'
     },
 
     constructor: function(config) {

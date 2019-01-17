@@ -115,56 +115,6 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
-    public void submitOrder(int orderId, int quantity, double limitPrice) {
-        OrderDataHolder odh = orderMap.get(orderId);
-
-        if (odh != null) {
-            HopOrder hopOrder = odh.getHopOrder();
-
-            if (hopOrder.isNew()) {
-                log.info("submitting order " + orderId);
-                placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
-            } else {
-                log.warn("cannot submit order " + orderId + ", not new");
-            }
-        }
-    }
-
-    public void modifyOrder(int orderId, int quantity, double limitPrice) {
-        OrderDataHolder odh = orderMap.get(orderId);
-
-        if (odh != null) {
-            HopOrder hopOrder = odh.getHopOrder();
-
-            if (hopOrder.isActive()) {
-                log.info("modifying order " + orderId);
-                placeOrder(hopOrder, odh.getInstrument(), quantity, limitPrice);
-            } else {
-                log.warn("cannot modify order " + orderId + ", not active");
-            }
-        }
-    }
-
-    public void modifyOrderIncreaseLimit(int orderId) {
-        OrderDataHolder odh = orderMap.get(orderId);
-
-        if (odh != null) {
-            log.info("increasing limit for order " + orderId);
-            HopOrder hopOrder = odh.getHopOrder();
-            modifyOrder(orderId, hopOrder.getQuantity(), hopOrder.getLimitPrice() + odh.getInstrument().getMinTick());
-        }
-    }
-
-    public void modifyOrderDecreaseLimit(int orderId) {
-        OrderDataHolder odh = orderMap.get(orderId);
-
-        if (odh != null) {
-            log.info("decreasing limit for order " + orderId);
-            HopOrder hopOrder = odh.getHopOrder();
-            modifyOrder(orderId, hopOrder.getQuantity(), hopOrder.getLimitPrice() - odh.getInstrument().getMinTick());
-        }
-    }
-
     private double scaleLimitPrice(double limitPrice, Types.Action action, double minTick) {
         RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
         int priceScale = BigDecimal.valueOf(minTick).scale();
@@ -172,56 +122,44 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
-    private void placeOrder(HopOrder hopOrder, OptionInstrument instrument, int quantity, double limitPrice) {
-        if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
-            hopOrder.setQuantity(quantity);
-            limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
-            hopOrder.setLimitPrice(limitPrice);
+    public void placeOrder(int orderId, int quantity, double limitPrice) {
+        OrderDataHolder odh = orderMap.get(orderId);
 
-            ibController.placeOrder(hopOrder, instrument);
-        } else {
-            log.warn("cannot place order, quantity or limitPrice not valid, orderId=" + hopOrder.getOrderId() + ", quantity=" + quantity + ", limitPrice=" + limitPrice);
+        if (odh != null) {
+            HopOrder hopOrder = odh.getHopOrder();
+
+            if (hopOrder.isNew() || hopOrder.isActive()) {
+                OptionInstrument instrument = odh.getInstrument();
+
+                if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
+                    hopOrder.setQuantity(quantity);
+                    limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
+                    hopOrder.setLimitPrice(limitPrice);
+
+                    ibController.placeOrder(hopOrder, instrument);
+                } else {
+                    log.warn("cannot place order " + orderId + ", quantity or limitPrice not valid, quantity=" + quantity + ", limitPrice=" + limitPrice);
+                }
+            } else {
+                log.warn("cannot place order " + orderId + ", not new or active");
+            }
         }
     }
 
-    public void cancelOrder(int orderId) {
+    public void cancelOrRemoveOrder(int orderId) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null) {
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isActive()) {
-                log.info("canceling order " + orderId);
                 ibController.cancelOrder(orderId);
             } else {
-                log.warn("cannot cancel order " + orderId + ", not active");
-            }
-        }
-    }
-
-    public void discardOrder(int orderId) {
-        OrderDataHolder odh = orderMap.get(orderId);
-
-        if (odh != null && odh.getHopOrder().isNew()) {
-            HopOrder hopOrder = odh.getHopOrder();
-
-            if (hopOrder.isNew()) {
-                log.info("discarding order " + orderId);
+                log.info("removing order " + orderId);
                 orderMap.remove(orderId);
                 cancelMktData(odh);
-            } else {
-                log.warn("cannot discard order " + orderId + ", not new");
             }
         }
-    }
-
-    public void removeCompletedOrders() {
-        log.info("removing completed orders");
-
-        new ArrayList<>(orderMap.values()).stream().filter(odh -> odh.getHopOrder().isCompleted()).forEach(odh -> {
-            orderMap.remove(odh.getHopOrder().getOrderId());
-            cancelMktData(odh);
-        });
     }
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)

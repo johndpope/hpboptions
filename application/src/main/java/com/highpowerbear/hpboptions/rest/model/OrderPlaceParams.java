@@ -3,7 +3,7 @@ package com.highpowerbear.hpboptions.rest.model;
 /**
  * Created by robertk on 1/10/2019.
  */
-public class ModifyOrderParams {
+public class OrderPlaceParams {
     private int quantity;
     private double limitPrice;
 
