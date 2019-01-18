@@ -19,6 +19,7 @@ Ext.define('HopGui.view.position.PositionController', {
             positionDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/position/data-holders');
             me.loadPositionDataHolders();
         }
+        me.prepareSortOrderRadio();
 
         var socket  = new SockJS('/websocket');
         var stompClient = Stomp.over(socket);
@@ -73,6 +74,32 @@ Ext.define('HopGui.view.position.PositionController', {
             },
             success: function(response, opts) {
                 //
+            }
+        });
+    },
+
+    prepareSortOrderRadio: function() {
+        var me = this,
+            sortOrderRadio = me.lookupReference('sortOrderRadio');
+
+        Ext.Ajax.request({
+            method: 'GET',
+            url: HopGui.common.Definitions.urlPrefix + '/position/sort-order',
+            success: function(response, opts) {
+                sortOrderRadio.setValue({sortOrder: response.responseText});
+            }
+        });
+    },
+
+    onSortOrderChange: function(radioGroup, newValue, oldValue, eOpts) {
+        var me = this,
+            positionDataHolders = me.getStore('positionDataHolders');
+
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/position/sort-order/' + newValue.sortOrder,
+            success: function(response, opts) {
+                positionDataHolders.reload();
             }
         });
     }

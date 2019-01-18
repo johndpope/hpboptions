@@ -6,7 +6,9 @@ Ext.define('HopGui.view.position.PositionGrid', {
     xtype: 'hop-position-grid',
     requires: [
         'Ext.grid.column.Date',
-        'Ext.toolbar.Paging'
+        'Ext.toolbar.Paging',
+        'Ext.form.RadioGroup',
+        'Ext.form.field.Radio'
     ],
     bind: '{positionDataHolders}',
     listeners: {
@@ -188,6 +190,19 @@ Ext.define('HopGui.view.position.PositionGrid', {
     }, {
         xtype: 'toolbar',
         items: [{
+            xtype: 'radiogroup',
+            reference: 'sortOrderRadio',
+            margin: '0 0 0 10',
+            labelWidth: 45,
+            fieldLabel: 'Sort by',
+            items: [
+                {boxLabel: 'Exp', name: 'sortOrder', inputValue: 'expiration', width: 50},
+                {boxLabel: 'Und', name: 'sortOrder', inputValue: 'underlying', width: 50}
+            ],
+            listeners: {
+                change: 'onSortOrderChange'
+            }
+        }, {
             xtype: 'tbtext',
             flex: 1
         }, {

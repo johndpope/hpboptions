@@ -3,6 +3,7 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
+import com.highpowerbear.hpboptions.enums.PositionSortOrder;
 import com.highpowerbear.hpboptions.rest.model.OrderCreateParams;
 import com.highpowerbear.hpboptions.rest.model.OrderPlaceParams;
 import com.highpowerbear.hpboptions.rest.model.RestList;
@@ -71,6 +72,19 @@ public class AppRestController {
     public ResponseEntity<?> getUnderlyingDataHolders() {
         List<UnderlyingDataHolder> underlyingDataHolders = riskService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
+    }
+
+    @RequestMapping("/position/sort-order")
+    public ResponseEntity<?> getPositionSortOrder() {
+        return ResponseEntity.ok(riskService.getPositionSortOrder().name().toLowerCase());
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/position/sort-order/{sortOrder}")
+    public ResponseEntity<?> setPositionSortOrder(
+            @PathVariable("sortOrder") String sortOrder) {
+
+        riskService.setPositionSortOrder(PositionSortOrder.valueOf(sortOrder.toUpperCase()));
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping("position/data-holders")

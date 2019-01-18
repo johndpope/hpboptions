@@ -52,6 +52,8 @@ public class RiskService extends AbstractDataService implements ConnectionListen
     private final RestTemplate restTemplate = new RestTemplate();
     private ExchangeRates exchangeRates;
 
+    private PositionSortOrder positionSortOrder = PositionSortOrder.EXPIRATION;
+
     @Autowired
     public RiskService(IbController ibController, HopDao hopDao, MessageService messageService) {
         super(ibController, hopDao, messageService);
@@ -373,13 +375,31 @@ public class RiskService extends AbstractDataService implements ConnectionListen
                 .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
     }
 
+    public PositionSortOrder getPositionSortOrder() {
+        return positionSortOrder;
+    }
+
+    public void setPositionSortOrder(PositionSortOrder positionSortOrder) {
+        this.positionSortOrder = positionSortOrder;
+    }
+
     public List<PositionDataHolder> getSortedPositionDataHolders() {
-        return positionMap.values().stream()
-                .sorted(Comparator
-                        .comparing(PositionDataHolder::getDaysToExpiration)
-                        .thenComparing(PositionDataHolder::getDisplayRank)
-                        .thenComparing(PositionDataHolder::getUnderlyingSymbol)
-                        .thenComparing(PositionDataHolder::getRight)
-                        .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
+        if (positionSortOrder == PositionSortOrder.EXPIRATION) {
+            return positionMap.values().stream()
+                    .sorted(Comparator
+                            .comparing(PositionDataHolder::getDaysToExpiration)
+                            .thenComparing(PositionDataHolder::getDisplayRank)
+                            .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                            .thenComparing(PositionDataHolder::getRight)
+                            .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
+        } else {
+            return positionMap.values().stream()
+                    .sorted(Comparator
+                            .comparing(PositionDataHolder::getDisplayRank)
+                            .thenComparing(PositionDataHolder::getUnderlyingSymbol)
+                            .thenComparing(PositionDataHolder::getDaysToExpiration)
+                            .thenComparing(PositionDataHolder::getRight)
+                            .thenComparingDouble(PositionDataHolder::getStrike)).collect(Collectors.toList());
+        }
     }
 }
