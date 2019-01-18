@@ -57,21 +57,58 @@ Ext.define('HopGui.view.order.OrderController', {
         });
     },
 
-    submitOrModifyOrder: function (button) {
+    sendOrder: function (button) {
         var me = this,
-            orderId = button.getWidgetRecord().data.orderId;
+            order = button.getWidgetRecord().data;
 
-        // TODO
+        me.doSend(order);
     },
 
-    cancelOrRemoveOrder: function (button) {
+    sendNewOrders: function() {
         var me = this,
-            orderDataHolders = me.getStore('orderDataHolders'),
-            orderId = button.getWidgetRecord().data.orderId;
+            orderDataHolders = me.getStore('orderDataHolders');
+
+        orderDataHolders.each(function(record) {
+            var order = record.data;
+            if (order.state === 'New') {
+                me.doSend(order);
+            }
+        });
+    },
+
+    doSend: function(order) {
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/order/' + order.orderId + '/send',
+            jsonData: {
+                quantity: order.quantity,
+                limitPrice: order.limitPrice
+            },
+            success: function(response, opts) {
+                // reload triggered through ws reloadRequest
+            }
+        });
+    },
+
+    cancelOrder: function (button) {
+        var order = button.getWidgetRecord().data;
 
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/order/' + orderId + '/cancel-or-remove',
+            url: HopGui.common.Definitions.urlPrefix + '/order/' + order.orderId + '/cancel',
+            success: function(response) {
+                // reload triggered through ws reloadRequest
+            }
+        });
+    },
+
+    removeOrders: function() {
+        var me = this,
+            orderDataHolders = me.getStore('orderDataHolders');
+
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/order/remove',
             success: function(response) {
                 orderDataHolders.reload();
             }

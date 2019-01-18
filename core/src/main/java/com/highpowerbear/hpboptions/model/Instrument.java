@@ -10,12 +10,12 @@ import com.ib.client.Types;
  */
 public class Instrument {
 
-    private final int conid;
-    private final Types.SecType secType;
-    private final String symbol;
-    private final Currency currency;
-    private Exchange exchange;
-    private Exchange primaryExchange;
+    protected final int conid;
+    protected final Types.SecType secType;
+    protected final String symbol;
+    protected final Currency currency;
+    protected Exchange exchange;
+    protected Exchange primaryExchange;
 
     public Instrument(int conid, Types.SecType secType, String symbol, Currency currency) {
         this.conid = conid;

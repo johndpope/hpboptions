@@ -97,11 +97,6 @@ Ext.define('HopGui.view.order.OrderGrid', {
         dataIndex: 'orderId',
         align: 'right'
     }, {
-        text: 'PermId',
-        width: 100,
-        dataIndex: 'permId',
-        align: 'right'
-    }, {
         text: 'Action',
         width: 70,
         dataIndex: 'action'
@@ -109,14 +104,20 @@ Ext.define('HopGui.view.order.OrderGrid', {
         text: 'Qnt',
         width: 60,
         dataIndex: 'quantity',
-        align: 'right'
+        align: 'right',
+        editor: {
+            xtype: 'numberfield',
+            minValue: 0,
+            step: 1,
+            allowDecimals: false
+        }
     }, {
         text: 'Type',
         width: 70,
         dataIndex: 'orderType'
     }, {
         text: 'Lmt',
-        width: 100,
+        width: 70,
         dataIndex: 'limitPrice',
         align: 'right',
         editor: {
@@ -126,22 +127,27 @@ Ext.define('HopGui.view.order.OrderGrid', {
             allowDecimals: true
         }
     }, {
-        text: 'IB Status',
-        width: 110,
-        dataIndex: 'ibStatus'
+        text: 'Fill',
+        width: 60,
+        dataIndex: 'fillPrice',
+        align: 'right',
+        renderer: 'orderPriceRenderer'
     }, {
         text: 'State',
         width: 90,
         dataIndex: 'state'
     }, {
-        text: 'Fill',
-        width: 80,
-        dataIndex: 'fillPrice',
-        align: 'right',
-        renderer: 'orderPriceRenderer'
+        text: 'IB Status',
+        width: 110,
+        dataIndex: 'ibStatus'
     }, {
-        text: 'Hbc',
-        width: 60,
+        text: 'PermId',
+        width: 100,
+        dataIndex: 'permId',
+        align: 'right'
+    }, {
+        text: 'Hb',
+        width: 50,
         dataIndex: 'heartbeatCount',
         align: 'right'
     }, {
@@ -150,8 +156,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
         widget: {
             xtype: 'button',
             width: 30,
-            tooltip: 'Place Order',
-            handler: 'submitOrModifyOrder',
+            tooltip: 'Send Order',
+            handler: 'sendOrder',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('send'));
@@ -164,8 +170,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
         widget: {
             xtype: 'button',
             width: 30,
-            tooltip: 'Cancel or Remove Order',
-            handler: 'cancelOrRemoveOrder',
+            tooltip: 'Cancel Order',
+            handler: 'cancelOrder',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
@@ -184,6 +190,26 @@ Ext.define('HopGui.view.order.OrderGrid', {
     }, {
         xtype: 'toolbar',
         items: [{
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: 'Send New',
+            handler: 'sendNewOrders',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('send'));
+                }
+            }
+        }, {
+            xtype: 'button',
+            margin: '0 0 0 10',
+            text: 'Remove',
+            handler: 'removeOrders',
+            listeners: {
+                beforerender: function(c, eOpts) {
+                    c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
+                }
+            }
+        }, {
             xtype: 'tbtext',
             flex: 1
         }, {

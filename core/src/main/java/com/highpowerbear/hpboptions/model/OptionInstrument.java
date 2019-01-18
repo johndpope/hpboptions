@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
 import com.highpowerbear.hpboptions.enums.Currency;
+import com.ib.client.Contract;
 import com.ib.client.Types;
 
 import java.time.LocalDate;
@@ -26,6 +27,14 @@ public class OptionInstrument extends Instrument {
         this.expiration = expiration;
         this.multiplier = multiplier;
         this.underlyingSymbol = underlyingSymbol;
+    }
+
+    @Override
+    public Contract createIbContract() {
+        Contract contract = super.createIbContract();
+        contract.symbol(underlyingSymbol);
+
+        return contract;
     }
 
     public Types.Right getRight() {

@@ -19,12 +19,12 @@ public class HopOrder {
     private final Types.Action action;
     private final OrderType orderType;
 
-    private Integer permId;
     private int quantity;
     private double limitPrice;
     private double fillPrice;
-    private OrderStatus ibStatus;
     private HopOrderState state;
+    private OrderStatus ibStatus;
+    private Integer permId;
     private int heartbeatCount;
 
     public HopOrder(int orderId, Types.Action action, OrderType orderType) {
@@ -32,12 +32,12 @@ public class HopOrder {
         this.action = action;
         this.orderType = orderType;
 
-        state = HopOrderState.New;
-        permId = null;
-        quantity = 0;
+        quantity = 1;
         limitPrice = 0d;
         fillPrice = 0d;
+        state = HopOrderState.New;
         ibStatus = null;
+        permId = null;
         heartbeatCount = HopSettings.HEARTBEAT_COUNT_INITIAL;
     }
 
@@ -79,14 +79,6 @@ public class HopOrder {
         return orderType;
     }
 
-    public Integer getPermId() {
-        return permId;
-    }
-
-    public void setPermId(Integer permId) {
-        this.permId = permId;
-    }
-
     public int getQuantity() {
         return quantity;
     }
@@ -111,6 +103,10 @@ public class HopOrder {
         this.fillPrice = fillPrice;
     }
 
+    public HopOrderState getState() {
+        return state;
+    }
+
     public OrderStatus getIbStatus() {
         return ibStatus;
     }
@@ -127,8 +123,12 @@ public class HopOrder {
         }
     }
 
-    public HopOrderState getState() {
-        return state;
+    public Integer getPermId() {
+        return permId;
+    }
+
+    public void setPermId(Integer permId) {
+        this.permId = permId;
     }
 
     public int getHeartbeatCount() {
