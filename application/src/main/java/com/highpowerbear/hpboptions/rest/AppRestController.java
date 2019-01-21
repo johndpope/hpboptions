@@ -132,9 +132,9 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/remove")
-    public ResponseEntity<?> removeOrders() {
-        orderService.removeOrders();
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/remove-nonworking")
+    public ResponseEntity<?> removeNonworkingOrders() {
+        orderService.removeNonworkingOrders();
         return ResponseEntity.ok().build();
     }
 

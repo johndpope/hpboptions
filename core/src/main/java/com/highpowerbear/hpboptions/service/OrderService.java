@@ -127,7 +127,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         if (odh != null) {
             HopOrder hopOrder = odh.getHopOrder();
 
-            if (hopOrder.isNew() || hopOrder.isActive()) {
+            if (hopOrder.isNew() || hopOrder.isWorking()) {
                 OptionInstrument instrument = odh.getInstrument();
 
                 if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
@@ -151,21 +151,21 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         if (odh != null) {
             HopOrder hopOrder = odh.getHopOrder();
 
-            if (hopOrder.isActive()) {
+            if (hopOrder.isWorking()) {
                 ibController.cancelOrder(orderId);
             } else {
-                log.warn("cannot cancel order " + orderId + ", not active");
+                log.warn("cannot cancel order " + orderId + ", not working");
             }
         }
     }
 
-    public void removeOrders() {
-        log.info("removing all nonactive orders");
+    public void removeNonworkingOrders() {
+        log.info("removing all nonworking orders");
 
         for (OrderDataHolder odh : new ArrayList<>(orderMap.values())) {
             HopOrder hopOrder = odh.getHopOrder();
 
-            if (!hopOrder.isActive()) {
+            if (!hopOrder.isWorking()) {
                 orderMap.remove(hopOrder.getOrderId());
                 cancelMktData(odh);
             }
@@ -175,7 +175,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)
     private void updateHeartbeats() {
-        List<HopOrder> activeOrders = orderMap.values().stream().map(OrderDataHolder::getHopOrder).filter(HopOrder::isActive).collect(Collectors.toList());
+        List<HopOrder> activeOrders = orderMap.values().stream().map(OrderDataHolder::getHopOrder).filter(HopOrder::isWorking).collect(Collectors.toList());
 
         for (HopOrder hopOrder : activeOrders) {
             if (hopOrder.getHeartbeatCount() <= 0) {

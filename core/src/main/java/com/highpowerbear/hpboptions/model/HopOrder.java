@@ -47,13 +47,8 @@ public class HopOrder {
     }
 
     @JsonIgnore
-    public boolean isActive() {
-        return state == HopOrderState.Active;
-    }
-
-    @JsonIgnore
-    public boolean isCompleted() {
-        return state == HopOrderState.Completed;
+    public boolean isWorking() {
+        return state == HopOrderState.Working;
     }
 
     public Order createIbOrder() {
@@ -117,7 +112,7 @@ public class HopOrder {
         if (ibStatus == null) {
             state = HopOrderState.New;
         } else if (ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted) {
-            state = HopOrderState.Active;
+            state = HopOrderState.Working;
         } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
             state = HopOrderState.Completed;
         }

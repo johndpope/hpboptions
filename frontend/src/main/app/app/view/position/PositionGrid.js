@@ -112,14 +112,14 @@ Ext.define('HopGui.view.position.PositionGrid', {
         text: 'Bid',
         width: 80,
         dataIndex: 'bid',
-        tdCls: 'bid hop-price hop-unchanged',
+        tdCls: 'bid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
         width: 80,
         dataIndex: 'ask',
-        tdCls: 'ask hop-price hop-unchanged',
+        tdCls: 'ask hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {

@@ -48,14 +48,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         text: 'Bid',
         width: 65,
         dataIndex: 'callBid',
-        tdCls: 'callBid hop-price hop-unchanged',
+        tdCls: 'callBid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
         width: 65,
         dataIndex: 'callAsk',
-        tdCls: 'callAsk hop-price hop-unchanged',
+        tdCls: 'callAsk hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
@@ -152,14 +152,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         text: 'Bid',
         width: 65,
         dataIndex: 'putBid',
-        tdCls: 'putBid hop-price hop-unchanged',
+        tdCls: 'putBid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
         width: 65,
         dataIndex: 'putAsk',
-        tdCls: 'putAsk hop-price hop-unchanged',
+        tdCls: 'putAsk hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {

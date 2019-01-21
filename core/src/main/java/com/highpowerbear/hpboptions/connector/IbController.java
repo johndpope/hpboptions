@@ -195,7 +195,7 @@ public class IbController {
     }
 
     public void requestOpenOrders() {
-        log.info("requesting openOrders, allOpenOrders and autoOpenOrders");
+        log.info("requesting open orders");
 
         if (checkConnected()) {
             eClientSocket.reqOpenOrders();

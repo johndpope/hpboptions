@@ -102,13 +102,13 @@ Ext.define('HopGui.view.order.OrderController', {
         });
     },
 
-    removeOrders: function() {
+    removeNonworkingOrders: function() {
         var me = this,
             orderDataHolders = me.getStore('orderDataHolders');
 
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/order/remove',
+            url: HopGui.common.Definitions.urlPrefix + '/order/remove-nonworking',
             success: function(response) {
                 orderDataHolders.reload();
             }

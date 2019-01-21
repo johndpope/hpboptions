@@ -5,6 +5,6 @@ package com.highpowerbear.hpboptions.enums;
  */
 public enum HopOrderState {
     New,
-    Active,
+    Working,
     Completed
 }

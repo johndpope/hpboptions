@@ -139,7 +139,11 @@ Ext.define('HopGui.view.order.OrderGrid', {
     }, {
         text: 'IB Status',
         width: 110,
-        dataIndex: 'ibStatus'
+        dataIndex: 'ibStatus',
+        renderer: function(val, metadata, record) {
+            metadata.style ='background-color: ' + HopGui.common.Definitions.getIbStatusColor(val) + '; color: white;';
+            return val ? val : 'NA';
+        }
     }, {
         text: 'PermId',
         width: 100,
@@ -202,8 +206,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
         }, {
             xtype: 'button',
             margin: '0 0 0 10',
-            text: 'Remove',
-            handler: 'removeOrders',
+            text: 'Remove Nwkg',
+            handler: 'removeNonworkingOrders',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
