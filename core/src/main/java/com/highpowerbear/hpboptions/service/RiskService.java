@@ -268,32 +268,34 @@ public class RiskService extends AbstractDataService implements ConnectionListen
 
                     OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
-                    pdh.updatePositionSize(positionSize);
-                    positionMap.put(conid, pdh);
 
-                    ibController.requestContractDetails(ibRequestIdGen.incrementAndGet(), contract);
-                }
-            } else if (positionSize != 0) {
-                if (positionSize != pdh.getPositionSize()) {
-                    pdh.updatePositionSize(positionSize);
-                    messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
-
-                    recalculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+                    if (pdh.getDaysToExpiration() >= 0) {
+                        pdh.updatePositionSize(positionSize);
+                        positionMap.put(conid, pdh);
+                        ibController.requestContractDetails(ibRequestIdGen.incrementAndGet(), contract);
+                    }
                 }
             } else {
-                cancelMktData(pdh);
-                cancelPnlSingle(pdh);
+                if (positionSize != 0 && pdh.getDaysToExpiration() >= 0) {
+                    if (positionSize != pdh.getPositionSize()) {
+                        pdh.updatePositionSize(positionSize);
+                        messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
+                        recalculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+                    }
+                } else {
+                    cancelMktData(pdh);
+                    cancelPnlSingle(pdh);
 
-                int underlyingConid = pdh.getInstrument().getUnderlyingConid();
-                positionMap.remove(conid);
-                if (underlyingPositionMap.get(underlyingConid) != null) {
-                    underlyingPositionMap.get(underlyingConid).remove(conid);
+                    int underlyingConid = pdh.getInstrument().getUnderlyingConid();
+                    positionMap.remove(conid);
+
+                    if (underlyingPositionMap.get(underlyingConid) != null) {
+                        underlyingPositionMap.get(underlyingConid).remove(conid);
+                        recalculateRiskDataPerUnderlying(underlyingConid);
+                        recalculateUnrealizedPnlPerUnderlying(underlyingConid);
+                    }
+                    messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
                 }
-
-                recalculateRiskDataPerUnderlying(underlyingConid);
-                recalculateUnrealizedPnlPerUnderlying(underlyingConid);
-
-                messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
             }
         } finally {
             positionLock.unlock();
