@@ -59,32 +59,45 @@ Ext.define('HopGui.view.order.OrderController', {
     },
 
     sendOrder: function (button) {
-        var me = this,
-            order = button.getWidgetRecord().data;
+        var order = button.getWidgetRecord().data;
 
-        me.doSend(order);
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/order/' + order.orderId + '/send',
+            jsonData: {
+                orderId: order.orderId,
+                quantity: order.quantity,
+                limitPrice: order.limitPrice
+            },
+            success: function(response, opts) {
+                // reload triggered through ws reloadRequest
+            }
+        });
     },
 
     sendNewOrders: function() {
         var me = this,
             orderDataHolders = me.getStore('orderDataHolders');
 
+        var sendOrderParamsArr = [];
+
         orderDataHolders.each(function(record) {
             var order = record.data;
+
             if (order.state === 'New') {
-                me.doSend(order);
+                sendOrderParamsArr.push({
+                    orderId: order.orderId,
+                    quantity: order.quantity,
+                    limitPrice: order.limitPrice
+                });
             }
         });
-    },
 
-    doSend: function(order) {
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/order/' + order.orderId + '/send',
-            jsonData: {
-                quantity: order.quantity,
-                limitPrice: order.limitPrice
-            },
+            url: HopGui.common.Definitions.urlPrefix + '/order/send',
+            jsonData: sendOrderParamsArr,
+
             success: function(response, opts) {
                 // reload triggered through ws reloadRequest
             }

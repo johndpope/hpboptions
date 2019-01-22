@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -134,6 +135,17 @@ public class AppRestController {
             @RequestBody SendOrderParams sendOrderParams) {
 
         orderService.sendOrder(orderId, sendOrderParams.getQuantity(), sendOrderParams.getLimitPrice());
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/send")
+    public ResponseEntity<?> sendOrders(
+            @RequestBody List<SendOrderParams> sendOrderParamsList) {
+
+        sendOrderParamsList.stream()
+                .sorted(Comparator.comparingInt(SendOrderParams::getOrderId))
+                .forEach(o -> orderService.sendOrder(o.getOrderId(), o.getQuantity(), o.getLimitPrice()));
+
         return ResponseEntity.ok().build();
     }
 

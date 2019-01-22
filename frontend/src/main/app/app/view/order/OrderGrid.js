@@ -127,7 +127,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
             minValue: 0,
             step: 0.01,
             allowDecimals: true
-        }
+        },
+        renderer: 'orderPriceRenderer'
     }, {
         text: 'Fill',
         width: 60,

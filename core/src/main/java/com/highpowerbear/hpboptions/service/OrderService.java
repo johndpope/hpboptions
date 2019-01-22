@@ -142,7 +142,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                     log.warn("cannot send order " + orderId + ", quantity or limitPrice not valid, quantity=" + quantity + ", limitPrice=" + limitPrice);
                 }
             } else {
-                log.warn("cannot send order " + orderId + ", not new or active");
+                log.warn("cannot send order " + orderId + ", not new or working");
             }
         }
     }
