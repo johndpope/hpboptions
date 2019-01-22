@@ -20,6 +20,7 @@ Ext.define('HopGui.view.order.OrderController', {
             orderDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/order/data-holders');
             me.loadOrderDataHolders();
         }
+        me.prepareOrderFilter();
 
         var socket  = new SockJS('/websocket');
         var stompClient = Stomp.over(socket);
@@ -102,13 +103,13 @@ Ext.define('HopGui.view.order.OrderController', {
         });
     },
 
-    removeNonworkingOrders: function() {
+    removeIdleOrders: function() {
         var me = this,
             orderDataHolders = me.getStore('orderDataHolders');
 
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/order/remove-nonworking',
+            url: HopGui.common.Definitions.urlPrefix + '/order/remove-idle',
             success: function(response) {
                 orderDataHolders.reload();
             }
@@ -118,5 +119,43 @@ Ext.define('HopGui.view.order.OrderController', {
     orderPriceRenderer: function(val, metadata, record) {
         var me = this;
         return me.formatPrice(val);
+    },
+
+    prepareOrderFilter: function() {
+        var me = this,
+            orderFilter = me.lookupReference('orderFilter');
+
+        Ext.Ajax.request({
+            method: 'GET',
+            url: HopGui.common.Definitions.urlPrefix + '/order/filter',
+
+            success: function(response, opts) {
+                var filterResult = Ext.decode(response.responseText);
+
+                orderFilter.setValue({
+                    showNew: filterResult.showNew,
+                    showWorking: filterResult.showWorking,
+                    showCompleted: filterResult.showCompleted
+                });
+            }
+        });
+    },
+
+    onOrderFilterChange: function(radioGroup, newValue, oldValue, eOpts) {
+        var me = this,
+            orderDataHolders = me.getStore('orderDataHolders');
+
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/order/filter',
+            jsonData: {
+                showNew: !!newValue.showNew,
+                showWorking: !!newValue.showWorking,
+                showCompleted: !!newValue.showCompleted
+            },
+            success: function(response, opts) {
+                orderDataHolders.reload();
+            }
+        });
     }
 });

@@ -51,6 +51,16 @@ public class HopOrder {
         return state == HopOrderState.Working;
     }
 
+    @JsonIgnore
+    public boolean isCompleted() {
+        return state == HopOrderState.Completed;
+    }
+
+    @JsonIgnore
+    public boolean isIdle() {
+        return state != HopOrderState.Working;
+    }
+
     public Order createIbOrder() {
         Order order = new Order();
         order.action(action);
@@ -60,6 +70,18 @@ public class HopOrder {
         order.tif(Types.TimeInForce.DAY);
 
         return order;
+    }
+
+    public void setIbStatus(OrderStatus ibStatus) {
+        this.ibStatus = ibStatus;
+
+        if (ibStatus == null) {
+            state = HopOrderState.New;
+        } else if (ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted) {
+            state = HopOrderState.Working;
+        } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
+            state = HopOrderState.Completed;
+        }
     }
 
     public int getOrderId() {
@@ -104,18 +126,6 @@ public class HopOrder {
 
     public OrderStatus getIbStatus() {
         return ibStatus;
-    }
-
-    public void setIbStatus(OrderStatus ibStatus) {
-        this.ibStatus = ibStatus;
-
-        if (ibStatus == null) {
-            state = HopOrderState.New;
-        } else if (ibStatus == ApiPending || ibStatus == PendingSubmit || ibStatus == PendingCancel || ibStatus == PreSubmitted || ibStatus == Submitted) {
-            state = HopOrderState.Working;
-        } else if (ibStatus == ApiCancelled || ibStatus == Cancelled || ibStatus == Filled || ibStatus == Inactive || ibStatus == Unknown) {
-            state = HopOrderState.Completed;
-        }
     }
 
     public Integer getPermId() {

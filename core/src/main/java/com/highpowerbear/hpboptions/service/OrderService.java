@@ -41,6 +41,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.ORDER_IB_REQUEST_ID_INITIAL);
     private final AtomicInteger ibOrderIdGenerator = new AtomicInteger();
 
+    private OrderFilter orderFilter = new OrderFilter();
+
     @Autowired
     public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, RiskService riskService, ChainService chainService) {
         super(ibController, hopDao, messageService);
@@ -159,13 +161,13 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         }
     }
 
-    public void removeNonworkingOrders() {
-        log.info("removing all nonworking orders");
+    public void removeIdleOrders() {
+        log.info("removing all idle orders");
 
         for (OrderDataHolder odh : new ArrayList<>(orderMap.values())) {
             HopOrder hopOrder = odh.getHopOrder();
 
-            if (!hopOrder.isWorking()) {
+            if (hopOrder.isIdle()) {
                 orderMap.remove(hopOrder.getOrderId());
                 cancelMktData(odh);
             }
@@ -267,7 +269,28 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         }
     }
 
-    public Collection<OrderDataHolder> getOrderDataHolders() {
-        return orderMap.values();
+    public OrderFilter getOrderFilter() {
+        return orderFilter;
+    }
+
+    public void setOrderFilter(OrderFilter orderFilter) {
+        this.orderFilter = orderFilter;
+    }
+
+    public List<OrderDataHolder> getFilteredOrderDataHolders() {
+        List<OrderDataHolder> filteredOrderDataHolders = new ArrayList<>();
+
+        for (OrderDataHolder odh : orderMap.values()) {
+            HopOrder hopOrder = odh.getHopOrder();
+
+            if (orderFilter.isShowNew() && hopOrder.isNew()) {
+                filteredOrderDataHolders.add(odh);
+            } else if (orderFilter.isShowWorking() && hopOrder.isWorking()) {
+                filteredOrderDataHolders.add(odh);
+            } else if (orderFilter.isShowCompleted() && hopOrder.isCompleted()) {
+                filteredOrderDataHolders.add(odh);
+            }
+        }
+        return filteredOrderDataHolders;
     }
 }

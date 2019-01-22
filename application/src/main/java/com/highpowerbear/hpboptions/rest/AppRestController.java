@@ -93,9 +93,22 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(positionDataHolders, positionDataHolders.size()));
     }
 
+    @RequestMapping("/order/filter")
+    public ResponseEntity<?> getOrderFilter() {
+        return ResponseEntity.ok(orderService.getOrderFilter());
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/filter")
+    public ResponseEntity<?> setOrderFilter(
+            @RequestBody OrderFilter orderFilter) {
+
+        orderService.setOrderFilter(orderFilter);
+        return ResponseEntity.ok().build();
+    }
+
     @RequestMapping("order/data-holders")
     public ResponseEntity<?> getOrderDataHolders() {
-        Collection<OrderDataHolder>orderDataHolders = orderService.getOrderDataHolders();
+        List<OrderDataHolder>orderDataHolders = orderService.getFilteredOrderDataHolders();
         return ResponseEntity.ok(new RestList<>(orderDataHolders, orderDataHolders.size()));
     }
 
@@ -132,9 +145,9 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/order/remove-nonworking")
-    public ResponseEntity<?> removeNonworkingOrders() {
-        orderService.removeNonworkingOrders();
+    @RequestMapping(method = RequestMethod.PUT, value = "/order/remove-idle")
+    public ResponseEntity<?> removeIdleOrders() {
+        orderService.removeIdleOrders();
         return ResponseEntity.ok().build();
     }
 

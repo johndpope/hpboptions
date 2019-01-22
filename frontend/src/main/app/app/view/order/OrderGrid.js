@@ -8,7 +8,9 @@ Ext.define('HopGui.view.order.OrderGrid', {
         'Ext.grid.column.Date',
         'Ext.form.field.Number',
         'Ext.toolbar.Paging',
-        'Ext.grid.plugin.CellEditing'
+        'Ext.grid.plugin.CellEditing',
+        'Ext.form.CheckboxGroup',
+        'Ext.form.field.Checkbox'
     ],
     bind: '{orderDataHolders}',
     viewConfig: {
@@ -206,12 +208,26 @@ Ext.define('HopGui.view.order.OrderGrid', {
         }, {
             xtype: 'button',
             margin: '0 0 0 10',
-            text: 'Remove Nwkg',
-            handler: 'removeNonworkingOrders',
+            text: 'Remove Idle',
+            handler: 'removeIdleOrders',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('times'));
                 }
+            }
+        }, {
+            xtype: 'checkboxgroup',
+            reference: 'orderFilter',
+            margin: '0 0 0 20',
+            labelWidth: 30,
+            fieldLabel: 'Filter',
+            items: [
+                {boxLabel: 'New', name: 'showNew', width: 50},
+                {boxLabel: 'Working', name: 'showWorking', width: 75},
+                {boxLabel: 'Completed', name: 'showCompleted', width: 85}
+            ],
+            listeners: {
+                change: 'onOrderFilterChange'
             }
         }, {
             xtype: 'tbtext',
