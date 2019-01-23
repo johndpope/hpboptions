@@ -8,7 +8,8 @@ import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
 import com.highpowerbear.hpboptions.rest.model.SendOrderParams;
 import com.highpowerbear.hpboptions.rest.model.RestList;
 import com.highpowerbear.hpboptions.service.ChainService;
-import com.highpowerbear.hpboptions.service.RiskService;
+import com.highpowerbear.hpboptions.service.PositionService;
+import com.highpowerbear.hpboptions.service.UnderlyingService;
 import com.highpowerbear.hpboptions.service.OrderService;
 import com.highpowerbear.hpboptions.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,21 +31,23 @@ import java.util.Set;
 public class AppRestController {
 
     private final IbController ibController;
-    private final RiskService riskService;
+    private final UnderlyingService underlyingService;
     private final OrderService orderService;
+    private final PositionService positionService;
     private final ChainService chainService;
 
     @Autowired
-    public AppRestController(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService) {
+    public AppRestController(IbController ibController, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
         this.ibController = ibController;
-        this.riskService = riskService;
+        this.underlyingService = underlyingService;
         this.orderService = orderService;
+        this.positionService = positionService;
         this.chainService = chainService;
     }
 
     @RequestMapping("account/summary")
     public ResponseEntity<?> getAccountSummary() {
-        return ResponseEntity.ok(riskService.getAccountSummaryText());
+        return ResponseEntity.ok(underlyingService.getAccountSummaryText());
     }
 
     @RequestMapping("connection/info")
@@ -71,26 +74,26 @@ public class AppRestController {
 
     @RequestMapping("underlying/data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<UnderlyingDataHolder> underlyingDataHolders = riskService.getSortedUnderlyingDataHolders();
+        List<UnderlyingDataHolder> underlyingDataHolders = underlyingService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 
     @RequestMapping("/position/sort-order")
     public ResponseEntity<?> getPositionSortOrder() {
-        return ResponseEntity.ok(riskService.getPositionSortOrder().name().toLowerCase());
+        return ResponseEntity.ok(positionService.getPositionSortOrder().name().toLowerCase());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "/position/sort-order/{sortOrder}")
     public ResponseEntity<?> setPositionSortOrder(
             @PathVariable("sortOrder") String sortOrder) {
 
-        riskService.setPositionSortOrder(PositionSortOrder.valueOf(sortOrder.toUpperCase()));
+        positionService.setPositionSortOrder(PositionSortOrder.valueOf(sortOrder.toUpperCase()));
         return ResponseEntity.ok().build();
     }
 
     @RequestMapping("position/data-holders")
     public ResponseEntity<?> getPositionDataHolders() {
-        List<PositionDataHolder> positionDataHolders = riskService.getSortedPositionDataHolders();
+        List<PositionDataHolder> positionDataHolders = positionService.getSortedPositionDataHolders();
         return ResponseEntity.ok(new RestList<>(positionDataHolders, positionDataHolders.size()));
     }
 

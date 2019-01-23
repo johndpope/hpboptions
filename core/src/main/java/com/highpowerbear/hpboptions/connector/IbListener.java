@@ -3,10 +3,7 @@ package com.highpowerbear.hpboptions.connector;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.enums.WsTopic;
-import com.highpowerbear.hpboptions.service.ChainService;
-import com.highpowerbear.hpboptions.service.DataService;
-import com.highpowerbear.hpboptions.service.RiskService;
-import com.highpowerbear.hpboptions.service.OrderService;
+import com.highpowerbear.hpboptions.service.*;
 import com.ib.client.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,16 +19,18 @@ import java.util.Set;
 public class IbListener extends GenericIbListener {
 
     private final IbController ibController;
-    private final RiskService riskService;
+    private final UnderlyingService underlyingService;
     private final OrderService orderService;
+    private final PositionService positionService;
     private final ChainService chainService;
     private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, RiskService riskService, OrderService orderService, ChainService chainService, MessageService messageService) {
+    public IbListener(IbController ibController, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, MessageService messageService) {
         this.ibController = ibController;
-        this.riskService = riskService;
+        this.underlyingService = underlyingService;
         this.orderService = orderService;
+        this.positionService = positionService;
         this.chainService = chainService;
         this.messageService = messageService;
 
@@ -70,7 +69,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void accountSummary(int reqId, String account, String tag, String value, String currency) {
         super.accountSummary(reqId, account, tag, value, currency);
-        riskService.accountSummaryReceived(account, tag, value, currency);
+        underlyingService.accountSummaryReceived(account, tag, value, currency);
     }
 
     @Override
@@ -97,13 +96,13 @@ public class IbListener extends GenericIbListener {
     @Override
     public void historicalData(int requestId, Bar bar) {
         //super.historicalData(requestId, bar);
-        riskService.historicalDataReceived(requestId, bar);
+        underlyingService.historicalDataReceived(requestId, bar);
     }
 
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        riskService.historicalDataEndReceived(requestId);
+        underlyingService.historicalDataEndReceived(requestId);
     }
 
     @Override
@@ -112,7 +111,7 @@ public class IbListener extends GenericIbListener {
         if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
             return;
         }
-        riskService.positionReceived(contract, (int) pos);
+        positionService.positionReceived(contract, (int) pos);
     }
 
     @Override
@@ -145,8 +144,7 @@ public class IbListener extends GenericIbListener {
     @Override
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
-
-        riskService.unrealizedPnlReceived(requestId, unrealizedPnL);
+        positionService.unrealizedPnlReceived(requestId, unrealizedPnL);
     }
 
     @Override
@@ -168,10 +166,12 @@ public class IbListener extends GenericIbListener {
     }
 
     private DataService getDataService(int requestId) {
-        if (requestId >= HopSettings.RISK_IB_REQUEST_ID_INITIAL && requestId < HopSettings.ORDER_IB_REQUEST_ID_INITIAL) {
-            return riskService;
-        } else if (requestId >= HopSettings.ORDER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.CHAIN_IB_REQUEST_ID_INITIAL) {
+        if (requestId >= HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL && requestId < HopSettings.ORDER_IB_REQUEST_ID_INITIAL) {
+            return underlyingService;
+        } else if (requestId >= HopSettings.ORDER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.POSITION_IB_REQUEST_ID_INITIAL) {
             return orderService;
+        } else if (requestId >= HopSettings.POSITION_IB_REQUEST_ID_INITIAL && requestId < HopSettings.CHAIN_IB_REQUEST_ID_INITIAL) {
+            return positionService;
         } else {
             return chainService;
         }

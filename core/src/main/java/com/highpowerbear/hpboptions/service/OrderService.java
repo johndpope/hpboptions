@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class OrderService extends AbstractDataService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private final RiskService riskService;
+    private final PositionService positionService;
     private final ChainService chainService;
 
     private final Map<Integer, OrderDataHolder> orderMap = new TreeMap<>(); // sorted by orderId
@@ -44,9 +44,9 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, RiskService riskService, ChainService chainService) {
+    public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, PositionService positionService, ChainService chainService) {
         super(ibController, hopDao, messageService);
-        this.riskService = riskService;
+        this.positionService = positionService;
         this.chainService = chainService;
 
         ibController.addConnectionListener(this);
@@ -60,7 +60,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     }
 
     public void createOrderFromPosition(int conid, Types.Action action) {
-        PositionDataHolder pdh = riskService.getPositionDataHolder(conid);
+        PositionDataHolder pdh = positionService.getPositionDataHolder(conid);
 
         if (pdh != null) {
             int positionSize = pdh.getPositionSize();

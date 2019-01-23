@@ -37,7 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ChainService extends AbstractDataService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(ChainService.class);
 
-    private final RiskService riskService;
+    private final UnderlyingService underlyingService;
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 
     private final Map<Integer, Underlying> underlyingMap = new HashMap<>(); // conid -> underlying
@@ -57,20 +57,10 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.CHAIN_IB_REQUEST_ID_INITIAL);
 
-    private class UnderlyingMktDataSnapshot {
-        private double price;
-        private double optionImpliedVol;
-
-        private UnderlyingMktDataSnapshot(double price, double optionImpliedVol) {
-            this.price = price;
-            this.optionImpliedVol = optionImpliedVol;
-        }
-    }
-
     @Autowired
-    public ChainService(IbController ibController, HopDao hopDao, MessageService messageService, RiskService riskService) {
+    public ChainService(IbController ibController, HopDao hopDao, MessageService messageService, UnderlyingService underlyingService) {
         super(ibController, hopDao, messageService);
-        this.riskService = riskService;
+        this.underlyingService = underlyingService;
 
         ibController.addConnectionListener(this);
         for (Underlying u : hopDao.getActiveUnderlyings()) {
@@ -143,16 +133,10 @@ public class ChainService extends AbstractDataService implements ConnectionListe
             chainDataHolderMap.clear();
             conidMap.clear();
 
-            for (UnderlyingInfo underlyingInfo : underlyingInfos) {
-                expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingInfo.getConid());
-
-                double underlyingPrice = riskService.getUnderlyingPrice(underlyingInfo.getConid());
-                double underlyingOptionImpliedVol = riskService.getUnderlyingOptionImpliedVol(underlyingInfo.getConid());
-
-                if (HopUtil.isValidPrice(underlyingPrice) && HopUtil.isValidPrice(underlyingOptionImpliedVol)) {
-                    underlyingMktDataSnapshotMap.put(underlyingInfo.getConid(), new UnderlyingMktDataSnapshot(underlyingPrice, underlyingOptionImpliedVol));
-                }
-            }
+            underlyingInfos.stream().map(UnderlyingInfo::getConid).forEach(underlyingConid -> {
+                expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingConid);
+                underlyingMktDataSnapshotMap.put(underlyingConid,  underlyingService.createMktDataSnapshot(underlyingConid));
+            });
 
             for (int requestId : expirationsRequestMap.keySet()) {
                 int underlyingConid = expirationsRequestMap.get(requestId);
@@ -187,12 +171,12 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         UnderlyingMktDataSnapshot snapshot = underlyingMktDataSnapshotMap.get(cdh.getInstrument().getUnderlyingConid());
         double strike = cdh.getInstrument().getStrike();
 
-        if (snapshot == null || underlying.isChainRoundStrikes() && !HopUtil.isRound(strike)) {
+        if (!snapshot.isValid() || (underlying.isChainRoundStrikes() && !HopUtil.isRound(strike))) {
             return false;
         }
-        double priceStdDev = snapshot.price * snapshot.optionImpliedVol * Math.sqrt((double) cdh.getDaysToExpiration() / 365);
-        double lowerStrike = snapshot.price - (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
-        double upperStrike = snapshot.price + (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
+        double priceStdDev = snapshot.getPrice() * snapshot.getOptionImpliedVol() * Math.sqrt((double) cdh.getDaysToExpiration() / 365);
+        double lowerStrike = snapshot.getPrice() - (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
+        double upperStrike = snapshot.getPrice() + (priceStdDev * HopSettings.CHAIN_STRIKES_STD_DEVIATIONS);
 
         return strike >= lowerStrike && strike <= upperStrike;
     }
