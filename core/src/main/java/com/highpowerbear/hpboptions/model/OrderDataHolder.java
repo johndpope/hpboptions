@@ -1,5 +1,7 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.highpowerbear.hpboptions.common.HopUtil;
+import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.ib.client.TickType;
 
@@ -32,5 +34,19 @@ public class OrderDataHolder extends AbstractDataHolder implements OptionDataHol
 
     @Override
     public void recalculateOptionData() {
+    }
+
+    public boolean isBidFalling() {
+        double currentBid = getCurrent(BasicMktDataField.BID).doubleValue();
+        double oldBid = getOld(BasicMktDataField.BID).doubleValue();
+
+        return (HopUtil.isValidPrice(currentBid) && isValidPrice(oldBid) && currentBid < oldBid);
+    }
+
+    public boolean isAskRising() {
+        double currentAsk = getCurrent(BasicMktDataField.ASK).doubleValue();
+        double oldAsk = getOld(BasicMktDataField.ASK).doubleValue();
+
+        return (HopUtil.isValidPrice(currentAsk) && isValidPrice(oldAsk) && currentAsk > oldAsk);
     }
 }

@@ -67,7 +67,8 @@ Ext.define('HopGui.view.order.OrderController', {
             jsonData: {
                 orderId: order.orderId,
                 quantity: order.quantity,
-                limitPrice: order.limitPrice
+                limitPrice: order.limitPrice,
+                chase: order.chase
             },
             success: function(response, opts) {
                 // reload triggered through ws reloadRequest
@@ -88,7 +89,8 @@ Ext.define('HopGui.view.order.OrderController', {
                 sendOrderParamsArr.push({
                     orderId: order.orderId,
                     quantity: order.quantity,
-                    limitPrice: order.limitPrice
+                    limitPrice: order.limitPrice,
+                    chase: order.chase
                 });
             }
         });

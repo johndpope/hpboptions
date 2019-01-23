@@ -107,6 +107,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         width: 60,
         dataIndex: 'quantity',
         align: 'right',
+        tdCls: 'hop-pointer',
         editor: {
             xtype: 'numberfield',
             minValue: 0,
@@ -115,13 +116,14 @@ Ext.define('HopGui.view.order.OrderGrid', {
         }
     }, {
         text: 'Type',
-        width: 70,
+        width: 60,
         dataIndex: 'orderType'
     }, {
         text: 'Lmt',
         width: 70,
         dataIndex: 'limitPrice',
         align: 'right',
+        tdCls: 'hop-pointer',
         editor: {
             xtype: 'numberfield',
             minValue: 0,
@@ -129,6 +131,14 @@ Ext.define('HopGui.view.order.OrderGrid', {
             allowDecimals: true
         },
         renderer: 'orderPriceRenderer'
+    }, {
+        text: 'Chase',
+        width: 60,
+        dataIndex: 'chase',
+        xtype: 'checkcolumn',
+        editor: {
+            xtype: 'checkboxfield'
+        }
     }, {
         text: 'Fill',
         width: 60,

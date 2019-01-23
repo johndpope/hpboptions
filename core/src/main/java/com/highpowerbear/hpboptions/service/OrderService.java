@@ -6,9 +6,8 @@ import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
+import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.enums.Currency;
-import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.*;
 import org.slf4j.Logger;
@@ -35,7 +34,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private final PositionService positionService;
     private final ChainService chainService;
 
-    private final Map<Integer, OrderDataHolder> orderMap = new TreeMap<>(); // sorted by orderId
+    private final Map<Integer, OrderDataHolder> orderMap = new TreeMap<>(); // orderId -> order data holder (sorted by orderId)
     private final Map<Integer, OrderDataHolder> contractDetailsRequestMap = new ConcurrentHashMap<>(); // ib request id -> order data holder
 
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.ORDER_IB_REQUEST_ID_INITIAL);
@@ -97,16 +96,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         hopOrder.setQuantity(quantity);
 
         if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
-            double limitPrice = scaleLimitPrice((bid + ask) / 2d, action, minTick);
-
-            if (action == Types.Action.BUY && limitPrice >= ask) {
-                limitPrice -= minTick;
-
-            } else if (action == Types.Action.SELL && limitPrice <= bid) {
-                limitPrice += minTick;
-            }
-            limitPrice = scaleLimitPrice(limitPrice, action, minTick);
-            hopOrder.setLimitPrice(limitPrice);
+            hopOrder.setLimitPrice(scaleLimitPrice((bid + ask) / 2d, action, minTick));
         }
 
         OrderDataHolder odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
@@ -123,7 +113,8 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
-    public void sendOrder(int orderId, int quantity, double limitPrice) {
+    // submit new or modify working order
+    public void sendOrder(int orderId, int quantity, double limitPrice, boolean chase) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null) {
@@ -136,6 +127,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                     hopOrder.setQuantity(quantity);
                     limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
                     hopOrder.setLimitPrice(limitPrice);
+                    hopOrder.setChase(chase);
 
                     ibController.placeOrder(hopOrder, instrument);
                 } else {
@@ -143,6 +135,34 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                 }
             } else {
                 log.warn("cannot send order " + orderId + ", not new or working");
+            }
+        }
+    }
+
+    private void chaseOrder(OrderDataHolder odh, TickType tickType) {
+        HopOrder hopOrder = odh.getHopOrder();
+
+        if (hopOrder.isWorking() && hopOrder.isChase()) {
+            double minTick = odh.getInstrument().getMinTick();
+
+            Types.Action action = hopOrder.getAction();
+            OptionInstrument instrument = odh.getInstrument();
+
+            if (action == Types.Action.BUY && tickType == TickType.ASK && odh.isAskRising()) {
+                double limitPrice = scaleLimitPrice(odh.getAsk() - minTick, action, minTick);
+
+                if (limitPrice > hopOrder.getLimitPrice()) {
+                    hopOrder.setLimitPrice(limitPrice);
+                    ibController.placeOrder(hopOrder, instrument);
+                }
+
+            } else if (action == Types.Action.SELL && tickType == TickType.BID && odh.isBidFalling()) {
+                double limitPrice = scaleLimitPrice(odh.getBid() + minTick, action, minTick);
+
+                if (limitPrice < hopOrder.getLimitPrice()) {
+                    hopOrder.setLimitPrice(limitPrice);
+                    ibController.placeOrder(hopOrder, instrument);
+                }
             }
         }
     }
@@ -188,6 +208,16 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         }
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
         ibController.requestOpenOrders();
+    }
+
+    @Override
+    public void mktDataReceived(int requestId, int tickTypeIndex, Number value) {
+        super.mktDataReceived(requestId, tickTypeIndex, value);
+
+        TickType tickType = TickType.get(tickTypeIndex);
+        if (tickType == TickType.BID || tickType == TickType.ASK) {
+            chaseOrder((OrderDataHolder) mktDataRequestMap.get(requestId), tickType);
+        }
     }
 
     public void nextValidIdReceived(int nextValidOrderId) {

@@ -21,6 +21,7 @@ public class HopOrder {
 
     private int quantity;
     private double limitPrice;
+    private boolean chase;
     private double fillPrice;
     private HopOrderState state;
     private OrderStatus ibStatus;
@@ -110,6 +111,14 @@ public class HopOrder {
 
     public void setLimitPrice(double limitPrice) {
         this.limitPrice = limitPrice;
+    }
+
+    public boolean isChase() {
+        return chase;
+    }
+
+    public void setChase(boolean chase) {
+        this.chase = chase;
     }
 
     public double getFillPrice() {

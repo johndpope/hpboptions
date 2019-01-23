@@ -135,9 +135,9 @@ public class AppRestController {
     @RequestMapping(method = RequestMethod.PUT, value = "/order/{orderId}/send")
     public ResponseEntity<?> sendOrder(
             @PathVariable("orderId") int orderId,
-            @RequestBody SendOrderParams sendOrderParams) {
+            @RequestBody SendOrderParams p) {
 
-        orderService.sendOrder(orderId, sendOrderParams.getQuantity(), sendOrderParams.getLimitPrice());
+        orderService.sendOrder(orderId, p.getQuantity(), p.getLimitPrice(), p.isChase());
         return ResponseEntity.ok().build();
     }
 
@@ -147,7 +147,7 @@ public class AppRestController {
 
         sendOrderParamsList.stream()
                 .sorted(Comparator.comparingInt(SendOrderParams::getOrderId))
-                .forEach(o -> orderService.sendOrder(o.getOrderId(), o.getQuantity(), o.getLimitPrice()));
+                .forEach(p -> orderService.sendOrder(p.getOrderId(), p.getQuantity(), p.getLimitPrice(), p.isChase()));
 
         return ResponseEntity.ok().build();
     }

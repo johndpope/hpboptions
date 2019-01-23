@@ -23,7 +23,7 @@ public abstract class AbstractDataService implements DataService {
     protected final HopDao hopDao;
     protected final MessageService messageService;
 
-    private final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
+    protected final Map<Integer, DataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
 
     public AbstractDataService(IbController ibController, HopDao hopDao, MessageService messageService) {
         this.ibController = ibController;

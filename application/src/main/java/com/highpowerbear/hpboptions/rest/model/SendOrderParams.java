@@ -7,6 +7,7 @@ public class SendOrderParams {
     private int orderId;
     private int quantity;
     private double limitPrice;
+    private boolean chase;
 
     public int getOrderId() {
         return orderId;
@@ -18,5 +19,9 @@ public class SendOrderParams {
 
     public double getLimitPrice() {
         return limitPrice;
+    }
+
+    public boolean isChase() {
+        return chase;
     }
 }
