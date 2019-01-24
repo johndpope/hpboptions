@@ -98,6 +98,15 @@ Ext.define('HopGui.view.common.DataControllerBase', {
         return me.formatDecimal(val);
     },
 
+    decimalOneRenderer: function(val, metadata, record) {
+        var me = this;
+
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        metadata.tdCls = record.data.id + ' ' + statusCls;
+
+        return me.formatDecimalOne(val);
+    },
+
     decimalPctRenderer: function(val, metadata, record) {
         var me = this;
 
@@ -160,6 +169,10 @@ Ext.define('HopGui.view.common.DataControllerBase', {
         return val !== 'NaN' ? Ext.util.Format.number(val, '0.00') : '&nbsp;';
     },
 
+    formatDecimalOne: function(val) {
+        return val !== 'NaN' ? Ext.util.Format.number(val, '0.0') : '&nbsp;';
+    },
+
     formatDecimalPct: function(val) {
         return val !== 'NaN' ? Ext.util.Format.number(val, '0.0%') : '&nbsp;';
     },
@@ -197,7 +210,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
                     }
                 } else if (me.isVolume(td)) {
                     td.classList.add('hop-unchanged');
-                } else if (me.isPosition(td)|| me.isDecimal(td) || me.isDecimalPct(td) || me.isWhole(td)) {
+                } else if (me.isPosition(td)|| me.isDecimal(td) || me.isDecimalOne(td) || me.isDecimalPct(td) || me.isWhole(td)) {
                     td.classList.add(val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt'));
                 } else if (me.isChange(td) || me.isChangePct(td) || me.isIvChangePct(td) || me.isPnl(td)) {
                     td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
@@ -221,6 +234,8 @@ Ext.define('HopGui.view.common.DataControllerBase', {
                     div.innerHTML = me.formatPnl(val);
                 } else if (me.isDecimal(td)) {
                     div.innerHTML = me.formatDecimal(val);
+                } else if (me.isDecimalOne(td)) {
+                    div.innerHTML = me.formatDecimalOne(val);
                 } else if (me.isDecimalPct(td)) {
                     div.innerHTML = me.formatDecimalPct(val);
                 } else if (me.isWhole(td)) {
@@ -276,6 +291,10 @@ Ext.define('HopGui.view.common.DataControllerBase', {
 
     isDecimal: function(td) {
         return td.classList.contains('hop-decimal');
+    },
+
+    isDecimalOne: function(td) {
+        return td.classList.contains('hop-decimal-one');
     },
 
     isDecimalPct: function(td) {

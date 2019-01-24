@@ -15,6 +15,7 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'portfolioDelta',
         'portfolioDeltaOnePct',
         'portfolioGamma',
+        'portfolioGammaOnePctPct',
         'portfolioVega',
         'portfolioTheta',
         'portfolioTimeValue',

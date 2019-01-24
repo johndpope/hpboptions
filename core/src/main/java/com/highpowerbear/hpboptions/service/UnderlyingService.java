@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +38,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
+    private final Map<Integer, Map<DataField, LocalDateTime>> underlyingAlertMap = new HashMap<>(); // underlying conid -> (data field -> alert date)
 
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL);
@@ -67,6 +69,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
+            underlyingAlertMap.put(conid, new HashMap<>());
         }
 
         retrieveExchangeRates();
@@ -159,6 +162,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
             }
             double lastPrice = udh.getLast();
             double deltaOnePct = HopUtil.isValidPrice(lastPrice) ? (delta * udh.getLast()) / 100d : Double.NaN;
+            double gammaOnePctPct = HopUtil.isValidPrice(lastPrice) ? (((gamma * udh.getLast()) / 100d) * udh.getLast()) / 100d : Double.NaN;
             double margin  = Math.max(callMargin, putMargin);
             double allocationPct = Double.NaN;
 
@@ -166,10 +170,10 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 Currency transactionCurrency = udh.getInstrument().getCurrency();
                 double exchangeRate = exchangeRates.getRate(transactionCurrency);
                 double netLiqValue = accountSummary.getNetLiquidationValue();
-                allocationPct = margin / (netLiqValue * exchangeRate) * 100d;
+                allocationPct = 100d * margin / (netLiqValue * exchangeRate);
             }
 
-            udh.updateRiskData(delta, deltaOnePct, gamma, vega, theta, timeValue, allocationPct);
+            udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, allocationPct);
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }

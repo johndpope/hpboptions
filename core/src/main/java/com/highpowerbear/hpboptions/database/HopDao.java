@@ -23,4 +23,9 @@ public class HopDao {
         TypedQuery<Underlying> q = em.createQuery("SELECT u FROM Underlying u WHERE u.active = TRUE ORDER BY u.displayRank", Underlying.class);
         return q.getResultList();
     }
+
+    @Transactional
+    public void createUnderlyingAlert(UnderlyingAlert underlyingAlert) {
+        em.persist(underlyingAlert);
+    }
 }

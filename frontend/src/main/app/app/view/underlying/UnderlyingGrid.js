@@ -25,10 +25,6 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         width: 60,
         dataIndex: 'currency'
     }, {
-        text: 'Exchange',
-        width: 100,
-        dataIndex: 'exchange'
-    }, {
         text: 'Bs',
         width: 60,
         dataIndex: 'bidSize',
@@ -127,19 +123,26 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
+        text: 'D1p',
+        width: 70,
+        dataIndex: 'portfolioDeltaOnePct',
+        tdCls: 'portfolioDeltaOnePct hop-decimal-one',
+        align: 'right',
+        renderer: 'decimalOneRenderer'
+    }, {
+        text: 'G1pp',
+        width: 70,
+        dataIndex: 'portfolioGammaOnePctPct',
+        tdCls: 'portfolioGammaOnePctPct hop-decimal-one',
+        align: 'right',
+        renderer: 'decimalOneRenderer'
+    }, {
         text: 'Dlt',
         width: 60,
         dataIndex: 'portfolioDelta',
         tdCls: 'portfolioDelta hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
-    }, {
-        text: 'Dlt1p',
-        width: 70,
-        dataIndex: 'portfolioDeltaOnePct',
-        tdCls: 'portfolioDeltaOnePct hop-decimal',
-        align: 'right',
-        renderer: 'decimalRenderer'
     }, {
         text: 'Gm',
         width: 60,

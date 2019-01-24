@@ -41,6 +41,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 UnderlyingDataField.PORTFOLIO_DELTA,
                 UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT,
                 UnderlyingDataField.PORTFOLIO_GAMMA,
+                UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT,
                 UnderlyingDataField.PORTFOLIO_VEGA,
                 UnderlyingDataField.PORTFOLIO_THETA,
                 UnderlyingDataField.PORTFOLIO_TIME_VALUE,
@@ -131,12 +132,13 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
-    public void updateRiskData(double delta, double deltaOnePct, double gamma, double vega, double theta, double timeValue, double allocationPct) {
+    public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double allocationPct) {
         lastRiskUpdateTime = System.currentTimeMillis();
 
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
         update(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, deltaOnePct);
         update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
+        update(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, gammaOnePctPct);
         update(UnderlyingDataField.PORTFOLIO_VEGA, vega);
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
@@ -203,6 +205,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public double getPortfolioGamma() {
         return getCurrent(UnderlyingDataField.PORTFOLIO_GAMMA).doubleValue();
+    }
+
+    public double getPortfolioGammaOnePctPct() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT).doubleValue();
     }
 
     public double getPortfolioVega() {

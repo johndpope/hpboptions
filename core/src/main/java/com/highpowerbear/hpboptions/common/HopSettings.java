@@ -27,4 +27,6 @@ public class HopSettings {
     public static final DateTimeFormatter EXCHANGE_RATE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     public static final String EXCHANGE_RATES_URL = "http://data.fixer.io/api";
     public static final String EXCHANGE_RATES_SYMBOLS = "EUR,USD,GBP,CHF,AUD,JPY,KRW,HKD,SGD";
+    public static final double ALERT_DELTA_ONE_PCT_TRIGGER = 100.0;
+    public static final double ALERT_ALLOCATION_PCT_TRIGGER = 0.15;
 }
