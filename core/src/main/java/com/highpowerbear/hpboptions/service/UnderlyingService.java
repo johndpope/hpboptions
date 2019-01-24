@@ -158,7 +158,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 }
             }
             double lastPrice = udh.getLast();
-            double deltaDollars = HopUtil.isValidPrice(lastPrice) ? delta * udh.getLast() : Double.NaN;
+            double deltaOnePct = HopUtil.isValidPrice(lastPrice) ? (delta * udh.getLast()) / 100d : Double.NaN;
             double margin  = Math.max(callMargin, putMargin);
             double allocationPct = Double.NaN;
 
@@ -169,7 +169,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 allocationPct = margin / (netLiqValue * exchangeRate) * 100d;
             }
 
-            udh.updateRiskData(delta, gamma, vega, theta, timeValue, deltaDollars, allocationPct);
+            udh.updateRiskData(delta, deltaOnePct, gamma, vega, theta, timeValue, allocationPct);
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }

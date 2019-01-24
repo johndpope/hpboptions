@@ -122,14 +122,18 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             if (hopOrder.isNew() || hopOrder.isWorking()) {
                 OptionInstrument instrument = odh.getInstrument();
+                hopOrder.setChase(chase);
 
                 if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
-                    hopOrder.setQuantity(quantity);
                     limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
-                    hopOrder.setLimitPrice(limitPrice);
-                    hopOrder.setChase(chase);
 
-                    ibController.placeOrder(hopOrder, instrument);
+                    if (hopOrder.isNew() || quantity != hopOrder.getQuantity() || limitPrice != hopOrder.getLimitPrice()) {
+                        hopOrder.setQuantity(quantity);
+                        hopOrder.setLimitPrice(limitPrice);
+                        ibController.placeOrder(hopOrder, instrument);
+                    } else {
+                        log.info("order " + orderId + " not sent, quantity and limitPrice are the same as before");
+                    }
                 } else {
                     log.warn("cannot send order " + orderId + ", quantity or limitPrice not valid, quantity=" + quantity + ", limitPrice=" + limitPrice);
                 }

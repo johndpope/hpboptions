@@ -39,11 +39,11 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
                 UnderlyingDataField.IV_CLOSE,
                 UnderlyingDataField.PORTFOLIO_DELTA,
+                UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT,
                 UnderlyingDataField.PORTFOLIO_GAMMA,
                 UnderlyingDataField.PORTFOLIO_VEGA,
                 UnderlyingDataField.PORTFOLIO_THETA,
                 UnderlyingDataField.PORTFOLIO_TIME_VALUE,
-                UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS,
                 UnderlyingDataField.ALLOCATION_PCT,
                 UnderlyingDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
@@ -131,15 +131,15 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
-    public void updateRiskData(double delta, double gamma, double vega, double theta, double timeValue, double deltaDollars, double allocationPct) {
+    public void updateRiskData(double delta, double deltaOnePct, double gamma, double vega, double theta, double timeValue, double allocationPct) {
         lastRiskUpdateTime = System.currentTimeMillis();
 
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
+        update(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, deltaOnePct);
         update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
         update(UnderlyingDataField.PORTFOLIO_VEGA, vega);
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
-        update(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS, deltaDollars);
         update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
     }
 
@@ -197,6 +197,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA).doubleValue();
     }
 
+    public double getPortfolioDeltaOnePct() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT).doubleValue();
+    }
+
     public double getPortfolioGamma() {
         return getCurrent(UnderlyingDataField.PORTFOLIO_GAMMA).doubleValue();
     }
@@ -211,10 +215,6 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public double getPortfolioTimeValue() {
         return getCurrent(UnderlyingDataField.PORTFOLIO_TIME_VALUE).doubleValue();
-    }
-
-    public double getPortfolioDeltaDollars() {
-        return getCurrent(UnderlyingDataField.PORTFOLIO_DELTA_DOLLARS).doubleValue();
     }
 
     public double getAllocationPct() {

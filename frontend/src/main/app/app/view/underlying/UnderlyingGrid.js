@@ -134,12 +134,12 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'Ddol',
+        text: 'Dlt1p',
         width: 70,
-        dataIndex: 'portfolioDeltaDollars',
-        tdCls: 'portfolioDeltaDollars hop-whole',
+        dataIndex: 'portfolioDeltaOnePct',
+        tdCls: 'portfolioDeltaOnePct hop-decimal',
         align: 'right',
-        renderer: 'wholeRenderer'
+        renderer: 'decimalRenderer'
     }, {
         text: 'Gm',
         width: 60,

@@ -13,12 +13,12 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'optionVolume',
         'optionOpenInterest',
         'portfolioDelta',
+        'portfolioDeltaOnePct',
         'portfolioGamma',
         'portfolioVega',
         'portfolioTheta',
         'portfolioTimeValue',
-        'portfolioDeltaDollars',
-        'allocationPct',
-        'unrealizedPnl'
+        'unrealizedPnl',
+        'allocationPct'
     ]
 });

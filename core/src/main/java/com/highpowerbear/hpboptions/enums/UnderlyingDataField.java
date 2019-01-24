@@ -11,11 +11,11 @@ import java.util.stream.Stream;
 public enum UnderlyingDataField implements DataField {
     IV_CLOSE,
     PORTFOLIO_DELTA,
+    PORTFOLIO_DELTA_ONE_PCT,
     PORTFOLIO_GAMMA,
     PORTFOLIO_VEGA,
     PORTFOLIO_THETA,
     PORTFOLIO_TIME_VALUE,
-    PORTFOLIO_DELTA_DOLLARS,
     ALLOCATION_PCT,
     UNREALIZED_PNL;
 
@@ -27,11 +27,11 @@ public enum UnderlyingDataField implements DataField {
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
     private static List<UnderlyingDataField> riskDataFields = Stream.of(
             PORTFOLIO_DELTA,
+            PORTFOLIO_DELTA_ONE_PCT,
             PORTFOLIO_GAMMA,
             PORTFOLIO_VEGA,
             PORTFOLIO_THETA,
             PORTFOLIO_TIME_VALUE,
-            PORTFOLIO_DELTA_DOLLARS,
             ALLOCATION_PCT).collect(Collectors.toList());
 
     public static List<UnderlyingDataField> fields() {
