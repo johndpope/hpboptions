@@ -14,7 +14,7 @@ Ext.define('HopGui.model.OrderDataHolder', {
         {name: 'permId', mapping: 'hopOrder.permId'},
         {name: 'quantity', mapping: 'hopOrder.quantity'},
         {name: 'limitPrice', mapping: 'hopOrder.limitPrice'},
-        {name: 'chase', mapping: 'hopOrder.chase'},
+        {name: 'adapt', mapping: 'hopOrder.adapt'},
         {name: 'fillPrice', mapping: 'hopOrder.fillPrice'},
         {name: 'ibStatus', mapping: 'hopOrder.ibStatus'},
         {name: 'state', mapping: 'hopOrder.state'},

@@ -2,7 +2,6 @@ package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.common.MessageService;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
@@ -114,7 +113,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     }
 
     // submit new or modify working order
-    public void sendOrder(int orderId, int quantity, double limitPrice, boolean chase) {
+    public void sendOrder(int orderId, int quantity, double limitPrice, boolean adapt) {
         OrderDataHolder odh = orderMap.get(orderId);
 
         if (odh != null) {
@@ -122,7 +121,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             if (hopOrder.isNew() || hopOrder.isWorking()) {
                 OptionInstrument instrument = odh.getInstrument();
-                hopOrder.setChase(chase);
+                hopOrder.setAdapt(adapt);
 
                 if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
                     limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
@@ -146,7 +145,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private void adaptOrder(OrderDataHolder odh, TickType tickType) {
         HopOrder hopOrder = odh.getHopOrder();
 
-        if (hopOrder.isWorking() && hopOrder.isChase()) {
+        if (hopOrder.isWorking() && hopOrder.isAdapt()) {
             double minTick = odh.getInstrument().getMinTick();
 
             Types.Action action = hopOrder.getAction();

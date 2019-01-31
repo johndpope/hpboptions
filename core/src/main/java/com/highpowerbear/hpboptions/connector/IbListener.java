@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.connector;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
-import com.highpowerbear.hpboptions.common.MessageService;
+import com.highpowerbear.hpboptions.service.MessageService;
 import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.service.*;
 import com.ib.client.*;

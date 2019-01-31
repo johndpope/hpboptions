@@ -67,7 +67,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'Volume',
+        text: 'Vlm',
         width: 75,
         dataIndex: 'volume',
         tdCls: 'volume hop-volume hop-unchanged',

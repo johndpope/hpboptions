@@ -137,7 +137,7 @@ public class AppRestController {
             @PathVariable("orderId") int orderId,
             @RequestBody SendOrderParams p) {
 
-        orderService.sendOrder(orderId, p.getQuantity(), p.getLimitPrice(), p.isChase());
+        orderService.sendOrder(orderId, p.getQuantity(), p.getLimitPrice(), p.isAdapt());
         return ResponseEntity.ok().build();
     }
 
@@ -147,7 +147,7 @@ public class AppRestController {
 
         sendOrderParamsList.stream()
                 .sorted(Comparator.comparingInt(SendOrderParams::getOrderId))
-                .forEach(p -> orderService.sendOrder(p.getOrderId(), p.getQuantity(), p.getLimitPrice(), p.isChase()));
+                .forEach(p -> orderService.sendOrder(p.getOrderId(), p.getQuantity(), p.getLimitPrice(), p.isAdapt()));
 
         return ResponseEntity.ok().build();
     }

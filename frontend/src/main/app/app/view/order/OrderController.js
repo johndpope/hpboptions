@@ -68,7 +68,7 @@ Ext.define('HopGui.view.order.OrderController', {
                 orderId: order.orderId,
                 quantity: order.quantity,
                 limitPrice: order.limitPrice,
-                chase: order.chase
+                adapt: order.adapt
             },
             success: function(response, opts) {
                 // reload triggered through ws reloadRequest
@@ -90,7 +90,7 @@ Ext.define('HopGui.view.order.OrderController', {
                     orderId: order.orderId,
                     quantity: order.quantity,
                     limitPrice: order.limitPrice,
-                    chase: order.chase
+                    adapt: order.adapt
                 });
             }
         });

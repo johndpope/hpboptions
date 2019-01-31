@@ -132,9 +132,9 @@ Ext.define('HopGui.view.order.OrderGrid', {
         },
         renderer: 'orderPriceRenderer'
     }, {
-        text: 'Chase',
+        text: 'Adpt',
         width: 60,
-        dataIndex: 'chase',
+        dataIndex: 'adapt',
         xtype: 'checkcolumn',
         editor: {
             xtype: 'checkboxfield'

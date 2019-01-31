@@ -7,7 +7,7 @@ public class SendOrderParams {
     private int orderId;
     private int quantity;
     private double limitPrice;
-    private boolean chase;
+    private boolean adapt;
 
     public int getOrderId() {
         return orderId;
@@ -21,7 +21,7 @@ public class SendOrderParams {
         return limitPrice;
     }
 
-    public boolean isChase() {
-        return chase;
+    public boolean isAdapt() {
+        return adapt;
     }
 }
