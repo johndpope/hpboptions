@@ -89,7 +89,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         cancelAllMktData();
     }
 
-    @Scheduled(cron="0 0 5 * * MON")
+    @Scheduled(cron = "0 0 5 * * MON")
     private void performStartOfWeekTasks() {
         executor.execute(this::rebuildChains);
     }

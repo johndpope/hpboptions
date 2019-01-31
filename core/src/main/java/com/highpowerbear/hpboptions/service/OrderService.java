@@ -143,7 +143,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         }
     }
 
-    private void chaseOrder(OrderDataHolder odh, TickType tickType) {
+    private void adaptOrder(OrderDataHolder odh, TickType tickType) {
         HopOrder hopOrder = odh.getHopOrder();
 
         if (hopOrder.isWorking() && hopOrder.isChase()) {
@@ -152,21 +152,15 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             Types.Action action = hopOrder.getAction();
             OptionInstrument instrument = odh.getInstrument();
 
-            if (action == Types.Action.BUY && tickType == TickType.ASK && odh.isAskRising()) {
-                double limitPrice = scaleLimitPrice(odh.getAsk() - minTick, action, minTick);
+            double limitPrice = scaleLimitPrice((odh.getBid() + odh.getAsk()) / 2d, action, minTick);
 
-                if (limitPrice > hopOrder.getLimitPrice()) {
-                    hopOrder.setLimitPrice(limitPrice);
-                    ibController.placeOrder(hopOrder, instrument);
-                }
+            if (action == Types.Action.BUY && tickType == TickType.ASK && odh.isAskRising() && limitPrice > hopOrder.getLimitPrice()) {
+                hopOrder.setLimitPrice(limitPrice);
+                ibController.placeOrder(hopOrder, instrument);
 
-            } else if (action == Types.Action.SELL && tickType == TickType.BID && odh.isBidFalling()) {
-                double limitPrice = scaleLimitPrice(odh.getBid() + minTick, action, minTick);
-
-                if (limitPrice < hopOrder.getLimitPrice()) {
-                    hopOrder.setLimitPrice(limitPrice);
-                    ibController.placeOrder(hopOrder, instrument);
-                }
+            } else if (action == Types.Action.SELL && tickType == TickType.BID && odh.isBidFalling() && limitPrice < hopOrder.getLimitPrice()) {
+                hopOrder.setLimitPrice(limitPrice);
+                ibController.placeOrder(hopOrder, instrument);
             }
         }
     }
@@ -220,7 +214,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
         TickType tickType = TickType.get(tickTypeIndex);
         if (tickType == TickType.BID || tickType == TickType.ASK) {
-            chaseOrder((OrderDataHolder) mktDataRequestMap.get(requestId), tickType);
+            adaptOrder((OrderDataHolder) mktDataRequestMap.get(requestId), tickType);
         }
     }
 

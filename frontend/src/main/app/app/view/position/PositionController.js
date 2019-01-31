@@ -18,8 +18,8 @@ Ext.define('HopGui.view.position.PositionController', {
         if (positionDataHolders) {
             positionDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/position/data-holders');
             me.loadPositionDataHolders();
+            me.prepareSortOrderRadio();
         }
-        me.prepareSortOrderRadio();
 
         var socket  = new SockJS('/websocket');
         var stompClient = Stomp.over(socket);

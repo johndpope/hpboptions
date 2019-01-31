@@ -8,6 +8,8 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'ibHistDataRequestId',
         'optionImpliedVol',
         'ivClose',
+        'putsSum',
+        'callsSum',
         'ivChangePct',
         'ivRank',
         'optionVolume',

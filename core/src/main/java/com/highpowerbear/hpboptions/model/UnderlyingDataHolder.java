@@ -5,10 +5,7 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +19,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
+    private Map<DataField, Double> thresholdBreachedFields = new HashMap<>();
     private long lastRiskUpdateTime;
 
     public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
@@ -38,6 +36,8 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
                 UnderlyingDataField.IV_CLOSE,
+                UnderlyingDataField.PUTS_SUM,
+                UnderlyingDataField.CALLS_SUM,
                 UnderlyingDataField.PORTFOLIO_DELTA,
                 UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT,
                 UnderlyingDataField.PORTFOLIO_GAMMA,
@@ -132,6 +132,11 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
+    public void updatePositionsSum(int putsSum, int callsSum) {
+        update(UnderlyingDataField.PUTS_SUM, putsSum);
+        update(UnderlyingDataField.CALLS_SUM, callsSum);
+    }
+
     public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double allocationPct) {
         lastRiskUpdateTime = System.currentTimeMillis();
 
@@ -143,6 +148,14 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
         update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
+
+        thresholdBreachedFields.clear();
+        for (UnderlyingDataField f : UnderlyingDataField.riskDataFields()) {
+            double current = getCurrent(f).doubleValue();
+            if (f.thresholdBreached(current)) {
+                thresholdBreachedFields.put(f, current);
+            }
+        }
     }
 
     public void resetRiskData() {
@@ -171,12 +184,24 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return ibHistDataRequestId;
     }
 
+    public Map<DataField, Double> getThresholdBreachedFields() {
+        return thresholdBreachedFields;
+    }
+
     public double getOptionImpliedVol() {
         return getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
     }
 
     public double getIvClose() {
         return getCurrent(UnderlyingDataField.IV_CLOSE).doubleValue();
+    }
+
+    public int getPutsSum() {
+        return getCurrent(UnderlyingDataField.PUTS_SUM).intValue();
+    }
+
+    public int getCallsSum() {
+        return getCurrent(UnderlyingDataField.CALLS_SUM).intValue();
     }
 
     public double getIvChangePct() {

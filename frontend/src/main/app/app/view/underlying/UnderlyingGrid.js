@@ -33,14 +33,14 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 80,
+        width: 75,
         dataIndex: 'bid',
         tdCls: 'bid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 80,
+        width: 75,
         dataIndex: 'ask',
         tdCls: 'ask hop-price hop-unchanged',
         align: 'right',
@@ -54,7 +54,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 80,
+        width: 75,
         dataIndex: 'last',
         tdCls: 'last hop-price hop-unchanged',
         align: 'right',
@@ -68,21 +68,21 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Volume',
-        width: 80,
+        width: 75,
         dataIndex: 'volume',
         tdCls: 'volume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
         text: 'Close',
-        width: 80,
+        width: 75,
         dataIndex: 'close',
         tdCls: 'close hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
-        text: 'Change',
-        width: 80,
+        text: 'Chg',
+        width: 70,
         dataIndex: 'changePct',
         tdCls: 'changePct hop-change-pct',
         align: 'right',
@@ -122,6 +122,20 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         tdCls: 'optionOpenInterest hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
+    }, {
+        text: 'Ps',
+        width: 50,
+        dataIndex: 'putsSum',
+        tdCls: 'putsSum hop-position',
+        align: 'right',
+        renderer: 'positionRenderer'
+    }, {
+        text: 'Cs',
+        width: 50,
+        dataIndex: 'callsSum',
+        tdCls: 'callsSum hop-position',
+        align: 'right',
+        renderer: 'positionRenderer'
     }, {
         text: 'D1p',
         width: 70,

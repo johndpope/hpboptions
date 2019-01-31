@@ -20,12 +20,6 @@ public enum OptionDataField implements DataField {
     OPTION_PRICE,
     UNDERLYING_PRICE;
 
-
-    @Override
-    public Number getInitialValue() {
-        return Double.NaN;
-    }
-
     private static List<OptionDataField> fields = Arrays.asList(OptionDataField.values());
     private static List<OptionDataField> riskDataSourceFields = Stream.of(
             DELTA,

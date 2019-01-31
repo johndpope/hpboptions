@@ -32,7 +32,10 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
         double optonPrice = getOptionPrice();
         double underlyingPrice = getUnderlyingPrice();
 
-        double margin = (optonPrice + Math.max((0.2 * underlyingPrice - otmAmount()), (0.1 * underlyingPrice))) * Math.abs(getPositionSize()) * getInstrument().getMultiplier();
+        double margin = 0d;
+        if (getPositionSize() < 0) {
+            margin = (optonPrice + Math.max((0.2 * underlyingPrice - otmAmount()), (0.1 * underlyingPrice))) * Math.abs(getPositionSize()) * getInstrument().getMultiplier();
+        }
         update(PositionDataField.MARGIN, margin);
     }
 

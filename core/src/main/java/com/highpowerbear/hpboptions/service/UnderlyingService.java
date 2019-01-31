@@ -22,7 +22,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +37,6 @@ public class UnderlyingService extends AbstractDataService implements Connection
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
-    private final Map<Integer, Map<DataField, LocalDateTime>> underlyingAlertMap = new HashMap<>(); // underlying conid -> (data field -> alert date)
 
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL);
@@ -69,7 +67,6 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
-            underlyingAlertMap.put(conid, new HashMap<>());
         }
 
         retrieveExchangeRates();
@@ -90,7 +87,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
         ibController.cancelAccountSummary(accountSummary.getIbRequestId());
     }
 
-    @Scheduled(cron="0 0 7 * * MON-FRI")
+    @Scheduled(cron = "0 0 7 * * MON-FRI")
     private void performStartOfDayTasks() {
         retrieveExchangeRates();
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
@@ -121,13 +118,36 @@ public class UnderlyingService extends AbstractDataService implements Connection
     public void addPosition(int underlyingConid, PositionDataHolder pdh) {
         if (underlyingMap.containsKey(underlyingConid)) {
             underlyingPositionMap.get(underlyingConid).put(pdh.getInstrument().getConid(), pdh);
+            recalculatePositionsSum(underlyingConid);
         }
     }
 
     public void removePosition(int underlyingConid, int positionConid) {
         if (underlyingMap.containsKey(underlyingConid)) {
             underlyingPositionMap.get(underlyingConid).remove(positionConid);
+            recalculatePositionsSum(underlyingConid);
         }
+    }
+
+    public void recalculatePositionsSum(int underlyingConid) {
+        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        if (udh == null) {
+            return;
+        }
+
+        int putsSum = underlyingPositionMap.get(underlyingConid).values().stream()
+                .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Put)
+                .mapToInt(PositionDataHolder::getPositionSize)
+                .sum();
+
+        int callsSum = underlyingPositionMap.get(underlyingConid).values().stream()
+                .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Call)
+                .mapToInt(PositionDataHolder::getPositionSize)
+                .sum();
+
+        udh.updatePositionsSum(putsSum, callsSum);
+        messageService.sendWsMessage(udh, UnderlyingDataField.PUTS_SUM);
+        messageService.sendWsMessage(udh, UnderlyingDataField.CALLS_SUM);
     }
 
     public void recalculateRiskDataPerUnderlying(int underlyingConid) {
@@ -161,8 +181,8 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 }
             }
             double lastPrice = udh.getLast();
-            double deltaOnePct = HopUtil.isValidPrice(lastPrice) ? (delta * udh.getLast()) / 100d : Double.NaN;
-            double gammaOnePctPct = HopUtil.isValidPrice(lastPrice) ? (((gamma * udh.getLast()) / 100d) * udh.getLast()) / 100d : Double.NaN;
+            double deltaOnePct = HopUtil.isValidPrice(lastPrice) ? (delta * lastPrice) / 100d : Double.NaN;
+            double gammaOnePctPct = HopUtil.isValidPrice(lastPrice) ? (((gamma * lastPrice) / 100d) * lastPrice) / 100d : Double.NaN;
             double margin  = Math.max(callMargin, putMargin);
             double allocationPct = Double.NaN;
 
@@ -174,6 +194,8 @@ public class UnderlyingService extends AbstractDataService implements Connection
             }
 
             udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, allocationPct);
+            messageService.sendJmsMesage(HopSettings.JMS_DEST_RISK_DATA_RECALCULATED, underlyingConid);
+
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
     }

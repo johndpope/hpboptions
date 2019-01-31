@@ -7,24 +7,27 @@ import java.util.*;
  */
 public enum DerivedMktDataField implements DataField {
 
-    CHANGE (Double.NaN, BasicMktDataField.LAST, BasicMktDataField.CLOSE),
-    CHANGE_PCT (Double.NaN, BasicMktDataField.LAST, BasicMktDataField.CLOSE),
-    IV_CHANGE_PCT (Double.NaN, BasicMktDataField.OPTION_IMPLIED_VOL),
-    IV_RANK (Double.NaN, BasicMktDataField.OPTION_IMPLIED_VOL),
-    OPTION_VOLUME (-1, BasicMktDataField.OPTION_CALL_VOLUME, BasicMktDataField.OPTION_PUT_VOLUME),
-    OPTION_OPEN_INTEREST (-1, BasicMktDataField.OPTION_CALL_OPEN_INTEREST, BasicMktDataField.OPTION_PUT_OPEN_INTEREST);
+    CHANGE (BasicMktDataField.LAST, BasicMktDataField.CLOSE),
+    CHANGE_PCT (BasicMktDataField.LAST, BasicMktDataField.CLOSE),
+    IV_CHANGE_PCT (BasicMktDataField.OPTION_IMPLIED_VOL),
+    IV_RANK (BasicMktDataField.OPTION_IMPLIED_VOL),
+    OPTION_VOLUME (BasicMktDataField.OPTION_CALL_VOLUME, BasicMktDataField.OPTION_PUT_VOLUME) {
+        @Override
+        public Number getInitialValue() {
+            return -1;
+        }
+    },
+    OPTION_OPEN_INTEREST (BasicMktDataField.OPTION_CALL_OPEN_INTEREST, BasicMktDataField.OPTION_PUT_OPEN_INTEREST) {
+        @Override
+        public Number getInitialValue() {
+            return -1;
+        }
+    };
 
-    private Number initialValue;
     private Set<BasicMktDataField> dependencies;
 
-    DerivedMktDataField(Number initialValue, BasicMktDataField... dependencies) {
-        this.initialValue = initialValue;
+    DerivedMktDataField(BasicMktDataField... dependencies) {
         this.dependencies = new HashSet<>(Arrays.asList(dependencies));
-    }
-
-    @Override
-    public Number getInitialValue() {
-        return initialValue;
     }
 
     public Set<BasicMktDataField> getDependencies() {

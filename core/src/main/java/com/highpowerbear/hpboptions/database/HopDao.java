@@ -25,7 +25,7 @@ public class HopDao {
     }
 
     @Transactional
-    public void createUnderlyingAlert(UnderlyingAlert underlyingAlert) {
-        em.persist(underlyingAlert);
+    public void createRiskEvent(RiskEvent riskEvent) {
+        em.persist(riskEvent);
     }
 }

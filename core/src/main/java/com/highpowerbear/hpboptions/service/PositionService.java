@@ -65,7 +65,7 @@ public class PositionService extends AbstractDataService implements ConnectionLi
         ibController.cancelPositions();
     }
 
-    @Scheduled(cron="0 0 7 * * MON-FRI")
+    @Scheduled(cron = "0 0 7 * * MON-FRI")
     private void performStartOfDayTasks() {
         ibController.requestPositions();
     }
@@ -129,14 +129,17 @@ public class PositionService extends AbstractDataService implements ConnectionLi
                     if (positionSize != pdh.getPositionSize()) {
                         pdh.updatePositionSize(positionSize);
                         messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
-                        underlyingService.recalculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+
+                        int underlyingConid = pdh.getInstrument().getUnderlyingConid();
+                        underlyingService.recalculatePositionsSum(underlyingConid);
+                        underlyingService.recalculateRiskDataPerUnderlying(underlyingConid);
                     }
                 } else {
                     cancelMktData(pdh);
                     cancelPnlSingle(pdh);
 
-                    int underlyingConid = pdh.getInstrument().getUnderlyingConid();
                     positionMap.remove(conid);
+                    int underlyingConid = pdh.getInstrument().getUnderlyingConid();
 
                     underlyingService.removePosition(underlyingConid, conid);
                     underlyingService.recalculateRiskDataPerUnderlying(underlyingConid);
@@ -145,6 +148,7 @@ public class PositionService extends AbstractDataService implements ConnectionLi
                     messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
                 }
             }
+
         } finally {
             positionLock.unlock();
         }
