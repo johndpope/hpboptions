@@ -95,7 +95,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         hopOrder.setQuantity(quantity);
 
         if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
-            hopOrder.setLimitPrice(scaleLimitPrice((bid + ask) / 2d, action, minTick));
+            hopOrder.setLimitPrice(calculateLimitPrice(bid, ask, action, minTick));
         }
 
         OrderDataHolder odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
@@ -103,13 +103,6 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         requestMktData(odh);
 
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
-    }
-
-    private double scaleLimitPrice(double limitPrice, Types.Action action, double minTick) {
-        RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
-        int priceScale = BigDecimal.valueOf(minTick).scale();
-
-        return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
     // submit new or modify working order
@@ -120,11 +113,21 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             HopOrder hopOrder = odh.getHopOrder();
 
             if (hopOrder.isNew() || hopOrder.isWorking()) {
-                OptionInstrument instrument = odh.getInstrument();
                 hopOrder.setAdapt(adapt);
 
                 if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
-                    limitPrice = scaleLimitPrice(limitPrice, hopOrder.getAction(), instrument.getMinTick());
+                    OptionInstrument instrument = odh.getInstrument();
+                    double minTick = instrument.getMinTick();
+                    Types.Action action = hopOrder.getAction();
+
+                    double bid = odh.getBid();
+                    double ask = odh.getAsk();
+
+                    if (adapt && HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
+                        limitPrice = calculateLimitPrice(bid, ask, action, minTick);
+                    } else {
+                        limitPrice = scaleLimitPrice(limitPrice, action, minTick);
+                    }
 
                     if (hopOrder.isNew() || quantity != hopOrder.getQuantity() || limitPrice != hopOrder.getLimitPrice()) {
                         hopOrder.setQuantity(quantity);
@@ -146,22 +149,45 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         HopOrder hopOrder = odh.getHopOrder();
 
         if (hopOrder.isWorking() && hopOrder.isAdapt()) {
-            double minTick = odh.getInstrument().getMinTick();
-
-            Types.Action action = hopOrder.getAction();
             OptionInstrument instrument = odh.getInstrument();
+            double minTick = instrument.getMinTick();
+            Types.Action action = hopOrder.getAction();
 
-            double limitPrice = scaleLimitPrice((odh.getBid() + odh.getAsk()) / 2d, action, minTick);
+            double bid = odh.getBid();
+            double ask = odh.getAsk();
 
-            if (action == Types.Action.BUY && tickType == TickType.ASK && odh.isAskRising() && limitPrice > hopOrder.getLimitPrice()) {
-                hopOrder.setLimitPrice(limitPrice);
-                ibController.placeOrder(hopOrder, instrument);
+            if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
+                double limitPrice = calculateLimitPrice(bid, ask, action, minTick);
 
-            } else if (action == Types.Action.SELL && tickType == TickType.BID && odh.isBidFalling() && limitPrice < hopOrder.getLimitPrice()) {
-                hopOrder.setLimitPrice(limitPrice);
-                ibController.placeOrder(hopOrder, instrument);
+                if (action == Types.Action.BUY && tickType == TickType.ASK && odh.isAskRising() && limitPrice > hopOrder.getLimitPrice()) {
+                    hopOrder.setLimitPrice(limitPrice);
+                    ibController.placeOrder(hopOrder, instrument);
+
+                } else if (action == Types.Action.SELL && tickType == TickType.BID && odh.isBidFalling() && limitPrice < hopOrder.getLimitPrice()) {
+                    hopOrder.setLimitPrice(limitPrice);
+                    ibController.placeOrder(hopOrder, instrument);
+                }
             }
         }
+    }
+
+    private double calculateLimitPrice(double bid, double ask, Types.Action action, double minTick) {
+        double limitPrice = scaleLimitPrice((bid + ask) / 2d, action, minTick);
+
+        if (action == Types.Action.BUY && limitPrice == ask) {
+            limitPrice = scaleLimitPrice(limitPrice - minTick, action, minTick);
+
+        } else if (action == Types.Action.SELL && limitPrice == bid) {
+            limitPrice = scaleLimitPrice(limitPrice + minTick, action, minTick);
+        }
+        return limitPrice;
+    }
+
+    private double scaleLimitPrice(double limitPrice, Types.Action action, double minTick) {
+        RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
+        int priceScale = BigDecimal.valueOf(minTick).scale();
+
+        return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
     public void cancelOrder(int orderId) {
