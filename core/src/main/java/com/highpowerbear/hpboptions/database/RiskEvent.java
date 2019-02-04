@@ -21,8 +21,8 @@ public class RiskEvent implements Serializable {
     private int underlyingConid;
     private String underlyingSymbol;
     private String dataField;
-    private double fieldValue;
-    private double fieldThreshold;
+    private String fieldValue;
+    private String fieldThreshold;
     private String resolution;
 
     @Override
@@ -80,20 +80,20 @@ public class RiskEvent implements Serializable {
         this.dataField = dataField;
     }
 
-    public double getFieldValue() {
+    public String getFieldValue() {
         return fieldValue;
     }
 
-    public void setFieldValue(double fieldValue) {
+    public void setFieldValue(String fieldValue) {
         this.fieldValue = fieldValue;
     }
 
-    public double getFieldThreshold() {
+    public String getFieldThreshold() {
         return fieldThreshold;
     }
 
-    public void setFieldThreshold(double triggerValue) {
-        this.fieldThreshold = triggerValue;
+    public void setFieldThreshold(String fieldThreshold) {
+        this.fieldThreshold = fieldThreshold;
     }
 
     public String getResolution() {

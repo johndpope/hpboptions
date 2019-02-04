@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.enums;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.model.RiskThreshold;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,8 +28,11 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_DELTA,
     PORTFOLIO_DELTA_ONE_PCT {
         @Override
-        public boolean thresholdBreached(double value) {
-            return Math.abs(value) >= HopSettings.getRiskThreshold(this);
+        public boolean thresholdBreached(Number value) {
+            RiskThreshold rt = getRiskThreshold();
+            double v = value.doubleValue();
+
+            return v <= rt.getLow().doubleValue() || v >= rt.getHigh().doubleValue();
         }
     },
     PORTFOLIO_GAMMA,
@@ -38,15 +42,11 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_TIME_VALUE,
     ALLOCATION_PCT {
         @Override
-        public boolean thresholdBreached(double value) {
-            return value >= HopSettings.getRiskThreshold(this);
+        public boolean thresholdBreached(Number value) {
+            return value.doubleValue() >= getRiskThreshold().getHigh().doubleValue();
         }
     },
     UNREALIZED_PNL;
-
-    public boolean thresholdBreached(double value) {
-        return false;
-    }
 
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
     private static List<UnderlyingDataField> riskDataFields = Stream.of(

@@ -193,7 +193,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
             }
 
             udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, allocationPct);
-            messageService.sendJmsMesage(HopSettings.JMS_DEST_RISK_DATA_RECALCULATED, underlyingConid);
+            messageService.sendJmsMesage(HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_RECALCULATED, underlyingConid);
 
             UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
         }
