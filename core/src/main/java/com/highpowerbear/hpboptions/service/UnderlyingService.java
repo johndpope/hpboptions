@@ -10,6 +10,7 @@ import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.model.*;
 import com.ib.client.Bar;
+import com.ib.client.Contract;
 import com.ib.client.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
+    private final Map<Integer, UnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
 
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
@@ -71,6 +73,9 @@ public class UnderlyingService extends AbstractDataService implements Connection
             }
 
             UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            if (u.isCfdDefined()) {
+                underlyingCfdMap.put(u.getCfdConid(), udh);
+            }
             udh.setDisplayRank(u.getDisplayRank());
 
             underlyingMap.put(conid, udh);
@@ -248,6 +253,16 @@ public class UnderlyingService extends AbstractDataService implements Connection
         udh.impliedVolatilityHistoryCompleted();
 
         udh.getIvHistoryDependentFields().forEach(field -> messageService.sendWsMessage(udh, field));
+    }
+
+    public void positionReceived(Contract contract, int positionSize) {
+        int conid = contract.conid();
+        UnderlyingDataHolder udh = underlyingCfdMap.get(conid);
+
+        if (udh != null) {
+            udh.updateCfdPositionSize(positionSize);
+            messageService.sendWsMessage(udh, UnderlyingDataField.CFD_POSITION_SIZE);
+        }
     }
 
     public UnderlyingDataHolder getUnderlyingDataHolder(int conid) {

@@ -31,6 +31,7 @@ public class Instrument {
 
     public Contract createIbContract() {
         Contract contract = new Contract();
+
         contract.conid(conid);
         contract.secType(secType);
         if (underlyingSymbol != null) {

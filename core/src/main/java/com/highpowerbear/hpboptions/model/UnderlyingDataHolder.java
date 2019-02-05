@@ -136,6 +136,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         }
     }
 
+    public void updateCfdPositionSize(int cfdPositionSize) {
+        update(UnderlyingDataField.CFD_POSITION_SIZE, cfdPositionSize);
+    }
+
     public void updatePositionsSum(int putsSum, int callsSum) {
         update(UnderlyingDataField.PUTS_SUM, putsSum);
         update(UnderlyingDataField.CALLS_SUM, callsSum);

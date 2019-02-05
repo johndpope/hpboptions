@@ -113,7 +113,7 @@ public class IbListener extends GenericIbListener {
             positionService.positionReceived(contract, (int) pos);
 
         } else if (Types.SecType.valueOf(contract.getSecType()) == Types.SecType.CFD) {
-            // TODO underlyingService.positionReceived
+            underlyingService.positionReceived(contract, (int) pos);
         }
     }
 

@@ -245,6 +245,22 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
+    @Override
+    protected void requestMktData(DataHolder dataHolder) {
+        int requestId = dataHolder.getIbMktDataRequestId();
+
+        mktDataRequestMap.put(requestId, dataHolder);
+
+        Contract ibContract;
+        if (dataHolder.getInstrument().getSecType() == Types.SecType.CFD) {
+            UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(dataHolder.getInstrument().getUnderlyingConid());
+            ibContract = udh.getInstrument().createIbContract();
+        } else {
+            ibContract = dataHolder.getInstrument().createIbContract();
+        }
+        ibController.requestMktData(requestId, ibContract, dataHolder.getGenericTicks());
+    }
+
     @Scheduled(fixedRate = 300000, initialDelay = 60000)
     private void updateHeartbeats() {
         List<HopOrder> activeOrders = orderMap.values().stream().map(OrderDataHolder::getHopOrder).filter(HopOrder::isWorking).collect(Collectors.toList());

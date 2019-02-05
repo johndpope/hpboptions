@@ -158,7 +158,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     },
 
     formatPosition: function(val) {
-        return val !== 0 ? val : '&nbsp;';
+        return val > 0 || val < 0 ? val : '&nbsp;';
     },
 
     formatPnl: function(val) {
