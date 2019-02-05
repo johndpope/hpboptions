@@ -3,6 +3,7 @@ package com.highpowerbear.hpboptions.service;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
 import com.highpowerbear.hpboptions.model.DataHolder;
@@ -75,14 +76,16 @@ public abstract class AbstractDataService implements DataService {
         if (dataHolder == null) {
             return;
         }
-        OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
-        optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+        if (dataHolder.getType() == DataHolderType.POSITION || dataHolder.getType() == DataHolderType.CHAIN) {
+            OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
+            optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
 
-        if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
-            optionDataHolder.recalculateOptionData();
-            OptionDataField.fields().forEach(field -> messageService.sendWsMessage(dataHolder, field));
+            if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
+                optionDataHolder.recalculateOptionData();
+                OptionDataField.fields().forEach(field -> messageService.sendWsMessage(dataHolder, field));
 
-            modelOptionDataReceived(optionDataHolder);
+                modelOptionDataReceived(optionDataHolder);
+            }
         }
     }
 

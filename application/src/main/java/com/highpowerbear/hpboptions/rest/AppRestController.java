@@ -116,6 +116,14 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(orderDataHolders, orderDataHolders.size()));
     }
 
+    @RequestMapping(method = RequestMethod.POST, value = "order/create/from/underlying")
+    public ResponseEntity<?> createOrderFromUnderlying(
+            @RequestBody CreateOrderParams createOrderParams) {
+
+        orderService.createOrderFromUnderlying(createOrderParams.getConid(), createOrderParams.getAction());
+        return ResponseEntity.ok().build();
+    }
+
     @RequestMapping(method = RequestMethod.POST, value = "order/create/from/position")
     public ResponseEntity<?> createOrderFromPosition(
             @RequestBody CreateOrderParams createOrderParams) {

@@ -1,7 +1,5 @@
 package com.highpowerbear.hpboptions.enums;
 
-import com.highpowerbear.hpboptions.common.HopSettings;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,7 +11,7 @@ public enum PositionDataField implements DataField {
     POSITION_SIZE {
         @Override
         public Number getInitialValue() {
-            return HopSettings.INVALID_POSITION;
+            return 0;
         }
     },
     UNREALIZED_PNL,

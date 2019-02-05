@@ -14,6 +14,7 @@ import java.util.stream.Stream;
  */
 public class UnderlyingDataHolder extends AbstractDataHolder {
 
+    private final Instrument cfdInstrument;
     private final int ibHistDataRequestId;
     private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
     @JsonIgnore
@@ -22,8 +23,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     private Map<DataField, Double> thresholdBreachedFields = new HashMap<>();
     private long lastRiskUpdateTime;
 
-    public UnderlyingDataHolder(Instrument instrument, int ibMktDataRequestId, int ibHistDataRequestId) {
+    public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
+
+        this.cfdInstrument = cfdInstrument;
         this.ibHistDataRequestId = ibHistDataRequestId;
 
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -35,6 +38,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.IV_RANK,
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
+                UnderlyingDataField.CFD_POSITION_SIZE,
                 UnderlyingDataField.IV_CLOSE,
                 UnderlyingDataField.PUTS_SUM,
                 UnderlyingDataField.CALLS_SUM,
@@ -137,6 +141,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.CALLS_SUM, callsSum);
     }
 
+    public void resetPositionsSum() {
+        Stream.of(UnderlyingDataField.PUTS_SUM, UnderlyingDataField.CALLS_SUM).forEach(field -> update(field, field.getInitialValue()));
+    }
+
     public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double allocationPct) {
         lastRiskUpdateTime = System.currentTimeMillis();
 
@@ -180,6 +188,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return ivHistoryDependentFields;
     }
 
+    public Instrument getCfdInstrument() {
+        return cfdInstrument;
+    }
+
     public int getIbHistDataRequestId() {
         return ibHistDataRequestId;
     }
@@ -190,6 +202,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public double getOptionImpliedVol() {
         return getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
+    }
+
+    public int getCfdPositionSize() {
+        return getCurrent(UnderlyingDataField.CFD_POSITION_SIZE).intValue();
     }
 
     public double getIvClose() {

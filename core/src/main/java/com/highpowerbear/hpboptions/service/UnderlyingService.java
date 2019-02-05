@@ -54,15 +54,24 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
     @PostConstruct
     private void init() {
-        for (Underlying underlying : hopDao.getActiveUnderlyings()) {
-            int conid = underlying.getConid();
+        for (Underlying u : hopDao.getActiveUnderlyings()) {
+            int conid = u.getConid();
 
-            Instrument instrument = new Instrument(conid, underlying.getSecType(), underlying.getSymbol(), underlying.getCurrency());
-            instrument.setExchange(underlying.getExchange());
-            instrument.setPrimaryExchange(underlying.getPrimaryExchange());
+            Instrument instrument = new Instrument(conid, u.getSecType(),null, u.getSymbol(), u.getCurrency());
+            instrument.setExchange(u.getExchange());
+            instrument.setPrimaryExchange(u.getPrimaryExchange());
 
-            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
-            udh.setDisplayRank(underlying.getDisplayRank());
+            Instrument cfdInstrument = null;
+            if (u.isCfdDefined()) {
+                cfdInstrument = new Instrument(u.getCfdConid(), Types.SecType.CFD, u.getSymbol(), u.getCfdSymbol(), u.getCurrency());
+                cfdInstrument.setUnderlyingSecType(u.getSecType());
+                cfdInstrument.setUnderlyingConid(u.getConid());
+                cfdInstrument.setExchange(u.getExchange());
+                cfdInstrument.setMinTick(u.getCfdMinTick());
+            }
+
+            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            udh.setDisplayRank(u.getDisplayRank());
 
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
@@ -133,18 +142,24 @@ public class UnderlyingService extends AbstractDataService implements Connection
         if (udh == null) {
             return;
         }
+        Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
-        int putsSum = underlyingPositionMap.get(underlyingConid).values().stream()
-                .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Put)
-                .mapToInt(PositionDataHolder::getPositionSize)
-                .sum();
+        if (pdhs.isEmpty()) {
+            udh.resetPositionsSum();
+        } else {
+            int putsSum = pdhs.stream()
+                    .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Put)
+                    .mapToInt(PositionDataHolder::getPositionSize)
+                    .sum();
 
-        int callsSum = underlyingPositionMap.get(underlyingConid).values().stream()
-                .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Call)
-                .mapToInt(PositionDataHolder::getPositionSize)
-                .sum();
+            int callsSum = pdhs.stream()
+                    .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Call)
+                    .mapToInt(PositionDataHolder::getPositionSize)
+                    .sum();
 
-        udh.updatePositionsSum(putsSum, callsSum);
+            udh.updatePositionsSum(putsSum, callsSum);
+        }
+
         messageService.sendWsMessage(udh, UnderlyingDataField.PUTS_SUM);
         messageService.sendWsMessage(udh, UnderlyingDataField.CALLS_SUM);
     }

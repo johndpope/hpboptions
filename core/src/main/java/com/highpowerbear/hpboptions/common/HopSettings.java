@@ -34,11 +34,13 @@ public class HopSettings {
     public static final String EXCHANGE_RATES_URL = "http://data.fixer.io/api";
     public static final String EXCHANGE_RATES_SYMBOLS = "EUR,USD,GBP,CHF,AUD,JPY,KRW,HKD,SGD";
     public static final String JMS_DEST_UNDERLYING_RISK_DATA_RECALCULATED = "underlyingRiskDataRecalculated";
-    public static final int INVALID_POSITION = -999999999;
+    public static final int OPTION_ORDER_DEFAULT_QUANTITY = 1;
+    public static final int CFD_ORDER_DEFAULT_QUANTITY = 10;
 
     private static final Map<DataField, RiskThreshold> riskThresholdMap = new HashMap<>();
     static {
         riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, new RiskThreshold(-30.0, 30.0));
+        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, new RiskThreshold(-50.0, 50.0));
         riskThresholdMap.put(UnderlyingDataField.ALLOCATION_PCT, new RiskThreshold(null, 10.0));
     }
     public static RiskThreshold getRiskThreshold(DataField dataField) {

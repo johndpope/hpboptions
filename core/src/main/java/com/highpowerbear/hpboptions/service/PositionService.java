@@ -107,14 +107,14 @@ public class PositionService extends AbstractDataService implements ConnectionLi
                 if (positionSize != 0) {
                     Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
                     String symbol = contract.localSymbol();
+                    String underlyingSymbol = contract.symbol();
                     Currency currency = Currency.valueOf(contract.currency());
                     Types.Right right = contract.right();
                     double strike = contract.strike();
                     LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
                     int multiplier = Integer.valueOf(contract.multiplier());
-                    String underlyingSymbol = contract.symbol();
 
-                    OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
+                    OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
 
                     if (pdh.getDaysToExpiration() >= 0) {

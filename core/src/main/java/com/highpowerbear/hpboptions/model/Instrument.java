@@ -11,15 +11,20 @@ import com.ib.client.Types;
 public class Instrument {
 
     protected final int conid;
-    protected final Types.SecType secType;
+    private final Types.SecType secType;
+    private final String underlyingSymbol;
     protected final String symbol;
     protected final Currency currency;
-    protected Exchange exchange;
-    protected Exchange primaryExchange;
+    private Types.SecType underlyingSecType;
+    private Integer underlyingConid;
+    private Exchange exchange;
+    private Exchange primaryExchange;
+    private Double minTick;
 
-    public Instrument(int conid, Types.SecType secType, String symbol, Currency currency) {
+    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency) {
         this.conid = conid;
         this.secType = secType;
+        this.underlyingSymbol = underlyingSymbol;
         this.symbol = symbol;
         this.currency = currency;
     }
@@ -28,9 +33,15 @@ public class Instrument {
         Contract contract = new Contract();
         contract.conid(conid);
         contract.secType(secType);
+        if (underlyingSymbol != null) {
+            contract.symbol(underlyingSymbol);
+        }
         contract.localSymbol(symbol);
         contract.currency(currency.name());
         contract.exchange(exchange.name());
+        if (primaryExchange != null) {
+            contract.primaryExch(primaryExchange.name());
+        }
 
         return contract;
     }
@@ -43,12 +54,32 @@ public class Instrument {
         return secType;
     }
 
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
+    }
+
     public String getSymbol() {
         return symbol;
     }
 
     public Currency getCurrency() {
         return currency;
+    }
+
+    public Types.SecType getUnderlyingSecType() {
+        return underlyingSecType;
+    }
+
+    public void setUnderlyingSecType(Types.SecType underlyingSecType) {
+        this.underlyingSecType = underlyingSecType;
+    }
+
+    public Integer getUnderlyingConid() {
+        return underlyingConid;
+    }
+
+    public void setUnderlyingConid(Integer underlyingConid) {
+        this.underlyingConid = underlyingConid;
     }
 
     public Exchange getExchange() {
@@ -65,6 +96,14 @@ public class Instrument {
 
     public void setPrimaryExchange(Exchange primaryExchange) {
         this.primaryExchange = primaryExchange;
+    }
+
+    public Double getMinTick() {
+        return minTick;
+    }
+
+    public void setMinTick(Double minTick) {
+        this.minTick = minTick;
     }
 
     @Override

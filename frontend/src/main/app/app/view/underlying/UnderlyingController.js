@@ -136,5 +136,26 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                 me.updateAccountSummary(response.responseText);
             }
         });
+    },
+
+    createOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
+        var dataIndex = e.position.column.dataIndex;
+        if (dataIndex !== 'bid' && dataIndex !== 'ask') {
+            return;
+        }
+        var action = dataIndex === 'ask' ? 'BUY' : 'SELL';
+
+        console.log('requesting underlying order creation ' + action + ' ' + record.data.symbol);
+        Ext.Ajax.request({
+            method: 'POST',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/underlying',
+            jsonData: {
+                conid: record.data.conid,
+                action: action
+            },
+            success: function(response, opts) {
+                //
+            }
+        });
     }
 });

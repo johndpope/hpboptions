@@ -1,6 +1,5 @@
 package com.highpowerbear.hpboptions.enums;
 
-import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.model.RiskThreshold;
 
 import java.util.Arrays;
@@ -12,17 +11,23 @@ import java.util.stream.Stream;
  * Created by robertk on 12/9/2018.
  */
 public enum UnderlyingDataField implements DataField {
+    CFD_POSITION_SIZE {
+        @Override
+        public Number getInitialValue() {
+            return 0;
+        }
+    },
     IV_CLOSE,
     PUTS_SUM {
         @Override
         public Number getInitialValue() {
-            return HopSettings.INVALID_POSITION;
+            return 0;
         }
     },
     CALLS_SUM {
         @Override
         public Number getInitialValue() {
-            return HopSettings.INVALID_POSITION;
+            return 0;
         }
     },
     PORTFOLIO_DELTA,

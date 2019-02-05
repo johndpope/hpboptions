@@ -3,7 +3,7 @@ package com.highpowerbear.hpboptions.connector;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.model.HopOrder;
-import com.highpowerbear.hpboptions.model.OptionInstrument;
+import com.highpowerbear.hpboptions.model.Instrument;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,7 +202,7 @@ public class IbController {
         }
     }
 
-    public void placeOrder(HopOrder hopOrder, OptionInstrument instrument) {
+    public void placeOrder(HopOrder hopOrder, Instrument instrument) {
         log.info("placing order " + hopOrder + ", instrument=" + instrument);
 
         if (checkConnected()) {

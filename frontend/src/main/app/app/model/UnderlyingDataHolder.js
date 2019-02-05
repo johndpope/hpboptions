@@ -7,6 +7,7 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
     fields: [
         'ibHistDataRequestId',
         'optionImpliedVol',
+        'cfdPositionSize',
         'ivClose',
         'putsSum',
         'callsSum',

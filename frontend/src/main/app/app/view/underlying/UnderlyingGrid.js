@@ -9,6 +9,9 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         'Ext.toolbar.Paging'
     ],
     bind: '{underlyingDataHolders}',
+    listeners: {
+        cellclick: 'createOrder'
+    },
     viewConfig: {
         stripeRows: true
     },
@@ -25,6 +28,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         width: 60,
         dataIndex: 'currency'
     }, {
+        text: 'P',
+        width: 50,
+        dataIndex: 'cfdPositionSize',
+        tdCls: 'cfdPositionSize hop-position',
+        align: 'right',
+        renderer: 'positionRenderer'
+    }, {
         text: 'Bs',
         width: 60,
         dataIndex: 'bidSize',
@@ -35,14 +45,14 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         text: 'Bid',
         width: 75,
         dataIndex: 'bid',
-        tdCls: 'bid hop-price hop-unchanged',
+        tdCls: 'bid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
         width: 75,
         dataIndex: 'ask',
-        tdCls: 'ask hop-price hop-unchanged',
+        tdCls: 'ask hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
@@ -88,8 +98,8 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'changePctRenderer'
     }, {
-        text: 'Opt IV',
-        width: 80,
+        text: 'OptIV',
+        width: 75,
         dataIndex: 'optionImpliedVol',
         tdCls: 'optionImpliedVol hop-iv hop-unchanged',
         align: 'right',
@@ -109,15 +119,15 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'ivRankRenderer'
     }, {
-        text: 'Opt Vlm',
-        width: 80,
+        text: 'OptVm',
+        width: 75,
         dataIndex: 'optionVolume',
         tdCls: 'optionVolume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
-        text: 'Opt OI',
-        width: 80,
+        text: 'OptOI',
+        width: 75,
         dataIndex: 'optionOpenInterest',
         tdCls: 'optionOpenInterest hop-volume hop-unchanged',
         align: 'right',
@@ -138,42 +148,42 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'positionRenderer'
     }, {
         text: 'D1p',
-        width: 70,
+        width: 65,
         dataIndex: 'portfolioDeltaOnePct',
         tdCls: 'portfolioDeltaOnePct hop-decimal-one',
         align: 'right',
         renderer: 'decimalOneRenderer'
     }, {
         text: 'G1pp',
-        width: 70,
+        width: 65,
         dataIndex: 'portfolioGammaOnePctPct',
         tdCls: 'portfolioGammaOnePctPct hop-decimal-one',
         align: 'right',
         renderer: 'decimalOneRenderer'
     }, {
-        text: 'Dlt',
-        width: 60,
+        text: 'Dt',
+        width: 55,
         dataIndex: 'portfolioDelta',
         tdCls: 'portfolioDelta hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
         text: 'Gm',
-        width: 60,
+        width: 55,
         dataIndex: 'portfolioGamma',
         tdCls: 'portfolioGamma hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
         text: 'Vg',
-        width: 60,
+        width: 55,
         dataIndex: 'portfolioVega',
         tdCls: 'portfolioVega hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
         text: 'Th',
-        width: 60,
+        width: 55,
         dataIndex: 'portfolioTheta',
         tdCls: 'portfolioTheta hop-whole',
         align: 'right',
@@ -194,7 +204,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'pnlRenderer'
     }, {
         text: 'Allc',
-        width: 70,
+        width: 65,
         dataIndex: 'allocationPct',
         tdCls: 'allocationPct hop-decimal-pct hop-unchanged',
         align: 'right',

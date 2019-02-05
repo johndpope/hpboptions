@@ -134,7 +134,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
 
             underlyingInfos.stream().map(UnderlyingInfo::getConid).forEach(underlyingConid -> {
                 expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingConid);
-                underlyingMktDataSnapshotMap.put(underlyingConid,  underlyingService.createMktDataSnapshot(underlyingConid));
+                underlyingMktDataSnapshotMap.put(underlyingConid, underlyingService.createMktDataSnapshot(underlyingConid));
             });
 
             for (int requestId : expirationsRequestMap.keySet()) {
@@ -249,7 +249,7 @@ public class ChainService extends AbstractDataService implements ConnectionListe
         double strike = contract.strike();
         LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
 
-        OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
+        OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
         instrument.setExchange(exchange);
         instrument.setMinTick(minTick);
         instrument.setUnderlyingConid(underlyingConid);

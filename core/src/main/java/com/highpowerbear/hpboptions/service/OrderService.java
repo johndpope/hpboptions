@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 public class OrderService extends AbstractDataService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
+    private final UnderlyingService underlyingService;
     private final PositionService positionService;
     private final ChainService chainService;
 
@@ -42,8 +43,10 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, PositionService positionService, ChainService chainService) {
+    public OrderService(IbController ibController,HopDao hopDao, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
         super(ibController, hopDao, messageService);
+
+        this.underlyingService = underlyingService;
         this.positionService = positionService;
         this.chainService = chainService;
 
@@ -65,9 +68,9 @@ public class OrderService extends AbstractDataService implements ConnectionListe
             int quantity;
 
             if (action == Types.Action.BUY) {
-                quantity = positionSize < 0 ? Math.abs(positionSize) : 1;
+                quantity = positionSize < 0 ? Math.abs(positionSize) : HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
             } else {
-                quantity = positionSize > 0 ? Math.abs(positionSize) : 1;
+                quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
             }
             createOrder(pdh.getInstrument(), pdh.getInstrument().getMinTick(), pdh.getBid(), pdh.getAsk(), action, quantity);
         } else {
@@ -79,14 +82,38 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         ChainDataHolder cdh = chainService.getChainDataHolder(conid);
 
         if (cdh != null) {
-            int quantity = 1;
+            int quantity = HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
             createOrder(cdh.getInstrument(), cdh.getInstrument().getMinTick(), cdh.getBid(), cdh.getAsk(), action, quantity);
         } else {
             log.warn("cannot create order from chain, no conid " + conid + " found");
         }
     }
 
-    private void createOrder(OptionInstrument instrument, double minTick, double bid, double ask, Types.Action action, int quantity) {
+    public void createOrderFromUnderlying(int conid, Types.Action action) {
+        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(conid);
+
+        if (udh != null) {
+            Instrument cfdInstrument = udh.getCfdInstrument();
+
+            if (cfdInstrument != null) {
+                int positionSize = udh.getCfdPositionSize();
+                int quantity;
+
+                if (action == Types.Action.BUY) {
+                    quantity = positionSize < 0 ? Math.abs(positionSize) : HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
+                } else {
+                    quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
+                }
+                createOrder(cfdInstrument, cfdInstrument.getMinTick(), udh.getBid(), udh.getAsk(), action, quantity);
+            } else {
+                log.warn("cannot create order from underlying conid=" + conid + ", cfd parameters not defined");
+            }
+        } else {
+            log.warn("cannot create order from underlying, no conid " + conid + " found");
+        }
+    }
+
+    private void createOrder(Instrument instrument, double minTick, double bid, double ask, Types.Action action, int quantity) {
         log.info("creating order " + action + " " + quantity + " " + instrument.getSymbol() + ", conid=" + instrument.getConid());
 
         int orderId = ibOrderIdGenerator.incrementAndGet();
@@ -116,7 +143,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
                 hopOrder.setAdapt(adapt);
 
                 if (HopUtil.isValidSize(quantity) && HopUtil.isValidPrice(limitPrice)) {
-                    OptionInstrument instrument = odh.getInstrument();
+                    Instrument instrument = odh.getInstrument();
                     double minTick = instrument.getMinTick();
                     Types.Action action = hopOrder.getAction();
 
@@ -149,7 +176,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         HopOrder hopOrder = odh.getHopOrder();
 
         if (hopOrder.isWorking() && hopOrder.isAdapt()) {
-            OptionInstrument instrument = odh.getInstrument();
+            Instrument instrument = odh.getInstrument();
             double minTick = instrument.getMinTick();
             Types.Action action = hopOrder.getAction();
 
@@ -260,15 +287,22 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
             int conid = contract.conid();
             Types.SecType secType = Types.SecType.valueOf(contract.getSecType());
+            String underlyingSymbol = contract.symbol();
             String symbol = contract.localSymbol();
             Currency currency = Currency.valueOf(contract.currency());
-            Types.Right right = contract.right();
-            double strike = contract.strike();
-            LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
-            int multiplier = Integer.valueOf(contract.multiplier());
-            String underlyingSymbol = contract.symbol();
 
-            OptionInstrument instrument = new OptionInstrument(conid, secType, symbol, currency, right, strike, expiration, multiplier, underlyingSymbol);
+            Instrument instrument;
+
+            if (secType == Types.SecType.OPT) {
+                Types.Right right = contract.right();
+                double strike = contract.strike();
+                LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
+                int multiplier = Integer.valueOf(contract.multiplier());
+                instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
+            } else {
+                instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency);
+            }
+
             odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
             orderMap.put(orderId, odh);
 
@@ -297,7 +331,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
         int underlyingConid = contractDetails.underConid();
         Types.SecType underlyingSecType = Types.SecType.valueOf(contractDetails.underSecType());
 
-        OptionInstrument instrument = odh.getInstrument();
+        Instrument instrument = odh.getInstrument();
         instrument.setExchange(exchange);
         instrument.setMinTick(minTick);
         instrument.setUnderlyingConid(underlyingConid);

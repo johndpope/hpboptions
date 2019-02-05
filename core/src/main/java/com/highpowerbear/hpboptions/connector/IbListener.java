@@ -108,10 +108,13 @@ public class IbListener extends GenericIbListener {
     @Override
     public void position(String account, Contract contract, double pos, double avgCost) {
         super.position(account, contract, pos, avgCost);
-        if (Types.SecType.valueOf(contract.getSecType()) != Types.SecType.OPT) {
-            return;
+
+        if (Types.SecType.valueOf(contract.getSecType()) == Types.SecType.OPT) {
+            positionService.positionReceived(contract, (int) pos);
+
+        } else if (Types.SecType.valueOf(contract.getSecType()) == Types.SecType.CFD) {
+            // TODO underlyingService.positionReceived
         }
-        positionService.positionReceived(contract, (int) pos);
     }
 
     @Override

@@ -40,6 +40,9 @@ public class Underlying implements Serializable {
     private boolean chainRoundStrikes;
     @Enumerated(EnumType.STRING)
     private Exchange chainExchange;
+    private Integer cfdConid;
+    private String cfdSymbol;
+    private Double cfdMinTick;
 
     @Override
     public boolean equals(Object o) {
@@ -65,6 +68,10 @@ public class Underlying implements Serializable {
         contract.exchange(chainExchange.name());
 
         return contract;
+    }
+
+    public boolean isCfdDefined() {
+        return cfdConid != null && cfdSymbol != null && cfdMinTick != null;
     }
 
     public Long getId() {
@@ -177,5 +184,29 @@ public class Underlying implements Serializable {
 
     public void setChainExchange(Exchange chainExchange) {
         this.chainExchange = chainExchange;
+    }
+
+    public Integer getCfdConid() {
+        return cfdConid;
+    }
+
+    public void setCfdConid(Integer cfdConid) {
+        this.cfdConid = cfdConid;
+    }
+
+    public String getCfdSymbol() {
+        return cfdSymbol;
+    }
+
+    public void setCfdSymbol(String cfdSymbol) {
+        this.cfdSymbol = cfdSymbol;
+    }
+
+    public Double getCfdMinTick() {
+        return cfdMinTick;
+    }
+
+    public void setCfdMinTick(Double cfdMinTick) {
+        this.cfdMinTick = cfdMinTick;
     }
 }

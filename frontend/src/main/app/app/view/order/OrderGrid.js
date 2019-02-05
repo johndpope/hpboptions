@@ -44,7 +44,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         width: 30,
         dataIndex: 'right',
         renderer: function(val, metadata, record) {
-            return (val.charAt(0));
+            return val ? (val.charAt(0)) : '&nbsp;';
         }
     }, {
         text: 'S',
