@@ -17,15 +17,15 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     },
     columns: [{
         text: 'Sec',
-        width: 60,
+        width: 55,
         dataIndex: 'secType'
     }, {
         text: 'Sym',
-        width: 60,
+        width: 55,
         dataIndex: 'symbol'
     }, {
         text: 'Cur',
-        width: 60,
+        width: 55,
         dataIndex: 'currency'
     }, {
         text: 'P',
@@ -35,6 +35,13 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'positionRenderer'
     }, {
+        text: 'Pl',
+        width: 50,
+        dataIndex: 'cfdUnrealizedPnl',
+        tdCls: 'cfdUnrealizedPnl hop-pnl hop-unchanged',
+        align: 'right',
+        renderer: 'pnlRenderer'
+    }, {
         text: 'Bs',
         width: 60,
         dataIndex: 'bidSize',
@@ -43,14 +50,14 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 75,
+        width: 70,
         dataIndex: 'bid',
         tdCls: 'bid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 75,
+        width: 70,
         dataIndex: 'ask',
         tdCls: 'ask hop-price hop-unchanged hop-pointer',
         align: 'right',
@@ -64,7 +71,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 75,
+        width: 70,
         dataIndex: 'last',
         tdCls: 'last hop-price hop-unchanged',
         align: 'right',
@@ -85,7 +92,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'volumeRenderer'
     }, {
         text: 'Close',
-        width: 75,
+        width: 70,
         dataIndex: 'close',
         tdCls: 'close hop-price hop-unchanged',
         align: 'right',
@@ -198,8 +205,8 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     }, {
         text: 'PnL',
         width: 60,
-        dataIndex: 'unrealizedPnl',
-        tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
+        dataIndex: 'portfolioUnrealizedPnl',
+        tdCls: 'portfolioUnrealizedPnl hop-pnl hop-unchanged',
         align: 'right',
         renderer: 'pnlRenderer'
     }, {

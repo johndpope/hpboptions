@@ -78,7 +78,7 @@ public abstract class AbstractDataService implements DataService {
         }
         if (dataHolder.getType() == DataHolderType.POSITION || dataHolder.getType() == DataHolderType.CHAIN) {
             OptionDataHolder optionDataHolder = (OptionDataHolder) dataHolder;
-            optionDataHolder.updateOptionData(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
+            optionDataHolder.optionDataReceived(tickType, delta, gamma, vega, theta, impliedVolatility, optionPrice, underlyingPrice);
 
             if (tickType == TickType.MODEL_OPTION) { // update on bid, ask or model, but recalculate and send message only on model
                 optionDataHolder.recalculateOptionData();

@@ -2,6 +2,7 @@ package com.highpowerbear.hpboptions.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
+import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
@@ -16,18 +17,19 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     private final Instrument cfdInstrument;
     private final int ibHistDataRequestId;
+    private final int ibPnlRequestId;
     private final TreeMap<LocalDate, Double> ivHistoryMap = new TreeMap<>();
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
-    private Map<DataField, Double> thresholdBreachedFields = new HashMap<>();
-    private long lastRiskUpdateTime;
+    private Map<DataField, Double> thresholdBreachedFieldsMap = new HashMap<>();
 
-    public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId) {
+    public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
 
         this.cfdInstrument = cfdInstrument;
         this.ibHistDataRequestId = ibHistDataRequestId;
+        this.ibPnlRequestId = ibPnlRequestId;
 
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
@@ -39,6 +41,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 DerivedMktDataField.OPTION_VOLUME,
                 DerivedMktDataField.OPTION_OPEN_INTEREST,
                 UnderlyingDataField.CFD_POSITION_SIZE,
+                UnderlyingDataField.CFD_UNREALIZED_PNL,
                 UnderlyingDataField.IV_CLOSE,
                 UnderlyingDataField.PUTS_SUM,
                 UnderlyingDataField.CALLS_SUM,
@@ -50,7 +53,7 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
                 UnderlyingDataField.PORTFOLIO_THETA,
                 UnderlyingDataField.PORTFOLIO_TIME_VALUE,
                 UnderlyingDataField.ALLOCATION_PCT,
-                UnderlyingDataField.UNREALIZED_PNL
+                UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL
         ).collect(Collectors.toSet()));
 
         ivHistoryDependentFields = Stream.of(
@@ -138,6 +141,23 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public void updateCfdPositionSize(int cfdPositionSize) {
         update(UnderlyingDataField.CFD_POSITION_SIZE, cfdPositionSize);
+
+        UnderlyingDataField cfdMarginField = UnderlyingDataField.CFD_MARGIN;
+        if (cfdPositionSize == 0) {
+            reset(cfdMarginField);
+
+        } else if (HopUtil.isValidPrice(getLast())) {
+            double cfdMargin = Math.abs(cfdPositionSize) * getLast() * HopSettings.CFD_MARGIN_FACTOR;
+            update(cfdMarginField, cfdMargin);
+        }
+    }
+
+    public void updateCfdUnrealizedPnl(double unrealizedPnl) {
+        update(UnderlyingDataField.CFD_UNREALIZED_PNL, unrealizedPnl);
+    }
+
+    public void resetCfdFields() {
+        UnderlyingDataField.cfdFields().forEach(this::reset);
     }
 
     public void updatePositionsSum(int putsSum, int callsSum) {
@@ -146,12 +166,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     }
 
     public void resetPositionsSum() {
-        Stream.of(UnderlyingDataField.PUTS_SUM, UnderlyingDataField.CALLS_SUM).forEach(field -> update(field, field.getInitialValue()));
+        Stream.of(UnderlyingDataField.PUTS_SUM, UnderlyingDataField.CALLS_SUM).forEach(this::reset);
     }
 
-    public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double allocationPct) {
-        lastRiskUpdateTime = System.currentTimeMillis();
-
+    public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double margin, double allocationPct) {
         update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
         update(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, deltaOnePct);
         update(UnderlyingDataField.PORTFOLIO_GAMMA, gamma);
@@ -159,33 +177,41 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         update(UnderlyingDataField.PORTFOLIO_VEGA, vega);
         update(UnderlyingDataField.PORTFOLIO_THETA, theta);
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
+        update(UnderlyingDataField.PORTFOLIO_MARGIN, margin);
         update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
 
-        thresholdBreachedFields.clear();
+        populateThresholdBreachedFieldsMap();
+    }
+
+    public void updateCfdOnlyRiskData(double delta, double deltaOnePct, double margin, double allocationPct) {
+        update(UnderlyingDataField.PORTFOLIO_DELTA, delta);
+        update(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, deltaOnePct);
+        update(UnderlyingDataField.PORTFOLIO_MARGIN, margin);
+        update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
+
+        populateThresholdBreachedFieldsMap();
+    }
+
+    private void populateThresholdBreachedFieldsMap() {
+        thresholdBreachedFieldsMap.clear();
         for (UnderlyingDataField f : UnderlyingDataField.riskDataFields()) {
             double current = getCurrent(f).doubleValue();
             if (f.thresholdBreached(current)) {
-                thresholdBreachedFields.put(f, current);
+                thresholdBreachedFieldsMap.put(f, current);
             }
         }
     }
 
     public void resetRiskData() {
-        lastRiskUpdateTime = 0;
-        UnderlyingDataField.riskDataFields().forEach(field -> update(field, field.getInitialValue()));
+        UnderlyingDataField.riskDataFields().forEach(this::reset);
     }
 
-    public boolean isRiskDataUpdateDue() {
-        return (System.currentTimeMillis() - lastRiskUpdateTime) > HopSettings.RISK_DATA_UPDATE_INTERVAL_MILLIS;
+    public void updatePortfolioUnrealizedPnl(double unrealizedPnl) {
+        update(UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL, unrealizedPnl);
     }
 
-    public void updateUnrealizedPnl(double unrealizedPnl) {
-        update(UnderlyingDataField.UNREALIZED_PNL, unrealizedPnl);
-    }
-
-    public void resetUnrealizedPnl() {
-        UnderlyingDataField field = UnderlyingDataField.UNREALIZED_PNL;
-        update(field, field.getInitialValue());
+    public void resetPortfolioUnrealizedPnl() {
+        reset(UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
     }
 
     public Set<DataField> getIvHistoryDependentFields() {
@@ -200,8 +226,12 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return ibHistDataRequestId;
     }
 
-    public Map<DataField, Double> getThresholdBreachedFields() {
-        return thresholdBreachedFields;
+    public int getIbPnlRequestId() {
+        return ibPnlRequestId;
+    }
+
+    public Map<DataField, Double> getThresholdBreachedFieldsMap() {
+        return thresholdBreachedFieldsMap;
     }
 
     public double getOptionImpliedVol() {
@@ -210,6 +240,14 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public int getCfdPositionSize() {
         return getCurrent(UnderlyingDataField.CFD_POSITION_SIZE).intValue();
+    }
+
+    public double getCfdUnrealizedPnl() {
+        return getCurrent(UnderlyingDataField.CFD_UNREALIZED_PNL).doubleValue();
+    }
+
+    public double getCfdMargin() {
+        return getCurrent(UnderlyingDataField.CFD_MARGIN).doubleValue();
     }
 
     public double getIvClose() {
@@ -268,11 +306,15 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
         return getCurrent(UnderlyingDataField.PORTFOLIO_TIME_VALUE).doubleValue();
     }
 
-    public double getAllocationPct() {
-        return getCurrent(UnderlyingDataField.ALLOCATION_PCT).doubleValue();
+    public double getPortfolioUnrealizedPnl() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL).doubleValue();
     }
 
-    public double getUnrealizedPnl() {
-        return getCurrent(UnderlyingDataField.UNREALIZED_PNL).doubleValue();
+    public double getPortfolioMargin() {
+        return getCurrent(UnderlyingDataField.PORTFOLIO_MARGIN).doubleValue();
+    }
+
+    public double getAllocationPct() {
+        return getCurrent(UnderlyingDataField.ALLOCATION_PCT).doubleValue();
     }
 }

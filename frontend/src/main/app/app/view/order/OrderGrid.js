@@ -141,7 +141,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         }
     }, {
         text: 'Fill',
-        width: 60,
+        width: 70,
         dataIndex: 'fillPrice',
         align: 'right',
         renderer: 'orderPriceRenderer'

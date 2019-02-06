@@ -9,6 +9,7 @@ import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class RiskService {
 
     private final Map<Integer, Set<DataField>> riskEventMap = new HashMap<>(); // underlying conid -> fields for which risk events have already triggered in the last 24h
 
+    @Value("${ib.account}")
+    private String ibAccount;
+
     @Autowired
     public RiskService(HopDao hopDao, UnderlyingService underlyingService, MessageService messageService) {
         this.hopDao = hopDao;
@@ -46,11 +50,11 @@ public class RiskService {
         riskEventMap.values().forEach(Set::clear);
     }
 
-    @JmsListener(destination = HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_RECALCULATED)
-    public void underlyingRiskDataRecalculated(int underlyingConid) {
+    @JmsListener(destination = HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED)
+    public void underlyingRiskDataCalculated(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
-        for (Map.Entry<DataField, Double> entry : udh.getThresholdBreachedFields().entrySet()) {
+        for (Map.Entry<DataField, Double> entry : udh.getThresholdBreachedFieldsMap().entrySet()) {
             DataField dataField = entry.getKey();
 
             if (riskEventMap.get(underlyingConid).contains(dataField)) {
@@ -71,10 +75,11 @@ public class RiskService {
             riskEvent.setFieldValue(fieldValue);
             riskEvent.setFieldThreshold(riskThreshold);
             riskEvent.setResolution("send email");
+            riskEvent.setIbAccount(ibAccount);
             hopDao.createRiskEvent(riskEvent);
 
             String subject = "Risk event " + symbol;
-            String text = dataFieldStr + " threshold breached, value=" + fieldValue + ", threshold=" + riskThreshold;
+            String text = "Account " + ibAccount + ", " + dataFieldStr + "=" + fieldValue + ", threshold=" + riskThreshold;
             messageService.sendEmailMessage(subject, text);
         }
     }

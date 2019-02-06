@@ -17,6 +17,13 @@ public enum UnderlyingDataField implements DataField {
             return 0;
         }
     },
+    CFD_UNREALIZED_PNL,
+    CFD_MARGIN {
+        @Override
+        public Number getInitialValue() {
+            return 0d;
+        }
+    },
     IV_CLOSE,
     PUTS_SUM {
         @Override
@@ -45,15 +52,21 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_VEGA,
     PORTFOLIO_THETA,
     PORTFOLIO_TIME_VALUE,
+    PORTFOLIO_UNREALIZED_PNL,
+    PORTFOLIO_MARGIN,
     ALLOCATION_PCT {
         @Override
         public boolean thresholdBreached(Number value) {
             return value.doubleValue() >= getRiskThreshold().getHigh().doubleValue();
         }
-    },
-    UNREALIZED_PNL;
+    };
 
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
+    private static List<UnderlyingDataField> cfdFields = Stream.of(
+            CFD_POSITION_SIZE,
+            CFD_UNREALIZED_PNL,
+            CFD_MARGIN
+    ).collect(Collectors.toList());
     private static List<UnderlyingDataField> riskDataFields = Stream.of(
             PORTFOLIO_DELTA,
             PORTFOLIO_DELTA_ONE_PCT,
@@ -62,10 +75,15 @@ public enum UnderlyingDataField implements DataField {
             PORTFOLIO_VEGA,
             PORTFOLIO_THETA,
             PORTFOLIO_TIME_VALUE,
+            PORTFOLIO_MARGIN,
             ALLOCATION_PCT).collect(Collectors.toList());
 
     public static List<UnderlyingDataField> fields() {
         return fields;
+    }
+
+    public static List<UnderlyingDataField> cfdFields() {
+        return cfdFields;
     }
 
     public static List<UnderlyingDataField> riskDataFields() {

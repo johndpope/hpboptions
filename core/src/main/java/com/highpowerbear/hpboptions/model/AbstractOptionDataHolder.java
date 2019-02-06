@@ -56,7 +56,7 @@ public class AbstractOptionDataHolder extends AbstractDataHolder implements Opti
     }
 
     @Override
-    public void updateOptionData(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVol, double optionPrice, double underlyingPrice) {
+    public void optionDataReceived(TickType tickType, double delta, double gamma, double vega, double theta, double impliedVol, double optionPrice, double underlyingPrice) {
         Map<OptionDataField, Double> m = computationMap.get(tickType);
 
         m.put(DELTA, delta);

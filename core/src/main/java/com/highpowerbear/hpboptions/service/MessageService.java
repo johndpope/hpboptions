@@ -8,6 +8,7 @@ import com.highpowerbear.hpboptions.model.DataHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -25,6 +26,11 @@ public class MessageService {
     private final JmsTemplate jmsTemplate;
     private final SimpMessagingTemplate simpMessagingTemplate;
 
+    @Value("${email.from}")
+    private String emailFrom;
+    @Value("${email.to}")
+    private String emailTo;
+
     @Autowired
     public MessageService(JavaMailSender emailSender, JmsTemplate jmsTemplate, SimpMessagingTemplate simpMessagingTemplate) {
         this.emailSender = emailSender;
@@ -37,8 +43,8 @@ public class MessageService {
 
         SimpleMailMessage message = new SimpleMailMessage();
 
-        message.setFrom(HopSettings.EMAIL_FROM);
-        message.setTo(HopSettings.EMAIL_TO);
+        message.setFrom(emailFrom);
+        message.setTo(emailTo);
         message.setSubject(subject);
         message.setText(text);
 

@@ -127,6 +127,10 @@ public abstract class AbstractDataHolder implements DataHolder {
         valueMap.get(field).add(value instanceof Double ? HopUtil.round4(value.doubleValue()) : value);
     }
 
+    protected void reset(DataField field) {
+        update(field, field.getInitialValue());
+    }
+
     protected CircularFifoQueue<Number> createValueQueue(Number initialValue) {
         CircularFifoQueue<Number> valueQueue = new CircularFifoQueue<>(2);
         valueQueue.add(initialValue); // old value

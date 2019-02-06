@@ -107,8 +107,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void position(String account, Contract contract, double pos, double avgCost) {
-        super.position(account, contract, pos, avgCost);
-
+        //super.position(account, contract, pos, avgCost);
         if (Types.SecType.valueOf(contract.getSecType()) == Types.SecType.OPT) {
             positionService.positionReceived(contract, (int) pos);
 
@@ -147,7 +146,12 @@ public class IbListener extends GenericIbListener {
     @Override
     public void pnlSingle(int requestId, int pos, double dailyPnL, double unrealizedPnL, double realizedPnL, double value) {
         //super.pnlSingle(requestId, pos, dailyPnL, unrealizedPnL, realizedPnL, value);
-        positionService.unrealizedPnlReceived(requestId, unrealizedPnL);
+        if (isPositionIbRequest(requestId)) {
+            positionService.unrealizedPnlReceived(requestId, unrealizedPnL);
+
+        } else if (isUnderlyingIbRequest(requestId)) {
+            underlyingService.unrealizedPnlReceived(requestId, unrealizedPnL);
+        }
     }
 
     @Override
@@ -169,14 +173,32 @@ public class IbListener extends GenericIbListener {
     }
 
     private DataService getDataService(int requestId) {
-        if (requestId >= HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL && requestId < HopSettings.ORDER_IB_REQUEST_ID_INITIAL) {
+        if (isUnderlyingIbRequest(requestId)) {
             return underlyingService;
-        } else if (requestId >= HopSettings.ORDER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.POSITION_IB_REQUEST_ID_INITIAL) {
+        } else if (isOrderIbRequest(requestId)) {
             return orderService;
-        } else if (requestId >= HopSettings.POSITION_IB_REQUEST_ID_INITIAL && requestId < HopSettings.CHAIN_IB_REQUEST_ID_INITIAL) {
+        } else if (isPositionIbRequest(requestId)) {
             return positionService;
-        } else {
+        } else if (isChainIbRequest(requestId)) {
             return chainService;
+        } else {
+            throw new IllegalStateException("no data service for requestId " + requestId);
         }
+    }
+
+    private boolean isUnderlyingIbRequest(int requestId) {
+        return requestId >= HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL && requestId < HopSettings.ORDER_IB_REQUEST_ID_INITIAL;
+    }
+
+    private boolean isOrderIbRequest(int requestId) {
+        return requestId >= HopSettings.ORDER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.POSITION_IB_REQUEST_ID_INITIAL;
+    }
+
+    private boolean isPositionIbRequest(int requestId) {
+        return requestId >= HopSettings.POSITION_IB_REQUEST_ID_INITIAL && requestId < HopSettings.CHAIN_IB_REQUEST_ID_INITIAL;
+    }
+
+    private boolean isChainIbRequest(int requestId) {
+        return requestId >= HopSettings.CHAIN_IB_REQUEST_ID_INITIAL;
     }
 }

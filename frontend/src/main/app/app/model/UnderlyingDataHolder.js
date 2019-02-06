@@ -8,6 +8,7 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'ibHistDataRequestId',
         'optionImpliedVol',
         'cfdPositionSize',
+        'cfdUnrealizedPnl',
         'ivClose',
         'putsSum',
         'callsSum',
@@ -22,7 +23,7 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
         'portfolioVega',
         'portfolioTheta',
         'portfolioTimeValue',
-        'unrealizedPnl',
+        'portfolioUnrealizedPnl',
         'allocationPct'
     ]
 });

@@ -7,6 +7,7 @@ import com.highpowerbear.hpboptions.model.Instrument;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,9 @@ public class IbController {
     private boolean markConnected;
 
     private final List<ConnectionListener> connectionListeners = new ArrayList<>();
+
+    @Value("${ib.account}")
+    private String ibAccount;
 
     void initialize(IbListener ibListener) {
         if (!initialized.get()) {
@@ -182,7 +186,7 @@ public class IbController {
         log.info("requesting pnl single for requestId=" + requestId + ", conId=" + conid);
 
         if (checkConnected()) {
-            eClientSocket.reqPnLSingle(requestId, "U1884205", "", conid);
+            eClientSocket.reqPnLSingle(requestId, ibAccount, "", conid);
         }
     }
 

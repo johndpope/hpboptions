@@ -28,7 +28,7 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
         ).collect(Collectors.toSet()));
     }
 
-    public void recalculateMargin() {
+    public void calculateMargin() {
         double optonPrice = getOptionPrice();
         double underlyingPrice = getUnderlyingPrice();
 

@@ -24,6 +24,7 @@ public class RiskEvent implements Serializable {
     private String fieldValue;
     private String fieldThreshold;
     private String resolution;
+    private String ibAccount;
 
     @Override
     public boolean equals(Object o) {
@@ -102,5 +103,13 @@ public class RiskEvent implements Serializable {
 
     public void setResolution(String resolution) {
         this.resolution = resolution;
+    }
+
+    public String getIbAccount() {
+        return ibAccount;
+    }
+
+    public void setIbAccount(String ibAccount) {
+        this.ibAccount = ibAccount;
     }
 }

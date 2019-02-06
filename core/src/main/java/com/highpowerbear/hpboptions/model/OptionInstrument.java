@@ -23,6 +23,14 @@ public class OptionInstrument extends Instrument {
         this.multiplier = multiplier;
     }
 
+    public boolean isCall() {
+        return right == Types.Right.Call;
+    }
+
+    public boolean isPut() {
+        return right == Types.Right.Put;
+    }
+
     public Types.Right getRight() {
         return right;
     }

@@ -37,12 +37,14 @@ public class UnderlyingService extends AbstractDataService implements Connection
     private final AccountSummary accountSummary;
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, UnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
+    private final Map<Integer, UnderlyingDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
 
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL);
 
-    @Value("${fixer.access-key}") private String fixerAccessKey;
+    @Value("${fixer.access-key}")
+    private String fixerAccessKey;
     private final RestTemplate restTemplate = new RestTemplate();
     private ExchangeRates exchangeRates;
 
@@ -72,7 +74,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 cfdInstrument.setMinTick(u.getCfdMinTick());
             }
 
-            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
             if (u.isCfdDefined()) {
                 underlyingCfdMap.put(u.getCfdConid(), udh);
             }
@@ -92,12 +94,20 @@ public class UnderlyingService extends AbstractDataService implements Connection
         underlyingMap.values().forEach(this::requestMktData);
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
         ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
+
+        underlyingCfdMap.values().forEach(udh -> {
+            pnlRequestMap.put(udh.getIbPnlRequestId(), udh);
+            ibController.requestPnlSingle(udh.getIbPnlRequestId(), udh.getCfdInstrument().getConid());
+        });
     }
 
     @Override
     public void preDisconnect() {
         cancelAllMktData();
         ibController.cancelAccountSummary(accountSummary.getIbRequestId());
+
+        pnlRequestMap.keySet().forEach(ibController::cancelPnlSingle);
+        pnlRequestMap.clear();
     }
 
     @Scheduled(cron = "0 0 7 * * MON-FRI")
@@ -128,21 +138,21 @@ public class UnderlyingService extends AbstractDataService implements Connection
                 IbTradingHours.REGULAR.getValue());
     }
 
-    public void addPosition(int underlyingConid, PositionDataHolder pdh) {
+    public void addOptionPosition(int underlyingConid, PositionDataHolder pdh) {
         if (underlyingMap.containsKey(underlyingConid)) {
             underlyingPositionMap.get(underlyingConid).put(pdh.getInstrument().getConid(), pdh);
-            recalculatePositionsSum(underlyingConid);
+            calculateOptionPositionsSum(underlyingConid);
         }
     }
 
-    public void removePosition(int underlyingConid, int positionConid) {
+    public void removeOptionPosition(int underlyingConid, int positionConid) {
         if (underlyingMap.containsKey(underlyingConid)) {
             underlyingPositionMap.get(underlyingConid).remove(positionConid);
-            recalculatePositionsSum(underlyingConid);
+            calculateOptionPositionsSum(underlyingConid);
         }
     }
 
-    public void recalculatePositionsSum(int underlyingConid) {
+    public void calculateOptionPositionsSum(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
@@ -169,7 +179,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
         messageService.sendWsMessage(udh, UnderlyingDataField.CALLS_SUM);
     }
 
-    public void recalculateRiskDataPerUnderlying(int underlyingConid) {
+    public void calculateRiskDataPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
@@ -178,48 +188,72 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
         if (pdhs.isEmpty()) {
             udh.resetRiskData();
-            UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
 
-        } else if (udh.isRiskDataUpdateDue() && pdhs.stream().allMatch(PositionDataHolder::riskDataSourceFieldsReady)) {
+            if (udh.getCfdPositionSize() != 0) {
+                double delta = udh.getCfdPositionSize();
+                double deltaOnePct = calculateDeltaOnePct(delta, udh.getLast());
+                double allocationPct = calculateAllocationPct(udh.getCfdMargin(), udh.getInstrument().getCurrency());
 
-            double delta = 0d, gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
+                udh.updateCfdOnlyRiskData(delta, deltaOnePct, udh.getCfdMargin(), allocationPct);
+            }
+            sendRiskMessages(udh);
+
+        } else if (pdhs.stream().allMatch(PositionDataHolder::riskDataSourceFieldsReady)) {
+            double delta = udh.getCfdPositionSize();
+            double gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
 
             for (PositionDataHolder pdh : pdhs) {
-                int multiplier = pdh.getInstrument().getMultiplier();
+                int factor = pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
 
-                delta += pdh.getDelta() * pdh.getPositionSize() * multiplier;
-                gamma += pdh.getGamma() * pdh.getPositionSize() * multiplier;
-                vega += pdh.getVega() * pdh.getPositionSize() * multiplier;
-                theta += pdh.getTheta() * pdh.getPositionSize() * multiplier;
-                timeValue += pdh.getTimeValue() * Math.abs(pdh.getPositionSize()) * multiplier;
+                delta += pdh.getDelta() * factor;
+                gamma += pdh.getGamma() * factor;
+                vega += pdh.getVega() * factor;
+                theta += pdh.getTheta() * factor;
 
-                if (pdh.getInstrument().getRight() == Types.Right.Call) {
-                    callMargin += pdh.getMargin();
-                } else if (pdh.getInstrument().getRight() == Types.Right.Put) {
-                    putMargin += pdh.getMargin();
-                }
+                timeValue += pdh.getTimeValue() * Math.abs( pdh.getPositionSize()) * pdh.getInstrument().getMultiplier();
+
+                callMargin += pdh.getInstrument().isCall() ? pdh.getMargin() : 0d;
+                putMargin += pdh.getInstrument().isPut() ? pdh.getMargin() : 0d;
             }
-            double lastPrice = udh.getLast();
-            double deltaOnePct = HopUtil.isValidPrice(lastPrice) ? (delta * lastPrice) / 100d : Double.NaN;
-            double gammaOnePctPct = HopUtil.isValidPrice(lastPrice) ? (((gamma * lastPrice) / 100d) * lastPrice) / 100d : Double.NaN;
+            double deltaOnePct = calculateDeltaOnePct(delta, udh.getLast());
+            double gammaOnePctPct = calculateGammaOnePct(gamma, udh.getLast());
+
+            callMargin += udh.getCfdPositionSize() < 0 ? udh.getCfdMargin() : 0d;
+            putMargin += udh.getCfdPositionSize() > 0 ? udh.getCfdMargin() : 0d;
+
             double margin  = Math.max(callMargin, putMargin);
-            double allocationPct = Double.NaN;
+            double allocationPct = calculateAllocationPct(margin, udh.getInstrument().getCurrency());
 
-            if (accountSummary.isReady() && exchangeRates != null && exchangeRates.getBaseCurrency() == accountSummary.getBaseCurrency()) {
-                Currency transactionCurrency = udh.getInstrument().getCurrency();
-                double exchangeRate = exchangeRates.getRate(transactionCurrency);
-                double netLiqValue = accountSummary.getNetLiquidationValue();
-                allocationPct = 100d * margin / (netLiqValue * exchangeRate);
-            }
-
-            udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, allocationPct);
-            messageService.sendJmsMesage(HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_RECALCULATED, underlyingConid);
-
-            UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
+            udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, margin, allocationPct);
+            sendRiskMessages(udh);
         }
     }
 
-    public void recalculateUnrealizedPnlPerUnderlying(int underlyingConid) {
+    private void sendRiskMessages(UnderlyingDataHolder udh) {
+        messageService.sendJmsMesage(HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED, udh.getInstrument().getConid());
+        UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
+    }
+
+    private double calculateDeltaOnePct(double delta, double price) {
+        return HopUtil.isValidPrice(price) ? (delta * price) / 100d : Double.NaN;
+    }
+
+    private double calculateGammaOnePct(double gamma, double price) {
+        return HopUtil.isValidPrice(price) ? (((gamma * price) / 100d) * price) / 100d : Double.NaN;
+    }
+
+    private double calculateAllocationPct(double margin, Currency currency) {
+        double allocationPct = Double.NaN;
+
+        if (accountSummary.isReady() && exchangeRates != null && exchangeRates.getBaseCurrency() == accountSummary.getBaseCurrency()) {
+            double exchangeRate = exchangeRates.getRate(currency);
+            double netLiqValue = accountSummary.getNetLiquidationValue();
+            allocationPct = 100d * margin / (netLiqValue * exchangeRate);
+        }
+        return allocationPct;
+    }
+
+    public void calculateUnrealizedPnlPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
@@ -227,12 +261,19 @@ public class UnderlyingService extends AbstractDataService implements Connection
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
-            udh.resetUnrealizedPnl();
+            if (udh.getCfdPositionSize() == 0) {
+                udh.resetPortfolioUnrealizedPnl();
+            } else {
+                udh.updatePortfolioUnrealizedPnl(udh.getCfdUnrealizedPnl());
+            }
         } else {
             double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
-            udh.updateUnrealizedPnl(unrealizedPnl);
+            if (udh.getCfdPositionSize() != 0) {
+                unrealizedPnl += udh.getCfdUnrealizedPnl();
+            }
+            udh.updatePortfolioUnrealizedPnl(unrealizedPnl);
         }
-        messageService.sendWsMessage(udh, UnderlyingDataField.UNREALIZED_PNL);
+        messageService.sendWsMessage(udh, UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
     }
 
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
@@ -262,6 +303,25 @@ public class UnderlyingService extends AbstractDataService implements Connection
         if (udh != null) {
             udh.updateCfdPositionSize(positionSize);
             messageService.sendWsMessage(udh, UnderlyingDataField.CFD_POSITION_SIZE);
+
+            if (positionSize == 0) {
+                udh.resetCfdFields();
+                UnderlyingDataField.cfdFields().forEach(field -> messageService.sendWsMessage(udh, field));
+                calculateUnrealizedPnlPerUnderlying(udh.getInstrument().getConid());
+            }
+            calculateRiskDataPerUnderlying(udh.getInstrument().getConid());
+        }
+    }
+
+    public void unrealizedPnlReceived(int requestId, double unrealizedPnL) {
+        UnderlyingDataHolder udh = pnlRequestMap.get(requestId);
+
+        if (udh != null) {
+            if (udh.getCfdPositionSize() != 0) {
+                udh.updateCfdUnrealizedPnl(unrealizedPnL);
+                messageService.sendWsMessage(udh, UnderlyingDataField.CFD_UNREALIZED_PNL);
+            }
+            calculateUnrealizedPnlPerUnderlying(udh.getInstrument().getConid());
         }
     }
 

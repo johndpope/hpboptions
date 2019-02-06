@@ -91,10 +91,10 @@ public class PositionService extends AbstractDataService implements ConnectionLi
     @Override
     public void modelOptionDataReceived(OptionDataHolder optionDataHolder) {
         PositionDataHolder pdh = (PositionDataHolder) optionDataHolder;
-        pdh.recalculateMargin();
+        pdh.calculateMargin();
         messageService.sendWsMessage(pdh, PositionDataField.MARGIN);
 
-        underlyingService.recalculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+        underlyingService.calculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
     }
 
     public void positionReceived(Contract contract, int positionSize) {
@@ -130,8 +130,8 @@ public class PositionService extends AbstractDataService implements ConnectionLi
                         messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
 
                         int underlyingConid = pdh.getInstrument().getUnderlyingConid();
-                        underlyingService.recalculatePositionsSum(underlyingConid);
-                        underlyingService.recalculateRiskDataPerUnderlying(underlyingConid);
+                        underlyingService.calculateOptionPositionsSum(underlyingConid);
+                        underlyingService.calculateRiskDataPerUnderlying(underlyingConid);
                     }
                 } else {
                     cancelMktData(pdh);
@@ -140,9 +140,9 @@ public class PositionService extends AbstractDataService implements ConnectionLi
                     positionMap.remove(conid);
                     int underlyingConid = pdh.getInstrument().getUnderlyingConid();
 
-                    underlyingService.removePosition(underlyingConid, conid);
-                    underlyingService.recalculateRiskDataPerUnderlying(underlyingConid);
-                    underlyingService.recalculateUnrealizedPnlPerUnderlying(underlyingConid);
+                    underlyingService.removeOptionPosition(underlyingConid, conid);
+                    underlyingService.calculateRiskDataPerUnderlying(underlyingConid);
+                    underlyingService.calculateUnrealizedPnlPerUnderlying(underlyingConid);
 
                     messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
                 }
@@ -174,7 +174,7 @@ public class PositionService extends AbstractDataService implements ConnectionLi
         UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
         if (udh != null) {
             pdh.setDisplayRank(udh.getDisplayRank());
-            underlyingService.addPosition(underlyingConid, pdh);
+            underlyingService.addOptionPosition(underlyingConid, pdh);
         } else {
             pdh.setDisplayRank(-1);
         }
@@ -186,12 +186,12 @@ public class PositionService extends AbstractDataService implements ConnectionLi
 
     public void unrealizedPnlReceived(int requestId, double unrealizedPnL) {
         PositionDataHolder pdh = pnlRequestMap.get(requestId);
-        if (pdh == null) {
-            return;
+
+        if (pdh != null) {
+            pdh.updateUnrealizedPnl(unrealizedPnL);
+            messageService.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
+            underlyingService.calculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
         }
-        pdh.updateUnrealizedPnl(unrealizedPnL);
-        messageService.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
-        underlyingService.recalculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
     }
 
     public PositionDataHolder getPositionDataHolder(int conid) {
