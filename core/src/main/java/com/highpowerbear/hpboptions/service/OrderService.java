@@ -55,9 +55,10 @@ public class OrderService extends AbstractDataService implements ConnectionListe
 
     @Override
     public void postConnect() {
-        ibController.requestOpenOrders();
         cancelAllMktData();
-        orderMap.values().forEach(this::requestMktData);
+        // open orders received after connecting even when not requested, so additional filtering needed
+        orderMap.values().stream().filter(odh -> odh.getInstrument().getExchange() != null).forEach(this::requestMktData);
+        ibController.requestOpenOrders();
     }
 
     public void createOrderFromPosition(int conid, Types.Action action) {

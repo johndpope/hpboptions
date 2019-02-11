@@ -17,6 +17,13 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         stripeRows: true
     },
     columns: [{
+        text: 'Itm',
+        width: 60,
+        dataIndex: 'callIntrinsicValue',
+        tdCls: 'callIntrinsicValue hop-decimal hop-unchanged',
+        align: 'right',
+        renderer: 'decimalRenderer'
+    }, {
         text: 'Tv',
         width: 60,
         dataIndex: 'callTimeValue',
@@ -25,7 +32,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'decimalRenderer'
     }, {
         text: 'Tpct',
-        width: 75,
+        width: 65,
         dataIndex: 'callTimeValuePct',
         tdCls: 'callTimeValuePct hop-decimal-pct hop-unchanged',
         align: 'right',
@@ -46,14 +53,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 65,
+        width: 60,
         dataIndex: 'callBid',
         tdCls: 'callBid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 65,
+        width: 60,
         dataIndex: 'callAsk',
         tdCls: 'callAsk hop-price hop-unchanged hop-pointer',
         align: 'right',
@@ -67,7 +74,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Lst',
-        width: 65,
+        width: 60,
         dataIndex: 'callLast',
         tdCls: 'callLast hop-price hop-unchanged',
         align: 'right',
@@ -81,21 +88,21 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Vlm',
-        width: 65,
+        width: 60,
         dataIndex: 'callVolume',
         tdCls: 'callVolume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
         text: 'Cls',
-        width: 65,
+        width: 60,
         dataIndex: 'callClose',
         tdCls: 'callClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Chg',
-        width: 65,
+        width: 60,
         dataIndex: 'callChange',
         tdCls: 'callChange hop-change',
         align: 'right',
@@ -121,6 +128,13 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         tdCls: 'hop-chain-strike',
         align: 'center'
     }, {
+        text: 'Itm',
+        width: 60,
+        dataIndex: 'putIntrinsicValue',
+        tdCls: 'putIntrinsicValue hop-decimal hop-unchanged',
+        align: 'right',
+        renderer: 'decimalRenderer'
+    }, {
         text: 'Tv',
         width: 60,
         dataIndex: 'putTimeValue',
@@ -129,7 +143,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'decimalRenderer'
     }, {
         text: 'Tpct',
-        width: 75,
+        width: 65,
         dataIndex: 'putTimeValuePct',
         tdCls: 'putTimeValuePct hop-decimal-pct hop-unchanged',
         align: 'right',
@@ -150,14 +164,14 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 65,
+        width: 60,
         dataIndex: 'putBid',
         tdCls: 'putBid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 65,
+        width: 60,
         dataIndex: 'putAsk',
         tdCls: 'putAsk hop-price hop-unchanged hop-pointer',
         align: 'right',
@@ -171,7 +185,7 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Lst',
-        width: 65,
+        width: 60,
         dataIndex: 'putLast',
         tdCls: 'putLast hop-price hop-unchanged',
         align: 'right',
@@ -185,21 +199,21 @@ Ext.define('HopGui.view.chain.ChainGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Vlm',
-        width: 65,
+        width: 60,
         dataIndex: 'putVolume',
         tdCls: 'putVolume hop-volume hop-unchanged',
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
         text: 'Cls',
-        width: 65,
+        width: 60,
         dataIndex: 'putClose',
         tdCls: 'putClose hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Chg',
-        width: 65,
+        width: 60,
         dataIndex: 'putChange',
         tdCls: 'putChange hop-change',
         align: 'right',

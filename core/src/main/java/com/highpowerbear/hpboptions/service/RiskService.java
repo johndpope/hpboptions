@@ -15,10 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by robertk on 1/28/2019.
@@ -54,33 +51,38 @@ public class RiskService {
     public void underlyingRiskDataCalculated(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
-        for (Map.Entry<DataField, Double> entry : udh.getThresholdBreachedFieldsMap().entrySet()) {
-            DataField dataField = entry.getKey();
+        udh.getRiskCalculationLock().lock();
+        try {
+            for (Map.Entry<DataField, Double> entry : udh.getThresholdBreachedFieldsMap().entrySet()) {
+                DataField dataField = entry.getKey();
 
-            if (riskEventMap.get(underlyingConid).contains(dataField)) {
-                continue;
+                if (riskEventMap.get(underlyingConid).contains(dataField)) {
+                    continue;
+                }
+                String dataFieldStr = HopUtil.toCamelCase(dataField.name());
+                String fieldValue = String.valueOf(entry.getValue());
+                String riskThreshold = entry.getKey().getRiskThreshold().toString();
+                String symbol = udh.getInstrument().getSymbol();
+
+                riskEventMap.get(underlyingConid).add(entry.getKey());
+
+                RiskEvent riskEvent = new RiskEvent();
+                riskEvent.setDate(LocalDateTime.now());
+                riskEvent.setUnderlyingConid(underlyingConid);
+                riskEvent.setUnderlyingSymbol(symbol);
+                riskEvent.setDataField(dataFieldStr);
+                riskEvent.setFieldValue(fieldValue);
+                riskEvent.setFieldThreshold(riskThreshold);
+                riskEvent.setResolution("send email");
+                riskEvent.setIbAccount(ibAccount);
+                hopDao.createRiskEvent(riskEvent);
+
+                String subject = "Risk event " + symbol;
+                String text = "Account " + ibAccount + ", " + dataFieldStr + "=" + fieldValue + ", threshold=" + riskThreshold;
+                messageService.sendEmailMessage(subject, text);
             }
-            String dataFieldStr = HopUtil.toCamelCase(dataField.name());
-            String fieldValue = String.valueOf(entry.getValue());
-            String riskThreshold = entry.getKey().getRiskThreshold().toString();
-            String symbol = udh.getInstrument().getSymbol();
-
-            riskEventMap.get(underlyingConid).add(entry.getKey());
-
-            RiskEvent riskEvent = new RiskEvent();
-            riskEvent.setDate(LocalDateTime.now());
-            riskEvent.setUnderlyingConid(underlyingConid);
-            riskEvent.setUnderlyingSymbol(symbol);
-            riskEvent.setDataField(dataFieldStr);
-            riskEvent.setFieldValue(fieldValue);
-            riskEvent.setFieldThreshold(riskThreshold);
-            riskEvent.setResolution("send email");
-            riskEvent.setIbAccount(ibAccount);
-            hopDao.createRiskEvent(riskEvent);
-
-            String subject = "Risk event " + symbol;
-            String text = "Account " + ibAccount + ", " + dataFieldStr + "=" + fieldValue + ", threshold=" + riskThreshold;
-            messageService.sendEmailMessage(subject, text);
+        } finally {
+            udh.getRiskCalculationLock().unlock();
         }
     }
 }

@@ -74,7 +74,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     positionRenderer: function(val, metadata, record) {
         var me = this;
 
-        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatPosition(val);
@@ -92,7 +92,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     decimalRenderer: function(val, metadata, record) {
         var me = this;
 
-        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatDecimal(val);
@@ -101,7 +101,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     decimalOneRenderer: function(val, metadata, record) {
         var me = this;
 
-        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatDecimalOne(val);
@@ -110,7 +110,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     decimalPctRenderer: function(val, metadata, record) {
         var me = this;
 
-        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatDecimalPct(val);
@@ -119,7 +119,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
     wholeRenderer: function(val, metadata, record) {
         var me = this;
 
-        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt');
+        var statusCls = val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt');
         metadata.tdCls = record.data.id + ' ' + statusCls;
 
         return me.formatWhole(val);
@@ -211,7 +211,7 @@ Ext.define('HopGui.view.common.DataControllerBase', {
                 } else if (me.isVolume(td)) {
                     td.classList.add('hop-unchanged');
                 } else if (me.isPosition(td)|| me.isDecimal(td) || me.isDecimalOne(td) || me.isDecimalPct(td) || me.isWhole(td)) {
-                    td.classList.add(val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-positive-alt'));
+                    td.classList.add(val > 0 ? 'hop-positive-alt' : (val < 0 ? 'hop-negative-alt' : 'hop-negative-alt'));
                 } else if (me.isChange(td) || me.isChangePct(td) || me.isIvChangePct(td) || me.isPnl(td)) {
                     td.classList.add(val > 0 ? 'hop-positive' : (val < 0 ? 'hop-negative' : 'hop-unchanged'));
                 }

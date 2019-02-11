@@ -7,6 +7,7 @@ import com.highpowerbear.hpboptions.enums.*;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,6 +24,10 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
     private final Set<DataField> ivHistoryDependentFields;
 
     private Map<DataField, Double> thresholdBreachedFieldsMap = new HashMap<>();
+    @JsonIgnore
+    private final ReentrantLock riskCalculationLock = new ReentrantLock();
+    @JsonIgnore
+    private final ReentrantLock pnlCalculationLock = new ReentrantLock();
 
     public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
@@ -167,6 +172,14 @@ public class UnderlyingDataHolder extends AbstractDataHolder {
 
     public void resetPositionsSum() {
         Stream.of(UnderlyingDataField.PUTS_SUM, UnderlyingDataField.CALLS_SUM).forEach(this::reset);
+    }
+
+    public ReentrantLock getRiskCalculationLock() {
+        return riskCalculationLock;
+    }
+
+    public ReentrantLock getPnlCalculationLock() {
+        return pnlCalculationLock;
     }
 
     public void updateRiskData(double delta, double deltaOnePct, double gamma, double gammaOnePctPct, double vega, double theta, double timeValue, double margin, double allocationPct) {

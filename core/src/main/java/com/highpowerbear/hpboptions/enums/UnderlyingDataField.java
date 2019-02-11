@@ -41,14 +41,16 @@ public enum UnderlyingDataField implements DataField {
     PORTFOLIO_DELTA_ONE_PCT {
         @Override
         public boolean thresholdBreached(Number value) {
-            RiskThreshold rt = getRiskThreshold();
-            double v = value.doubleValue();
-
-            return v <= rt.getLow().doubleValue() || v >= rt.getHigh().doubleValue();
+            return thresholdBreachedRange(value);
         }
     },
     PORTFOLIO_GAMMA,
-    PORTFOLIO_GAMMA_ONE_PCT_PCT,
+    PORTFOLIO_GAMMA_ONE_PCT_PCT {
+        @Override
+        public boolean thresholdBreached(Number value) {
+            return thresholdBreachedRange(value);
+        }
+    },
     PORTFOLIO_VEGA,
     PORTFOLIO_THETA,
     PORTFOLIO_TIME_VALUE,
@@ -57,9 +59,20 @@ public enum UnderlyingDataField implements DataField {
     ALLOCATION_PCT {
         @Override
         public boolean thresholdBreached(Number value) {
-            return value.doubleValue() >= getRiskThreshold().getHigh().doubleValue();
+            return thresholdBreachedHigh(value);
         }
     };
+
+    boolean thresholdBreachedRange(Number value) {
+        RiskThreshold rt = getRiskThreshold();
+        double v = value.doubleValue();
+
+        return v <= rt.getLow().doubleValue() || v >= rt.getHigh().doubleValue();
+    }
+
+    boolean thresholdBreachedHigh(Number value) {
+        return value.doubleValue() >= getRiskThreshold().getHigh().doubleValue();
+    }
 
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
     private static List<UnderlyingDataField> cfdFields = Stream.of(

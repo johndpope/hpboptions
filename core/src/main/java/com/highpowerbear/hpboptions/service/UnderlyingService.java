@@ -181,51 +181,55 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
     public void calculateRiskDataPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
-        if (udh == null) {
+        if (udh == null || !udh.getRiskCalculationLock().tryLock()) {
             return;
         }
-        Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
+        try {
+            Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
-        if (pdhs.isEmpty()) {
-            udh.resetRiskData();
+            if (pdhs.isEmpty()) {
+                udh.resetRiskData();
 
-            if (udh.getCfdPositionSize() != 0) {
+                if (udh.getCfdPositionSize() != 0) {
+                    double delta = udh.getCfdPositionSize();
+                    double deltaOnePct = calculateDeltaOnePct(delta, udh.getLast());
+                    double allocationPct = calculateAllocationPct(udh.getCfdMargin(), udh.getInstrument().getCurrency());
+
+                    udh.updateCfdOnlyRiskData(delta, deltaOnePct, udh.getCfdMargin(), allocationPct);
+                }
+                sendRiskMessages(udh);
+
+            } else if (pdhs.stream().allMatch(PositionDataHolder::riskDataSourceFieldsReady)) {
                 double delta = udh.getCfdPositionSize();
+                double gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
+
+                for (PositionDataHolder pdh : pdhs) {
+                    int factor = pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
+
+                    delta += pdh.getDelta() * factor;
+                    gamma += pdh.getGamma() * factor;
+                    vega += pdh.getVega() * factor;
+                    theta += pdh.getTheta() * factor;
+
+                    timeValue += pdh.getTimeValue() * Math.abs(pdh.getPositionSize()) * pdh.getInstrument().getMultiplier();
+
+                    callMargin += pdh.getInstrument().isCall() ? pdh.getMargin() : 0d;
+                    putMargin += pdh.getInstrument().isPut() ? pdh.getMargin() : 0d;
+                }
                 double deltaOnePct = calculateDeltaOnePct(delta, udh.getLast());
-                double allocationPct = calculateAllocationPct(udh.getCfdMargin(), udh.getInstrument().getCurrency());
+                double gammaOnePctPct = calculateGammaOnePct(gamma, udh.getLast());
 
-                udh.updateCfdOnlyRiskData(delta, deltaOnePct, udh.getCfdMargin(), allocationPct);
+                callMargin += udh.getCfdPositionSize() < 0 ? udh.getCfdMargin() : 0d;
+                putMargin += udh.getCfdPositionSize() > 0 ? udh.getCfdMargin() : 0d;
+
+                double margin = Math.max(callMargin, putMargin);
+                double allocationPct = calculateAllocationPct(margin, udh.getInstrument().getCurrency());
+
+                udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, margin, allocationPct);
+                sendRiskMessages(udh);
             }
-            sendRiskMessages(udh);
-
-        } else if (pdhs.stream().allMatch(PositionDataHolder::riskDataSourceFieldsReady)) {
-            double delta = udh.getCfdPositionSize();
-            double gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
-
-            for (PositionDataHolder pdh : pdhs) {
-                int factor = pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
-
-                delta += pdh.getDelta() * factor;
-                gamma += pdh.getGamma() * factor;
-                vega += pdh.getVega() * factor;
-                theta += pdh.getTheta() * factor;
-
-                timeValue += pdh.getTimeValue() * Math.abs( pdh.getPositionSize()) * pdh.getInstrument().getMultiplier();
-
-                callMargin += pdh.getInstrument().isCall() ? pdh.getMargin() : 0d;
-                putMargin += pdh.getInstrument().isPut() ? pdh.getMargin() : 0d;
-            }
-            double deltaOnePct = calculateDeltaOnePct(delta, udh.getLast());
-            double gammaOnePctPct = calculateGammaOnePct(gamma, udh.getLast());
-
-            callMargin += udh.getCfdPositionSize() < 0 ? udh.getCfdMargin() : 0d;
-            putMargin += udh.getCfdPositionSize() > 0 ? udh.getCfdMargin() : 0d;
-
-            double margin  = Math.max(callMargin, putMargin);
-            double allocationPct = calculateAllocationPct(margin, udh.getInstrument().getCurrency());
-
-            udh.updateRiskData(delta, deltaOnePct, gamma, gammaOnePctPct, vega, theta, timeValue, margin, allocationPct);
-            sendRiskMessages(udh);
+        } finally {
+          udh.getRiskCalculationLock().unlock();
         }
     }
 
@@ -255,25 +259,29 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
     public void calculateUnrealizedPnlPerUnderlying(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
-        if (udh == null) {
+        if (udh == null || !udh.getPnlCalculationLock().tryLock()) {
             return;
         }
-        Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
+        try {
+            Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
-        if (pdhs.isEmpty()) {
-            if (udh.getCfdPositionSize() == 0) {
-                udh.resetPortfolioUnrealizedPnl();
+            if (pdhs.isEmpty()) {
+                if (udh.getCfdPositionSize() == 0) {
+                    udh.resetPortfolioUnrealizedPnl();
+                } else {
+                    udh.updatePortfolioUnrealizedPnl(udh.getCfdUnrealizedPnl());
+                }
             } else {
-                udh.updatePortfolioUnrealizedPnl(udh.getCfdUnrealizedPnl());
+                double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
+                if (udh.getCfdPositionSize() != 0) {
+                    unrealizedPnl += udh.getCfdUnrealizedPnl();
+                }
+                udh.updatePortfolioUnrealizedPnl(unrealizedPnl);
             }
-        } else {
-            double unrealizedPnl = underlyingPositionMap.get(underlyingConid).values().stream().mapToDouble(PositionDataHolder::getUnrealizedPnl).sum();
-            if (udh.getCfdPositionSize() != 0) {
-                unrealizedPnl += udh.getCfdUnrealizedPnl();
-            }
-            udh.updatePortfolioUnrealizedPnl(unrealizedPnl);
+            messageService.sendWsMessage(udh, UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
+        } finally {
+            udh.getPnlCalculationLock().unlock();
         }
-        messageService.sendWsMessage(udh, UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
     }
 
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
