@@ -5,6 +5,7 @@ import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
+import com.highpowerbear.hpboptions.dataholder.*;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.model.*;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
  * Created by robertk on 11/8/2018.
  */
 @Service
-public class OrderService extends AbstractDataService implements ConnectionListener {
+public class OrderService extends AbstractMarketDataService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final UnderlyingService underlyingService;
@@ -43,7 +44,7 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController,HopDao hopDao, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
+    public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
         super(ibController, hopDao, messageService);
 
         this.underlyingService = underlyingService;
@@ -247,19 +248,19 @@ public class OrderService extends AbstractDataService implements ConnectionListe
     }
 
     @Override
-    protected void requestMktData(DataHolder dataHolder) {
-        int requestId = dataHolder.getIbMktDataRequestId();
+    protected void requestMktData(MarketDataHolder mdh) {
+        int requestId = mdh.getIbMktDataRequestId();
 
-        mktDataRequestMap.put(requestId, dataHolder);
+        mktDataRequestMap.put(requestId, mdh);
 
         Contract ibContract;
-        if (dataHolder.getInstrument().getSecType() == Types.SecType.CFD) {
-            UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(dataHolder.getInstrument().getUnderlyingConid());
+        if (mdh.getInstrument().getSecType() == Types.SecType.CFD) {
+            UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
             ibContract = udh.getInstrument().createIbContract();
         } else {
-            ibContract = dataHolder.getInstrument().createIbContract();
+            ibContract = mdh.getInstrument().createIbContract();
         }
-        ibController.requestMktData(requestId, ibContract, dataHolder.getGenericTicks());
+        ibController.requestMktData(requestId, ibContract, mdh.getGenericTicks());
     }
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)

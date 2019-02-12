@@ -3,11 +3,11 @@ package com.highpowerbear.hpboptions.connector;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.model.HopOrder;
+import com.highpowerbear.hpboptions.model.IbConnectionInfo;
 import com.highpowerbear.hpboptions.model.Instrument;
 import com.ib.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,19 +23,13 @@ public class IbController {
     private static final Logger log = LoggerFactory.getLogger(IbController.class);
 
     private AtomicBoolean initialized = new AtomicBoolean(false);
-
-    private final String host = HopSettings.IB_HOST;
-    private final Integer port = HopSettings.IB_PORT;
-    private final Integer clientId = HopSettings.IB_CLIENT_ID;
+    private final IbConnectionInfo ibConnectionInfo = new IbConnectionInfo();
 
     private EReaderSignal eReaderSignal;
     private EClientSocket eClientSocket;
     private boolean markConnected;
 
     private final List<ConnectionListener> connectionListeners = new ArrayList<>();
-
-    @Value("${ib.account}")
-    private String ibAccount;
 
     void initialize(IbListener ibListener) {
         if (!initialized.get()) {
@@ -55,12 +49,12 @@ public class IbController {
 
         markConnected = true;
         if (!isConnected()) {
-            log.info("connecting " + getConnectionInfo());
-            eClientSocket.eConnect(host, port, clientId);
+            log.info("connecting " + getIbConnectionInfo());
+            eClientSocket.eConnect(ibConnectionInfo.getHost(), ibConnectionInfo.getPort(), ibConnectionInfo.getClientId());
             HopUtil.waitMilliseconds(1000);
 
             if (isConnected()) {
-                log.info("successfully connected " + getConnectionInfo());
+                log.info("successfully connected " + getIbConnectionInfo());
 
                 final EReader eReader = new EReader(eClientSocket, eReaderSignal);
 
@@ -86,12 +80,12 @@ public class IbController {
 
         markConnected = false;
         if (isConnected()) {
-            log.info("disconnecting " + getConnectionInfo());
+            log.info("disconnecting " + getIbConnectionInfo());
             eClientSocket.eDisconnect();
             HopUtil.waitMilliseconds(1000);
 
             if (!isConnected()) {
-                log.info("successfully disconnected " + getConnectionInfo());
+                log.info("successfully disconnected " + getIbConnectionInfo());
                 connectionListeners.forEach(ConnectionListener::postDisconnect);
             }
         }
@@ -112,7 +106,7 @@ public class IbController {
         log.info("requesting account summary, requestId=" + requestId);
 
         if (checkConnected()) {
-            eClientSocket.reqAccountSummary(requestId, "All", tags);
+            eClientSocket.reqAccountSummary(requestId, HopSettings.IB_ALL_ACCOUNTS_STRING, tags);
         }
     }
 
@@ -182,8 +176,8 @@ public class IbController {
         }
     }
 
-    public void requestPnlSingle(int requestId, int conid) {
-        log.info("requesting pnl single for requestId=" + requestId + ", conId=" + conid);
+    public void requestPnlSingle(int requestId, String ibAccount, int conid) {
+        log.info("requesting pnl single for requestId=" + requestId + ", account=" + ibAccount + ", conId=" + conid);
 
         if (checkConnected()) {
             eClientSocket.reqPnLSingle(requestId, ibAccount, "", conid);
@@ -195,6 +189,22 @@ public class IbController {
 
         if (checkConnected()) {
             eClientSocket.cancelPnLSingle(requestId);
+        }
+    }
+
+    public void requestPnl(int requestId, String ibAccount) {
+        log.info("requesting pnl for requestId=" + requestId + ", account=" + ibAccount);
+
+        if (checkConnected()) {
+            eClientSocket.reqPnL(requestId, ibAccount, "");
+        }
+    }
+
+    public void cancelPnl(int requestId) {
+        log.info("canceling pnl for requestId=" + requestId);
+
+        if (checkConnected()) {
+            eClientSocket.cancelPnL(requestId);
         }
     }
 
@@ -222,8 +232,9 @@ public class IbController {
         }
     }
 
-    public String getConnectionInfo() {
-        return host + ":" + port + ":" + clientId + "," + isConnected();
+    public IbConnectionInfo getIbConnectionInfo() {
+        ibConnectionInfo.setConnected(isConnected());
+        return ibConnectionInfo;
     }
 
     void connectionBroken() {
@@ -232,7 +243,7 @@ public class IbController {
 
     private boolean checkConnected() {
         if (!isConnected()) {
-            log.info("not connected " + getConnectionInfo());
+            log.info("not connected " + getIbConnectionInfo());
             return false;
         }
         return true;

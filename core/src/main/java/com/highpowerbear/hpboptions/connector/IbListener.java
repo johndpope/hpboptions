@@ -19,6 +19,7 @@ import java.util.Set;
 public class IbListener extends GenericIbListener {
 
     private final IbController ibController;
+    private final AccountService accountService;
     private final UnderlyingService underlyingService;
     private final OrderService orderService;
     private final PositionService positionService;
@@ -26,8 +27,9 @@ public class IbListener extends GenericIbListener {
     private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, MessageService messageService) {
+    public IbListener(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, MessageService messageService) {
         this.ibController = ibController;
+        this.accountService = accountService;
         this.underlyingService = underlyingService;
         this.orderService = orderService;
         this.positionService = positionService;
@@ -41,7 +43,7 @@ public class IbListener extends GenericIbListener {
     public void error(Exception e) {
         super.error(e);
         if (e instanceof SocketException && e.getMessage().equals("Socket closed")) {
-            messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+            messageService.sendWsReloadRequestMessage(WsTopic.IB_CONNECTION);
         }
     }
 
@@ -50,26 +52,26 @@ public class IbListener extends GenericIbListener {
         super.error(id, errorCode, errorMsg);
         if (errorCode == 507) {
             ibController.connectionBroken();
-            messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+            messageService.sendWsReloadRequestMessage(WsTopic.IB_CONNECTION);
         }
     }
 
     @Override
     public void connectionClosed() {
         super.connectionClosed();
-        messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+        messageService.sendWsReloadRequestMessage(WsTopic.IB_CONNECTION);
     }
 
     @Override
     public void connectAck() {
         super.connectAck();
-        messageService.sendWsMessage(WsTopic.IB_CONNECTION, ibController.getConnectionInfo());
+        messageService.sendWsReloadRequestMessage(WsTopic.IB_CONNECTION);
     }
 
     @Override
     public void accountSummary(int reqId, String account, String tag, String value, String currency) {
         super.accountSummary(reqId, account, tag, value, currency);
-        underlyingService.accountSummaryReceived(account, tag, value, currency);
+        accountService.accountSummaryReceived(account, tag, value, currency);
     }
 
     @Override
@@ -155,6 +157,12 @@ public class IbListener extends GenericIbListener {
     }
 
     @Override
+    public void pnl(int reqId, double dailyPnL, double unrealizedPnL, double realizedPnL) {
+        super.pnl(reqId, dailyPnL, unrealizedPnL, realizedPnL);
+        accountService.unrealizedPnlReceived(reqId, unrealizedPnL);
+    }
+
+    @Override
     public void nextValidId(int orderId) {
         super.nextValidId(orderId);
         orderService.nextValidIdReceived(orderId);
@@ -172,7 +180,7 @@ public class IbListener extends GenericIbListener {
         orderService.orderStatusReceived(orderId, status, remaining, avgFillPrice);
     }
 
-    private DataService getDataService(int requestId) {
+    private MarketDataService getDataService(int requestId) {
         if (isUnderlyingIbRequest(requestId)) {
             return underlyingService;
         } else if (isOrderIbRequest(requestId)) {
@@ -182,7 +190,7 @@ public class IbListener extends GenericIbListener {
         } else if (isChainIbRequest(requestId)) {
             return chainService;
         } else {
-            throw new IllegalStateException("no data service for requestId " + requestId);
+            throw new IllegalStateException("no market data service for requestId " + requestId);
         }
     }
 

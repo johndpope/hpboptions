@@ -4,7 +4,7 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.WsTopic;
-import com.highpowerbear.hpboptions.model.DataHolder;
+import com.highpowerbear.hpboptions.dataholder.MarketDataHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,26 +61,30 @@ public class MessageService {
     }
 
     public void sendWsMessage(DataHolderType type, String message) {
-        String prefix = HopSettings.WS_TOPIC_PREFIX;
-        String topic;
+        WsTopic topic;
 
         switch (type) {
-            case UNDERLYING: topic = prefix + WsTopic.UNDERLYING.suffix(); break;
-            case ORDER: topic = prefix + WsTopic.ORDER.suffix(); break;
-            case POSITION: topic = prefix + WsTopic.POSITION.suffix(); break;
-            case CHAIN: topic = prefix + WsTopic.CHAIN.suffix(); break;
+            case ACCOUNT: topic = WsTopic.ACCOUNT; break;
+            case UNDERLYING: topic = WsTopic.UNDERLYING; break;
+            case ORDER: topic = WsTopic.ORDER; break;
+            case POSITION: topic = WsTopic.POSITION; break;
+            case CHAIN: topic = WsTopic.CHAIN; break;
             default: throw new IllegalStateException("no ws topic for " + type);
         }
-        simpMessagingTemplate.convertAndSend(topic, message);
+        sendWsMessage(topic, message);
     }
 
-    public void sendWsMessage(DataHolder dataHolder, DataField field) {
-        if (dataHolder.isSendMessage(field)) {
-            sendWsMessage(dataHolder.getType(), dataHolder.createMessage(field));
+    public void sendWsMessage(MarketDataHolder mdh, DataField field) {
+        if (mdh.isSendMessage(field)) {
+            sendWsMessage(mdh.getType(), mdh.createMessage(field));
         }
     }
 
     public void sendWsReloadRequestMessage(DataHolderType type) {
         sendWsMessage(type, "reloadRequest");
+    }
+
+    public void sendWsReloadRequestMessage(WsTopic topic) {
+        sendWsMessage(topic, "reloadRequest");
     }
 }

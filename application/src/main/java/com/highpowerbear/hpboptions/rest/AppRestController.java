@@ -3,14 +3,15 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
+import com.highpowerbear.hpboptions.dataholder.AccountDataHolder;
+import com.highpowerbear.hpboptions.dataholder.OrderDataHolder;
+import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
+import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.enums.PositionSortOrder;
 import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
 import com.highpowerbear.hpboptions.rest.model.SendOrderParams;
 import com.highpowerbear.hpboptions.rest.model.RestList;
-import com.highpowerbear.hpboptions.service.ChainService;
-import com.highpowerbear.hpboptions.service.PositionService;
-import com.highpowerbear.hpboptions.service.UnderlyingService;
-import com.highpowerbear.hpboptions.service.OrderService;
+import com.highpowerbear.hpboptions.service.*;
 import com.highpowerbear.hpboptions.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -31,28 +32,25 @@ import java.util.Set;
 public class AppRestController {
 
     private final IbController ibController;
+    private final AccountService accountService;
     private final UnderlyingService underlyingService;
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
 
     @Autowired
-    public AppRestController(IbController ibController, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
+    public AppRestController(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
         this.ibController = ibController;
+        this.accountService = accountService;
         this.underlyingService = underlyingService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
     }
 
-    @RequestMapping("account/summary")
-    public ResponseEntity<?> getAccountSummary() {
-        return ResponseEntity.ok(underlyingService.getAccountSummaryText());
-    }
-
     @RequestMapping("connection/info")
     public ResponseEntity<?> getConnectionInfo() {
-        return ResponseEntity.ok(ibController.getConnectionInfo());
+        return ResponseEntity.ok(ibController.getIbConnectionInfo());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connection/connect")
@@ -60,7 +58,7 @@ public class AppRestController {
         if (!ibController.isConnected()) {
             ibController.connect();
         }
-        return ResponseEntity.ok("connected=" + ibController.isConnected());
+        return ResponseEntity.ok(ibController.getIbConnectionInfo());
     }
 
     @RequestMapping(method = RequestMethod.PUT, value = "connection/disconnect")
@@ -69,7 +67,13 @@ public class AppRestController {
             ibController.disconnect();
             HopUtil.waitMilliseconds(1000);
         }
-        return ResponseEntity.ok("connected=" + ibController.isConnected());
+        return ResponseEntity.ok(ibController.getIbConnectionInfo());
+    }
+
+    @RequestMapping("account/data-holders")
+    public ResponseEntity<?> getAccountDataHolders() {
+        Collection<AccountDataHolder> accountDataHolders = accountService.getAccountDataHolders();
+        return ResponseEntity.ok(new RestList<>(accountDataHolders, accountDataHolders.size()));
     }
 
     @RequestMapping("underlying/data-holders")

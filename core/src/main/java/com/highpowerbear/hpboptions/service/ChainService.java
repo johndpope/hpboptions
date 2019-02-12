@@ -6,6 +6,7 @@ import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.Underlying;
+import com.highpowerbear.hpboptions.dataholder.ChainDataHolder;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.Exchange;
@@ -33,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by robertk on 12/21/2018.
  */
 @Service
-public class ChainService extends AbstractDataService implements ConnectionListener {
+public class ChainService extends AbstractMarketDataService implements ConnectionListener {
     private static final Logger log = LoggerFactory.getLogger(ChainService.class);
 
     private final UnderlyingService underlyingService;

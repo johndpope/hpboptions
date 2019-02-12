@@ -12,11 +12,16 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     init: function() {
         var me = this,
+            accountDataHolders = me.getStore('accountDataHolders'),
             underlyingDataHolders = me.getStore('underlyingDataHolders'),
             wsStatusField = me.lookupReference('wsStatus');
 
         me.refreshIbConnectionInfo();
-        me.refreshAccountSummary();
+
+        if (accountDataHolders) {
+            accountDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/account/data-holders');
+            me.refreshAccountData();
+        }
 
         if (underlyingDataHolders) {
             underlyingDataHolders.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/underlying/data-holders');
@@ -32,12 +37,16 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             wsStatusField.addCls('hop-connected');
 
             stompClient.subscribe('/topic/ib_connection', function(message) {
-                underlyingDataHolders.reload();
-                me.updateIbConnectionInfo(message.body);
+                if (message.body.startsWith('reloadRequest')) {
+                    underlyingDataHolders.reload();
+                    me.refreshIbConnectionInfo();
+                }
             });
 
             stompClient.subscribe('/topic/account', function(message) {
-                me.updateAccountSummary(message.body);
+                if (message.body.startsWith('reloadRequest')) {
+                    me.refreshAccountData();
+                }
             });
 
             stompClient.subscribe('/topic/underlying', function(message) {
@@ -50,17 +59,6 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             wsStatusField.update('WS disconnected');
             wsStatusField.removeCls('hop-connected');
             wsStatusField.addCls('hop-disconnected');
-        });
-    },
-
-    loadUnderlyingDataHolders: function() {
-        var me = this,
-            underlyingDataHolders = me.getStore('underlyingDataHolders');
-
-        underlyingDataHolders.load(function(records, operation, success) {
-            if (success) {
-                console.log('loaded underlyingDataHolders');
-            }
         });
     },
 
@@ -94,46 +92,59 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    updateIbConnectionInfo: function(message) {
+    refreshIbConnectionInfo: function() {
         var me = this,
             infoField = me.lookupReference('ibConnectionInfo');
-
-        var arr = message.split(','),
-            info = arr[0],
-            connected = arr[1];
-
-        infoField.update('IB ' + info);
-        infoField.removeCls('hop-connected');
-        infoField.removeCls('hop-disconnected');
-        infoField.addCls(connected === 'true' ? 'hop-connected' : 'hop-disconnected');
-    },
-
-    refreshIbConnectionInfo: function() {
-        var me = this;
 
         Ext.Ajax.request({
             method: 'GET',
             url: HopGui.common.Definitions.urlPrefix + '/connection/info',
+
             success: function(response) {
-                me.updateIbConnectionInfo(response.responseText);
+                var ibConnectionInfo = Ext.decode(response.responseText);
+                var text = 'IB' + ibConnectionInfo.host + ':' + ibConnectionInfo.port + ':' + ibConnectionInfo.clientId;
+
+                infoField.update(text);
+                infoField.removeCls('hop-connected');
+                infoField.removeCls('hop-disconnected');
+                infoField.addCls(ibConnectionInfo.connected === true ? 'hop-connected' : 'hop-disconnected');
             }
         });
     },
 
-    updateAccountSummary: function(message) {
-        var me = this;
+    refreshAccountData: function() {
+        var me = this,
+            accountDataHolders = me.getStore('accountDataHolders'),
+            accountDataField = me.lookupReference('accountData');
 
-        me.lookupReference('accountSummary').update(message);
+        accountDataHolders.load(function(records, operation, success) {
+            if (success) {
+                console.log('loaded accountDataHolders');
+                var text = '';
+
+                accountDataHolders.each(function(record) {
+                    var adh = record.data;
+                    var netLiq = adh.netLiquidationValue ? 'NetLiq ' + me.formatWhole(adh.netLiquidationValue) : '';
+                    var availFunds = adh.availableFunds ? 'AvailFunds ' + me.formatWhole(adh.availableFunds) : '';
+                    var unrlzPnl = adh.unrealizedPnl ? 'UnrlzPnl ' + me.formatWhole(adh.unrealizedPnl) : '';
+
+                    text = text + adh.ibAccount + ': ' + netLiq + ', ' + availFunds + ', ' + unrlzPnl;
+                });
+
+                if (accountDataHolders.getCount() > 0) {
+                    accountDataField.update(text);
+                }
+            }
+        });
     },
 
-    refreshAccountSummary: function() {
-        var me = this;
+    loadUnderlyingDataHolders: function() {
+        var me = this,
+            underlyingDataHolders = me.getStore('underlyingDataHolders');
 
-        Ext.Ajax.request({
-            method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/account/summary',
-            success: function(response) {
-                me.updateAccountSummary(response.responseText);
+        underlyingDataHolders.load(function(records, operation, success) {
+            if (success) {
+                console.log('loaded underlyingDataHolders');
             }
         });
     },

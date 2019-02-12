@@ -1,8 +1,9 @@
-package com.highpowerbear.hpboptions.model;
+package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
 import com.highpowerbear.hpboptions.enums.OptionDataField;
+import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.ib.client.TickType;
 import com.ib.client.Types;
 
@@ -19,7 +20,7 @@ import static com.highpowerbear.hpboptions.enums.OptionDataField.*;
 /**
  * Created by robertk on 12/6/2018.
  */
-public class AbstractOptionDataHolder extends AbstractDataHolder implements OptionDataHolder {
+public class AbstractOptionDataHolder extends AbstractMarketDataHolder implements OptionDataHolder {
 
     private final Map<TickType, Map<OptionDataField, Double>> computationMap = new HashMap<>();
 

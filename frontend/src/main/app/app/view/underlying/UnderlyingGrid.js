@@ -267,7 +267,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             xtype: 'button',
             margin: '0 0 0 20',
             text: '',
-            handler: 'refreshAccountSummary',
+            handler: 'refreshAccountData',
             listeners: {
                 beforerender: function(c, eOpts) {
                     c.setGlyph(HopGui.common.Glyphs.getGlyph('refresh'));
@@ -275,10 +275,10 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
             }
         }, {
             xtype: 'tbtext',
-            html: 'Account summary N/A',
+            html: 'Account data N/A',
             width: 500,
             margin: '0 0 0 10',
-            reference: 'accountSummary'
+            reference: 'accountData'
         }, {
             xtype: 'tbtext',
             flex: 1

@@ -1,14 +1,15 @@
-package com.highpowerbear.hpboptions.model;
+package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
+import com.highpowerbear.hpboptions.model.Instrument;
 
 /**
  * Created by robertk on 12/3/2018.
  */
-public interface DataHolder {
+public interface MarketDataHolder {
     String getId();
     DataHolderType getType();
     Instrument getInstrument();

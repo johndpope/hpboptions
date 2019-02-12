@@ -5,13 +5,14 @@ import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.enums.*;
-import com.highpowerbear.hpboptions.model.OptionDataHolder;
+import com.highpowerbear.hpboptions.dataholder.OptionDataHolder;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
-import com.highpowerbear.hpboptions.model.PositionDataHolder;
-import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
+import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.Types;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
  * Created by robertk on 1/23/2019.
  */
 @Service
-public class PositionService extends AbstractDataService implements ConnectionListener {
+public class PositionService extends AbstractMarketDataService implements ConnectionListener {
 
     private final UnderlyingService underlyingService;
 
@@ -39,6 +40,9 @@ public class PositionService extends AbstractDataService implements ConnectionLi
 
     private final ReentrantLock positionLock = new ReentrantLock();
     private PositionSortOrder positionSortOrder = PositionSortOrder.EXPIRATION;
+
+    @Value("${ib.account}")
+    private String ibAccount;
 
     public PositionService(IbController ibController, HopDao hopDao, MessageService messageService, UnderlyingService underlyingService) {
         super(ibController, hopDao, messageService);
@@ -73,7 +77,7 @@ public class PositionService extends AbstractDataService implements ConnectionLi
         int requestId = pdh.getIbPnlRequestId();
 
         pnlRequestMap.put(requestId, pdh);
-        ibController.requestPnlSingle(requestId, pdh.getInstrument().getConid());
+        ibController.requestPnlSingle(requestId, ibAccount, pdh.getInstrument().getConid());
     }
 
     private void cancelPnlSingle(PositionDataHolder pdh) {

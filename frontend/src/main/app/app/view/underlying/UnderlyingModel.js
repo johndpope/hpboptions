@@ -10,6 +10,11 @@ Ext.define('HopGui.view.underlying.UnderlyingModel', {
     alias: 'viewmodel.hop-underlying',
 
     stores: {
+        accountDataHolders: {
+            model: 'HopGui.model.AccountDataHolder',
+            autoload: true,
+            pageSize: 1000 // disable
+        },
         underlyingDataHolders: {
             model: 'HopGui.model.UnderlyingDataHolder',
             autoload: true,

@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.model;
 
+import com.highpowerbear.hpboptions.dataholder.ChainDataHolder;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.ib.client.Types;
 

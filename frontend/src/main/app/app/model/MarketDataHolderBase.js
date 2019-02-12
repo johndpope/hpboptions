@@ -1,7 +1,7 @@
 /**
  * Created by robertk on 11/26/2018.
  */
-Ext.define('HopGui.model.DataHolderBase', {
+Ext.define('HopGui.model.MarketDataHolderBase', {
     extend: 'Ext.data.Model',
 
     idProperty: 'id',

@@ -5,7 +5,7 @@ import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.RiskEvent;
 import com.highpowerbear.hpboptions.enums.DataField;
-import com.highpowerbear.hpboptions.model.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

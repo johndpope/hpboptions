@@ -15,8 +15,10 @@ public class HopSettings {
     public static final String IB_HOST = "localhost";
     public static final int IB_PORT = 4001;
     public static final int IB_CLIENT_ID = 1;
+    public static final String IB_ALL_ACCOUNTS_STRING = "All";
     public static final int HEARTBEAT_COUNT_INITIAL = 5;
-    public static final int UNDERLYING_IB_REQUEST_ID_INITIAL = 0;
+    public static final int ACCOUNT_IB_REQUEST_ID_INITIAL = 0;
+    public static final int UNDERLYING_IB_REQUEST_ID_INITIAL = 10000;
     public static final int ORDER_IB_REQUEST_ID_INITIAL = 100000;
     public static final int POSITION_IB_REQUEST_ID_INITIAL = 500000;
     public static final int CHAIN_IB_REQUEST_ID_INITIAL = 1000000;

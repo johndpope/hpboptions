@@ -8,17 +8,17 @@ import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.Underlying;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.*;
-import com.highpowerbear.hpboptions.model.*;
+import com.highpowerbear.hpboptions.model.Instrument;
+import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
+import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.model.UnderlyingMktDataSnapshot;
 import com.ib.client.Bar;
 import com.ib.client.Contract;
 import com.ib.client.Types;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDate;
@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
  * Created by robertk on 11/5/2018.
  */
 @Service
-public class UnderlyingService extends AbstractDataService implements ConnectionListener {
-    private static final Logger log = LoggerFactory.getLogger(UnderlyingService.class);
+public class UnderlyingService extends AbstractMarketDataService implements ConnectionListener {
 
-    private final AccountSummary accountSummary;
+    private final AccountService accountService;
+
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, UnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
     private final Map<Integer, UnderlyingDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
@@ -43,17 +43,15 @@ public class UnderlyingService extends AbstractDataService implements Connection
     private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL);
 
-    @Value("${fixer.access-key}")
-    private String fixerAccessKey;
-    private final RestTemplate restTemplate = new RestTemplate();
-    private ExchangeRates exchangeRates;
+    @Value("${ib.account}")
+    private String ibAccount;
 
     @Autowired
-    public UnderlyingService(IbController ibController, HopDao hopDao, MessageService messageService) {
+    public UnderlyingService(IbController ibController, HopDao hopDao, MessageService messageService, AccountService accountService) {
         super(ibController, hopDao, messageService);
+        this.accountService = accountService;
 
         ibController.addConnectionListener(this);
-        accountSummary = new AccountSummary(ibRequestIdGen.incrementAndGet());
     }
 
     @PostConstruct
@@ -83,8 +81,6 @@ public class UnderlyingService extends AbstractDataService implements Connection
             underlyingMap.put(conid, udh);
             underlyingPositionMap.put(conid, new ConcurrentHashMap<>());
         }
-
-        retrieveExchangeRates();
     }
 
     @Override
@@ -93,18 +89,16 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
         underlyingMap.values().forEach(this::requestMktData);
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
-        ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
 
         underlyingCfdMap.values().forEach(udh -> {
             pnlRequestMap.put(udh.getIbPnlRequestId(), udh);
-            ibController.requestPnlSingle(udh.getIbPnlRequestId(), udh.getCfdInstrument().getConid());
+            ibController.requestPnlSingle(udh.getIbPnlRequestId(), ibAccount, udh.getCfdInstrument().getConid());
         });
     }
 
     @Override
     public void preDisconnect() {
         cancelAllMktData();
-        ibController.cancelAccountSummary(accountSummary.getIbRequestId());
 
         pnlRequestMap.keySet().forEach(ibController::cancelPnlSingle);
         pnlRequestMap.clear();
@@ -112,17 +106,7 @@ public class UnderlyingService extends AbstractDataService implements Connection
 
     @Scheduled(cron = "0 0 7 * * MON-FRI")
     private void performStartOfDayTasks() {
-        retrieveExchangeRates();
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
-        ibController.requestAccountSummary(accountSummary.getIbRequestId(), accountSummary.getTags());
-    }
-
-    private void retrieveExchangeRates() {
-        String date = HopUtil.formatExchangeRateDate(LocalDate.now());
-        String query = HopSettings.EXCHANGE_RATES_URL + "/" + date + "?access_key=" + fixerAccessKey + "&symbols=" + HopSettings.EXCHANGE_RATES_SYMBOLS;
-
-        exchangeRates = restTemplate.getForObject(query, ExchangeRates.class);
-        log.info("retrieved exchange rates " + exchangeRates);
     }
 
     private void requestImpliedVolatilityHistory(UnderlyingDataHolder udh) {
@@ -249,9 +233,9 @@ public class UnderlyingService extends AbstractDataService implements Connection
     private double calculateAllocationPct(double margin, Currency currency) {
         double allocationPct = Double.NaN;
 
-        if (accountSummary.isReady() && exchangeRates != null && exchangeRates.getBaseCurrency() == accountSummary.getBaseCurrency()) {
-            double exchangeRate = exchangeRates.getRate(currency);
-            double netLiqValue = accountSummary.getNetLiquidationValue();
+        if (accountService.isReady(ibAccount)) {
+            double exchangeRate = accountService.getExchangeRate(currency);
+            double netLiqValue = accountService.getNetLiquidationValue(ibAccount);
             allocationPct = 100d * margin / (netLiqValue * exchangeRate);
         }
         return allocationPct;
@@ -282,11 +266,6 @@ public class UnderlyingService extends AbstractDataService implements Connection
         } finally {
             udh.getPnlCalculationLock().unlock();
         }
-    }
-
-    public void accountSummaryReceived(String account, String tag, String value, String currency) {
-        accountSummary.update(account, tag, value, currency);
-        messageService.sendWsMessage(WsTopic.ACCOUNT, accountSummary.getText());
     }
 
     public void historicalDataReceived(int requestId, Bar bar) {
@@ -350,10 +329,6 @@ public class UnderlyingService extends AbstractDataService implements Connection
         }
 
         return new UnderlyingMktDataSnapshot(price, udh.getOptionImpliedVol());
-    }
-
-    public String getAccountSummaryText() {
-        return accountSummary.getText();
     }
 
     public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {

@@ -1,10 +1,11 @@
-package com.highpowerbear.hpboptions.model;
+package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
+import com.highpowerbear.hpboptions.model.Instrument;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * Created by robertk on 11/27/2018.
  */
-public abstract class AbstractDataHolder implements DataHolder {
+public abstract class AbstractMarketDataHolder implements MarketDataHolder {
 
     protected String id;
     private final DataHolderType type;
@@ -28,7 +29,7 @@ public abstract class AbstractDataHolder implements DataHolder {
 
     protected final Map<DataField, CircularFifoQueue<Number>> valueMap = new HashMap<>(); // field -> queue[value, oldValue]
 
-    AbstractDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
+    AbstractMarketDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
         this.type = type;
         this.instrument = instrument;
         this.ibMktDataRequestId = ibMktDataRequestId;

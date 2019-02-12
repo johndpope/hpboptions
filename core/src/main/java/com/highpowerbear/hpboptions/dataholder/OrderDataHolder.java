@@ -1,13 +1,15 @@
-package com.highpowerbear.hpboptions.model;
+package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.model.HopOrder;
+import com.highpowerbear.hpboptions.model.Instrument;
 
 /**
  * Created by robertk on 1/9/2019.
  */
-public class OrderDataHolder extends AbstractDataHolder {
+public class OrderDataHolder extends AbstractMarketDataHolder {
 
     private final HopOrder hopOrder;
 

@@ -1,9 +1,10 @@
-package com.highpowerbear.hpboptions.model;
+package com.highpowerbear.hpboptions.dataholder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.*;
+import com.highpowerbear.hpboptions.model.Instrument;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -14,7 +15,7 @@ import java.util.stream.Stream;
 /**
  * Created by robertk on 12/3/2018.
  */
-public class UnderlyingDataHolder extends AbstractDataHolder {
+public class UnderlyingDataHolder extends AbstractMarketDataHolder {
 
     private final Instrument cfdInstrument;
     private final int ibHistDataRequestId;
