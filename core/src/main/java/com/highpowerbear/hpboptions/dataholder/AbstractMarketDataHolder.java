@@ -1,10 +1,10 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.enums.BasicMktDataField;
-import com.highpowerbear.hpboptions.enums.DataField;
+import com.highpowerbear.hpboptions.field.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.DerivedMktDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;

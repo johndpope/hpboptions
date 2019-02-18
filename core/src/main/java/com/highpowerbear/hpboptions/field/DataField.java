@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.model.RiskThreshold;

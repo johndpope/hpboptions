@@ -128,7 +128,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                     var availFunds = adh.availableFunds ? 'AvailFunds ' + me.formatWhole(adh.availableFunds) : '';
                     var unrlzPnl = adh.unrealizedPnl ? 'UnrlzPnl ' + me.formatWhole(adh.unrealizedPnl) : '';
 
-                    text = text + adh.ibAccount + ': ' + netLiq + ', ' + availFunds + ', ' + unrlzPnl;
+                    text = text + adh.ibAccount + ' ' + adh.baseCurrency + ': ' + netLiq + ', ' + availFunds + ', ' + unrlzPnl + ' ';
                 });
 
                 if (accountDataHolders.getCount() > 0) {

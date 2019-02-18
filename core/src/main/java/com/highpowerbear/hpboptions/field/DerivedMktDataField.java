@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import java.util.*;
 
@@ -49,6 +49,7 @@ public enum DerivedMktDataField implements DataField {
     }
 
     private static List<DerivedMktDataField> fields = Arrays.asList(DerivedMktDataField.values());
+
     public static List<DerivedMktDataField> fields() {
         return fields;
     }

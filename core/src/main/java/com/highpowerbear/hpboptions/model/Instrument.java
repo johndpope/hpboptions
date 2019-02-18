@@ -34,16 +34,17 @@ public class Instrument {
 
         contract.conid(conid);
         contract.secType(secType);
+
         if (underlyingSymbol != null) {
             contract.symbol(underlyingSymbol);
         }
         contract.localSymbol(symbol);
         contract.currency(currency.name());
-        contract.exchange(exchange.name());
+        contract.exchange(exchange.getCode());
+
         if (primaryExchange != null) {
             contract.primaryExch(primaryExchange.name());
         }
-
         return contract;
     }
 

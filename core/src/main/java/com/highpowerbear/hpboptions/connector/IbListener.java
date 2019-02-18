@@ -120,7 +120,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void securityDefinitionOptionalParameter(int requestId, String exchange, int underlyingConId, String tradingClass, String multiplier, Set<String> expirations, Set<Double> strikes) {
-        super.securityDefinitionOptionalParameter(requestId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
+        //super.securityDefinitionOptionalParameter(requestId, exchange, underlyingConId, tradingClass, multiplier, expirations, strikes);
         chainService.expirationsReceived(underlyingConId, exchange, Integer.valueOf(multiplier), expirations);
     }
 
@@ -158,7 +158,7 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void pnl(int reqId, double dailyPnL, double unrealizedPnL, double realizedPnL) {
-        super.pnl(reqId, dailyPnL, unrealizedPnL, realizedPnL);
+        //super.pnl(reqId, dailyPnL, unrealizedPnL, realizedPnL);
         accountService.unrealizedPnlReceived(reqId, unrealizedPnL);
     }
 

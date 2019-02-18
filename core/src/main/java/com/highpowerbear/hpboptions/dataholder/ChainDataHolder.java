@@ -1,9 +1,9 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.enums.DataField;
+import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.OptionDataField;
+import com.highpowerbear.hpboptions.field.OptionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 
 /**

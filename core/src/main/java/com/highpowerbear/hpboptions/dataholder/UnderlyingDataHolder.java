@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.*;
+import com.highpowerbear.hpboptions.field.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.DataField;
+import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 
 import java.time.LocalDate;
@@ -210,6 +214,7 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         thresholdBreachedFieldsMap.clear();
         for (UnderlyingDataField f : UnderlyingDataField.riskDataFields()) {
             double current = getCurrent(f).doubleValue();
+
             if (f.thresholdBreached(current)) {
                 thresholdBreachedFieldsMap.put(f, current);
             }

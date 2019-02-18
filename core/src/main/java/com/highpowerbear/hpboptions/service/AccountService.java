@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
@@ -62,6 +63,10 @@ public class AccountService implements ConnectionListener {
         accountSummaryTags = Stream.of(NetLiquidation, AvailableFunds).collect(Collectors.toSet());
 
         ibController.addConnectionListener(this);
+    }
+
+    @PostConstruct
+    private void init() {
         retrieveExchangeRates();
     }
 

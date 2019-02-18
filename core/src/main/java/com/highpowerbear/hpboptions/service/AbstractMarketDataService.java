@@ -2,10 +2,10 @@ package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
-import com.highpowerbear.hpboptions.enums.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.highpowerbear.hpboptions.enums.OptionDataField;
+import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.OptionDataField;
 import com.highpowerbear.hpboptions.dataholder.MarketDataHolder;
 import com.highpowerbear.hpboptions.dataholder.OptionDataHolder;
 import com.ib.client.ContractDetails;

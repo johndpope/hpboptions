@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +18,7 @@ public enum PositionDataField implements DataField {
     MARGIN;
 
     private static List<PositionDataField> fields = Arrays.asList(PositionDataField.values());
+
     public static List<PositionDataField> fields() {
         return fields;
     }

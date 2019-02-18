@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import com.highpowerbear.hpboptions.model.RiskThreshold;
 
@@ -75,11 +75,13 @@ public enum UnderlyingDataField implements DataField {
     }
 
     private static List<UnderlyingDataField> fields = Arrays.asList(UnderlyingDataField.values());
+
     private static List<UnderlyingDataField> cfdFields = Stream.of(
             CFD_POSITION_SIZE,
             CFD_UNREALIZED_PNL,
             CFD_MARGIN
     ).collect(Collectors.toList());
+
     private static List<UnderlyingDataField> riskDataFields = Stream.of(
             PORTFOLIO_DELTA,
             PORTFOLIO_DELTA_ONE_PCT,

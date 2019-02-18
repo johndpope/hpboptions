@@ -1,8 +1,8 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.DerivedMktDataField;
-import com.highpowerbear.hpboptions.enums.OptionDataField;
+import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.OptionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.ib.client.TickType;
 import com.ib.client.Types;
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.highpowerbear.hpboptions.enums.OptionDataField.*;
+import static com.highpowerbear.hpboptions.field.OptionDataField.*;
 
 /**
  * Created by robertk on 12/6/2018.

@@ -2,7 +2,7 @@ package com.highpowerbear.hpboptions.dataholder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.enums.PositionDataField;
+import com.highpowerbear.hpboptions.field.PositionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.ib.client.Types;
 

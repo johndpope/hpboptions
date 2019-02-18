@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
-import com.highpowerbear.hpboptions.enums.DataField;
+import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.WsTopic;
 import com.highpowerbear.hpboptions.dataholder.MarketDataHolder;

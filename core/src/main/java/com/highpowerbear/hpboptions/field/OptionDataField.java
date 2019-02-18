@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +21,7 @@ public enum OptionDataField implements DataField {
     UNDERLYING_PRICE;
 
     private static List<OptionDataField> fields = Arrays.asList(OptionDataField.values());
+
     private static List<OptionDataField> riskDataSourceFields = Stream.of(
             DELTA,
             GAMMA,

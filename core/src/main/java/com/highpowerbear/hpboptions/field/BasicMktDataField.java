@@ -1,4 +1,4 @@
-package com.highpowerbear.hpboptions.enums;
+package com.highpowerbear.hpboptions.field;
 
 import com.ib.client.TickType;
 
@@ -54,6 +54,7 @@ public enum BasicMktDataField implements DataField {
     }
 
     private static List<BasicMktDataField> fields = Arrays.asList(BasicMktDataField.values());
+
     public static List<BasicMktDataField> fields() {
         return fields;
     }

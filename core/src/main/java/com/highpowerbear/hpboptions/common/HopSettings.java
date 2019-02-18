@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.common;
 
-import com.highpowerbear.hpboptions.enums.DataField;
-import com.highpowerbear.hpboptions.enums.UnderlyingDataField;
+import com.highpowerbear.hpboptions.field.DataField;
+import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.highpowerbear.hpboptions.model.RiskThreshold;
 
 import java.time.format.DateTimeFormatter;

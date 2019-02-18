@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.enums.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.model.HopOrder;
 import com.highpowerbear.hpboptions.model.Instrument;
