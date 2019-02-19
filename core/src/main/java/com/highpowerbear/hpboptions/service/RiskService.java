@@ -4,10 +4,10 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.RiskEvent;
+import com.highpowerbear.hpboptions.database.Underlying;
+import com.highpowerbear.hpboptions.enums.RiskResolution;
 import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
@@ -22,7 +22,6 @@ import java.util.*;
  */
 @Service
 public class RiskService {
-    private static final Logger log = LoggerFactory.getLogger(RiskService.class);
 
     private final HopDao hopDao;
     private final UnderlyingService underlyingService;
@@ -50,6 +49,7 @@ public class RiskService {
     @JmsListener(destination = HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED)
     public void underlyingRiskDataCalculated(int underlyingConid) {
         UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        RiskResolution riskResolution = underlyingService.getUnderlying(underlyingConid).getRiskResolution();
 
         udh.getRiskCalculationLock().lock();
         try {
@@ -73,13 +73,15 @@ public class RiskService {
                 riskEvent.setDataField(dataFieldStr);
                 riskEvent.setFieldValue(fieldValue);
                 riskEvent.setFieldThreshold(riskThreshold);
-                riskEvent.setResolution("send email");
+                riskEvent.setResolution(riskResolution.text());
                 riskEvent.setIbAccount(ibAccount);
                 hopDao.createRiskEvent(riskEvent);
 
-                String subject = "Risk event " + symbol;
-                String text = "Account " + ibAccount + ", " + dataFieldStr + "=" + fieldValue + ", threshold=" + riskThreshold;
-                messageService.sendEmailMessage(subject, text);
+                if (riskResolution == RiskResolution.EMAIL_ONLY) {
+                    String subject = "Risk event " + symbol;
+                    String text = "Account " + ibAccount + ", " + dataFieldStr + "=" + fieldValue + ", threshold=" + riskThreshold;
+                    messageService.sendEmailMessage(subject, text);
+                }
             }
         } finally {
             udh.getRiskCalculationLock().unlock();

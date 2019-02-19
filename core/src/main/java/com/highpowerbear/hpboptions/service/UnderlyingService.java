@@ -12,6 +12,7 @@ import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
 import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.model.UnderlyingInfo;
 import com.highpowerbear.hpboptions.model.UnderlyingMktDataSnapshot;
 import com.ib.client.Bar;
 import com.ib.client.Contract;
@@ -21,7 +22,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +34,11 @@ import java.util.stream.Collectors;
 @Service
 public class UnderlyingService extends AbstractMarketDataService implements ConnectionListener {
 
+    private final HopDao hopDao;
     private final AccountService accountService;
+
+    private final Map<Integer, Underlying> underlyingEntityMap = new HashMap<>(); // conid -> underlying
+    private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
 
     private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
     private final Map<Integer, UnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
@@ -48,17 +52,21 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     private String ibAccount;
 
     @Autowired
-    public UnderlyingService(IbController ibController, HopDao hopDao, MessageService messageService, AccountService accountService) {
-        super(ibController, hopDao, messageService);
+    public UnderlyingService(IbController ibController, MessageService messageService, HopDao hopDao, AccountService accountService) {
+        super(ibController, messageService);
+        this.hopDao = hopDao;
         this.accountService = accountService;
 
         ibController.addConnectionListener(this);
+        init();
     }
 
-    @PostConstruct
     private void init() {
         for (Underlying u : hopDao.getActiveUnderlyings()) {
             int conid = u.getConid();
+
+            underlyingEntityMap.put(conid, u);
+            underlyingInfos.add(new UnderlyingInfo(u.getConid(), u.getSymbol()));
 
             Instrument instrument = new Instrument(conid, u.getSecType(),null, u.getSymbol(), u.getCurrency());
             instrument.setExchange(u.getExchange());
@@ -313,10 +321,6 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         }
     }
 
-    public UnderlyingDataHolder getUnderlyingDataHolder(int conid) {
-        return underlyingMap.get(conid);
-    }
-
     public UnderlyingMktDataSnapshot createMktDataSnapshot(int conid) {
         UnderlyingDataHolder udh = underlyingMap.get(conid);
         double price = Double.NaN;
@@ -330,6 +334,18 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         }
 
         return new UnderlyingMktDataSnapshot(price, udh.getOptionImpliedVol());
+    }
+
+    public Underlying getUnderlying(int conid) {
+        return underlyingEntityMap.get(conid);
+    }
+
+    public UnderlyingDataHolder getUnderlyingDataHolder(int conid) {
+        return underlyingMap.get(conid);
+    }
+
+    public List<UnderlyingInfo> getUnderlyingInfos() {
+        return underlyingInfos;
     }
 
     public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {

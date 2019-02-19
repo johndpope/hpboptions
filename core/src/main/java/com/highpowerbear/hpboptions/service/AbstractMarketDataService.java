@@ -1,7 +1,6 @@
 package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.field.BasicMktDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.field.DerivedMktDataField;
@@ -20,14 +19,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractMarketDataService implements MarketDataService {
 
     protected final IbController ibController;
-    protected final HopDao hopDao;
     protected final MessageService messageService;
 
     protected final Map<Integer, MarketDataHolder> mktDataRequestMap = new ConcurrentHashMap<>(); // ib request id -> dataHolder
 
-    public AbstractMarketDataService(IbController ibController, HopDao hopDao, MessageService messageService) {
+    public AbstractMarketDataService(IbController ibController, MessageService messageService) {
         this.ibController = ibController;
-        this.hopDao = hopDao;
         this.messageService = messageService;
     }
 

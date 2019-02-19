@@ -3,7 +3,6 @@ package com.highpowerbear.hpboptions.service;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.dataholder.OptionDataHolder;
 import com.highpowerbear.hpboptions.field.PositionDataField;
@@ -45,8 +44,8 @@ public class PositionService extends AbstractMarketDataService implements Connec
     @Value("${ib.account}")
     private String ibAccount;
 
-    public PositionService(IbController ibController, HopDao hopDao, MessageService messageService, UnderlyingService underlyingService) {
-        super(ibController, hopDao, messageService);
+    public PositionService(IbController ibController, MessageService messageService, UnderlyingService underlyingService) {
+        super(ibController, messageService);
         this.underlyingService = underlyingService;
 
         ibController.addConnectionListener(this);

@@ -180,7 +180,7 @@ public class AppRestController {
 
     @RequestMapping("chain/underlying-infos")
     public ResponseEntity<?> getUnderlyingInfos() {
-        List<UnderlyingInfo> underlyingInfos = chainService.getUnderlyingInfos();
+        List<UnderlyingInfo> underlyingInfos = underlyingService.getUnderlyingInfos();
         return ResponseEntity.ok(new RestList<>(underlyingInfos, underlyingInfos.size()));
     }
 

@@ -4,7 +4,6 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.dataholder.*;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.enums.Currency;
@@ -44,8 +43,8 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController, HopDao hopDao, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
-        super(ibController, hopDao, messageService);
+    public OrderService(IbController ibController, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
+        super(ibController, messageService);
 
         this.underlyingService = underlyingService;
         this.positionService = positionService;
