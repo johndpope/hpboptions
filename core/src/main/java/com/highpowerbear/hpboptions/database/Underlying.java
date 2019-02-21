@@ -3,7 +3,6 @@ package com.highpowerbear.hpboptions.database;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.highpowerbear.hpboptions.enums.RiskResolution;
 import com.ib.client.Contract;
 import com.ib.client.Types;
 
@@ -44,8 +43,6 @@ public class Underlying implements Serializable {
     private Integer cfdConid;
     private String cfdSymbol;
     private Double cfdMinTick;
-    @Enumerated(EnumType.STRING)
-    private RiskResolution riskResolution;
 
     @Override
     public boolean equals(Object o) {
@@ -211,13 +208,5 @@ public class Underlying implements Serializable {
 
     public void setCfdMinTick(Double cfdMinTick) {
         this.cfdMinTick = cfdMinTick;
-    }
-
-    public RiskResolution getRiskResolution() {
-        return riskResolution;
-    }
-
-    public void setRiskResolution(RiskResolution riskResolution) {
-        this.riskResolution = riskResolution;
     }
 }

@@ -36,12 +36,14 @@ public class HopSettings {
     public static final int OPTION_ORDER_DEFAULT_QUANTITY = 1;
     public static final int CFD_ORDER_DEFAULT_QUANTITY = 10;
     public static final double CFD_MARGIN_FACTOR = 0.2;
+    public static final int DELTA_HEDGE_QUANTITY_STEP = 20;
+    public static final int DELTA_HEDGE_MIN_INTERVAL_SEC = 60;
 
     private static final Map<DataField, RiskThreshold> riskThresholdMap = new HashMap<>();
     static {
-        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, new RiskThreshold(-30.0, 30.0));
-        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, new RiskThreshold(-50.0, 50.0));
-        riskThresholdMap.put(UnderlyingDataField.ALLOCATION_PCT, new RiskThreshold(null, 10.0));
+        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, new RiskThreshold(-50.0, 50.0));
+        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, new RiskThreshold(-100.0, 100.0));
+        riskThresholdMap.put(UnderlyingDataField.ALLOCATION_PCT, new RiskThreshold(null, 15.0));
     }
     public static RiskThreshold getRiskThreshold(DataField dataField) {
         return riskThresholdMap.get(dataField);

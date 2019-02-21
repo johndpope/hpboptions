@@ -11,6 +11,7 @@ import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -28,7 +29,9 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
-    private Map<DataField, Double> thresholdBreachedFieldsMap = new HashMap<>();
+    private boolean deltaHedgeEnabled = false;
+    private LocalDateTime lastDeltaHedgeTime;
+
     @JsonIgnore
     private final ReentrantLock riskCalculationLock = new ReentrantLock();
     @JsonIgnore
@@ -71,6 +74,8 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
                 DerivedMktDataField.IV_CHANGE_PCT,
                 DerivedMktDataField.IV_RANK
         ).collect(Collectors.toSet());
+
+        updateLastDeltaHedgeTime();
     }
 
     @Override
@@ -197,8 +202,6 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         update(UnderlyingDataField.PORTFOLIO_TIME_VALUE, timeValue);
         update(UnderlyingDataField.PORTFOLIO_MARGIN, margin);
         update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
-
-        populateThresholdBreachedFieldsMap();
     }
 
     public void updateCfdOnlyRiskData(double delta, double deltaOnePct, double margin, double allocationPct) {
@@ -206,23 +209,26 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         update(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, deltaOnePct);
         update(UnderlyingDataField.PORTFOLIO_MARGIN, margin);
         update(UnderlyingDataField.ALLOCATION_PCT, allocationPct);
-
-        populateThresholdBreachedFieldsMap();
-    }
-
-    private void populateThresholdBreachedFieldsMap() {
-        thresholdBreachedFieldsMap.clear();
-        for (UnderlyingDataField f : UnderlyingDataField.riskDataFields()) {
-            double current = getCurrent(f).doubleValue();
-
-            if (f.thresholdBreached(current)) {
-                thresholdBreachedFieldsMap.put(f, current);
-            }
-        }
     }
 
     public void resetRiskData() {
         UnderlyingDataField.riskDataFields().forEach(this::reset);
+    }
+
+    public boolean isDeltaHedgeEnabled() {
+        return deltaHedgeEnabled;
+    }
+
+    public void setDeltaHedgeEnabled(boolean deltaHedgeEnabled) {
+        this.deltaHedgeEnabled = deltaHedgeEnabled;
+    }
+
+    public void updateLastDeltaHedgeTime() {
+        lastDeltaHedgeTime = LocalDateTime.now();
+    }
+
+    public boolean isDeltaHedgeDue() {
+        return LocalDateTime.now().isAfter(lastDeltaHedgeTime.plusSeconds(HopSettings.DELTA_HEDGE_MIN_INTERVAL_SEC));
     }
 
     public void updatePortfolioUnrealizedPnl(double unrealizedPnl) {
@@ -247,10 +253,6 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
 
     public int getIbPnlRequestId() {
         return ibPnlRequestId;
-    }
-
-    public Map<DataField, Double> getThresholdBreachedFieldsMap() {
-        return thresholdBreachedFieldsMap;
     }
 
     public double getOptionImpliedVol() {

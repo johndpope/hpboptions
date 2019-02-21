@@ -246,6 +246,13 @@ public class OrderService extends AbstractMarketDataService implements Connectio
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
     }
 
+    public boolean hasWorkingOrder(int conid) {
+        return orderMap.values().stream()
+                .filter(odh -> odh.getInstrument().getConid() == conid)
+                .map(OrderDataHolder::getHopOrder)
+                .anyMatch(HopOrder::isWorking);
+    }
+
     @Override
     protected void requestMktData(MarketDataHolder mdh) {
         int requestId = mdh.getIbMktDataRequestId();

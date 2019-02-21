@@ -140,7 +140,7 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
         return valueQueue;
     }
 
-    protected Number getCurrent(DataField field) {
+    public Number getCurrent(DataField field) {
         return valueMap.get(field).get(1);
     }
 
