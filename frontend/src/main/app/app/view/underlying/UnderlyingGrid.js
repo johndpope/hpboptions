@@ -99,28 +99,28 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'priceRenderer'
     }, {
         text: 'Chg',
-        width: 70,
+        width: 65,
         dataIndex: 'changePct',
         tdCls: 'changePct hop-change-pct',
         align: 'right',
         renderer: 'changePctRenderer'
     }, {
         text: 'OptIV',
-        width: 75,
+        width: 70,
         dataIndex: 'optionImpliedVol',
         tdCls: 'optionImpliedVol hop-iv hop-unchanged',
         align: 'right',
         renderer: 'ivRenderer'
     }, {
-        text: 'IvChg',
-        width: 70,
+        text: 'IvCh',
+        width: 65,
         dataIndex: 'ivChangePct',
         tdCls: 'ivChangePct hop-iv-change-pct',
         align: 'right',
         renderer: 'ivChangePctRenderer'
     }, {
-        text: 'IvRnk',
-        width: 70,
+        text: 'IvRk',
+        width: 65,
         dataIndex: 'ivRank',
         tdCls: 'ivRank hop-iv-rank hop-unchanged',
         align: 'right',
@@ -140,64 +140,78 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         align: 'right',
         renderer: 'volumeRenderer'
     }, {
-        text: 'Ps',
-        width: 50,
-        dataIndex: 'putsSum',
-        tdCls: 'putsSum hop-position',
+        text: 'p',
+        width: 40,
+        dataIndex: 'putsShort',
+        tdCls: 'putsShort hop-position',
         align: 'right',
         renderer: 'positionRenderer'
     }, {
-        text: 'Cs',
-        width: 50,
-        dataIndex: 'callsSum',
-        tdCls: 'callsSum hop-position',
+        text: 'p',
+        width: 40,
+        dataIndex: 'putsLong',
+        tdCls: 'putsLong hop-position',
+        align: 'right',
+        renderer: 'positionRenderer'
+    }, {
+        text: 'c',
+        width: 40,
+        dataIndex: 'callsShort',
+        tdCls: 'callsShort hop-position',
+        align: 'right',
+        renderer: 'positionRenderer'
+    }, {
+        text: 'c',
+        width: 40,
+        dataIndex: 'callsLong',
+        tdCls: 'callsLong hop-position',
         align: 'right',
         renderer: 'positionRenderer'
     }, {
         text: 'D1p',
-        width: 65,
+        width: 60,
         dataIndex: 'portfolioDeltaOnePct',
         tdCls: 'portfolioDeltaOnePct hop-decimal-one',
         align: 'right',
         renderer: 'decimalOneRenderer'
     }, {
-        text: 'G1pp',
-        width: 65,
+        text: 'G1p',
+        width: 60,
         dataIndex: 'portfolioGammaOnePctPct',
         tdCls: 'portfolioGammaOnePctPct hop-decimal-one',
         align: 'right',
         renderer: 'decimalOneRenderer'
     }, {
-        text: 'Dt',
-        width: 55,
+        text: 'D',
+        width: 50,
         dataIndex: 'portfolioDelta',
         tdCls: 'portfolioDelta hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'Gm',
-        width: 55,
+        text: 'G',
+        width: 50,
         dataIndex: 'portfolioGamma',
         tdCls: 'portfolioGamma hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'Vg',
-        width: 55,
+        text: 'V',
+        width: 50,
         dataIndex: 'portfolioVega',
         tdCls: 'portfolioVega hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
-        text: 'Th',
-        width: 55,
+        text: 'T',
+        width: 50,
         dataIndex: 'portfolioTheta',
         tdCls: 'portfolioTheta hop-whole',
         align: 'right',
         renderer: 'wholeRenderer'
     }, {
         text: 'Tv',
-        width: 60,
+        width: 50,
         dataIndex: 'portfolioTimeValue',
         tdCls: 'portfolioTimeValue hop-whole',
         align: 'right',
@@ -211,7 +225,7 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         renderer: 'pnlRenderer'
     }, {
         text: 'Allc',
-        width: 65,
+        width: 60,
         dataIndex: 'allocationPct',
         tdCls: 'allocationPct hop-decimal-pct hop-unchanged',
         align: 'right',

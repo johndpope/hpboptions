@@ -81,7 +81,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
                 cfdInstrument.setMinTick(u.getCfdMinTick());
             }
 
-            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
+            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose());
             if (u.isCfdDefined()) {
                 underlyingCfdMap.put(u.getCfdConid(), udh);
             }
@@ -153,23 +153,24 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         Collection<PositionDataHolder> pdhs = underlyingPositionMap.get(underlyingConid).values();
 
         if (pdhs.isEmpty()) {
-            udh.resetPositionsSum();
+            udh.resetOptionPositionsSum();
         } else {
-            int putsSum = pdhs.stream()
-                    .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Put)
-                    .mapToInt(PositionDataHolder::getPositionSize)
-                    .sum();
+            int putsShort = optionPositionsSumPerType(underlyingConid, Types.Right.Put, -1);
+            int putsLong = optionPositionsSumPerType(underlyingConid, Types.Right.Put, 1);
+            int callsShort = optionPositionsSumPerType(underlyingConid, Types.Right.Call, -1);
+            int callsLong = optionPositionsSumPerType(underlyingConid, Types.Right.Call, 1);
 
-            int callsSum = pdhs.stream()
-                    .filter(pdh -> pdh.getInstrument().getRight() == Types.Right.Call)
-                    .mapToInt(PositionDataHolder::getPositionSize)
-                    .sum();
-
-            udh.updatePositionsSum(putsSum, callsSum);
+            udh.updateOptionPositionsSum(putsShort, putsLong, callsShort, callsLong);
         }
+        UnderlyingDataField.optionPositionSumFields().forEach(field -> messageService.sendWsMessage(udh, field));
+    }
 
-        messageService.sendWsMessage(udh, UnderlyingDataField.PUTS_SUM);
-        messageService.sendWsMessage(udh, UnderlyingDataField.CALLS_SUM);
+    private int optionPositionsSumPerType(int underlyingConid, Types.Right right, int sign) {
+        return underlyingPositionMap.get(underlyingConid).values().stream()
+                .filter(pdh -> pdh.getInstrument().getRight() == right)
+                .mapToInt(PositionDataHolder::getPositionSize)
+                .filter(pos -> sign == -1 ? pos < 0 : pos > 0)
+                .sum();
     }
 
     public void calculateRiskDataPerUnderlying(int underlyingConid) {
@@ -204,7 +205,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
                     vega += pdh.getVega() * factor;
                     theta += pdh.getTheta() * factor;
 
-                    timeValue += pdh.getTimeValue() * Math.abs(pdh.getPositionSize()) * pdh.getInstrument().getMultiplier();
+                    timeValue += pdh.getTimeValue() * -pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
 
                     callMargin += pdh.getInstrument().isCall() ? pdh.getMargin() : 0d;
                     putMargin += pdh.getInstrument().isPut() ? pdh.getMargin() : 0d;

@@ -58,24 +58,27 @@ public class RiskService {
                 Number fieldValue = udh.getCurrent(field);
 
                 if (field.thresholdBreached(fieldValue)) {
-                   if (field == UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
-                           udh.getCfdInstrument() != null &&
-                           udh.isDeltaHedgeEnabled() &&
-                           udh.isDeltaHedgeDue() &&
-                           !orderService.hasWorkingOrder(udh.getCfdInstrument().getConid())) {
+                    riskEventMap.get(underlyingConid).add(field);
 
-                       udh.updateLastDeltaHedgeTime();
+                    if (field == UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
+                            udh.getCfdInstrument() != null &&
+                            udh.isDeltaHedgeEnabled() &&
+                            udh.isDeltaHedgeDue() &&
+                            udh.isMarketOpen() &&
+                            !orderService.hasWorkingOrder(udh.getCfdInstrument().getConid())) {
 
-                       int quantity = HopSettings.DELTA_HEDGE_QUANTITY_STEP;
-                       Types.Action action = udh.getPortfolioDeltaOnePct() > 0 ? Types.Action.SELL : Types.Action.BUY;
+                        udh.updateLastDeltaHedgeTime();
 
-                       // TODO create and send order
+                        int quantity = HopSettings.DELTA_HEDGE_QUANTITY_STEP;
+                        Types.Action action = udh.getPortfolioDeltaOnePct() > 0 ? Types.Action.SELL : Types.Action.BUY;
 
-                       createRiskEvent(udh, field, "delta hedge " + action.name() + " " + quantity);
+                        // TODO create and send order
 
-                   } else if (!riskEventMap.get(underlyingConid).contains(field)) {
-                       createRiskEvent(udh, field, null);
-                   }
+                        createRiskEvent(udh, field, "delta hedge " + action.name() + " " + quantity);
+
+                    } else if (!riskEventMap.get(underlyingConid).contains(field)) {
+                        createRiskEvent(udh, field, null);
+                    }
                 }
             }
         } finally {

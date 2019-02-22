@@ -12,6 +12,7 @@ import com.highpowerbear.hpboptions.model.Instrument;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -31,18 +32,22 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
 
     private boolean deltaHedgeEnabled = false;
     private LocalDateTime lastDeltaHedgeTime;
+    private final LocalTime marketOpen;
+    private final LocalTime marketClose;
 
     @JsonIgnore
     private final ReentrantLock riskCalculationLock = new ReentrantLock();
     @JsonIgnore
     private final ReentrantLock pnlCalculationLock = new ReentrantLock();
 
-    public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId) {
+    public UnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId, LocalTime marketOpen, LocalTime marketClose) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId);
 
         this.cfdInstrument = cfdInstrument;
         this.ibHistDataRequestId = ibHistDataRequestId;
         this.ibPnlRequestId = ibPnlRequestId;
+        this.marketOpen = marketOpen;
+        this.marketClose = marketClose;
 
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
@@ -56,8 +61,10 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
                 UnderlyingDataField.CFD_POSITION_SIZE,
                 UnderlyingDataField.CFD_UNREALIZED_PNL,
                 UnderlyingDataField.IV_CLOSE,
-                UnderlyingDataField.PUTS_SUM,
-                UnderlyingDataField.CALLS_SUM,
+                UnderlyingDataField.PUTS_SHORT,
+                UnderlyingDataField.PUTS_LONG,
+                UnderlyingDataField.CALLS_SHORT,
+                UnderlyingDataField.CALLS_LONG,
                 UnderlyingDataField.PORTFOLIO_DELTA,
                 UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT,
                 UnderlyingDataField.PORTFOLIO_GAMMA,
@@ -175,13 +182,15 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         UnderlyingDataField.cfdFields().forEach(this::reset);
     }
 
-    public void updatePositionsSum(int putsSum, int callsSum) {
-        update(UnderlyingDataField.PUTS_SUM, putsSum);
-        update(UnderlyingDataField.CALLS_SUM, callsSum);
+    public void updateOptionPositionsSum(int putsShort, int putsLong, int callsShort, int callsLong) {
+        update(UnderlyingDataField.PUTS_SHORT, putsShort);
+        update(UnderlyingDataField.PUTS_LONG, putsLong);
+        update(UnderlyingDataField.CALLS_SHORT, callsShort);
+        update(UnderlyingDataField.CALLS_LONG, callsLong);
     }
 
-    public void resetPositionsSum() {
-        Stream.of(UnderlyingDataField.PUTS_SUM, UnderlyingDataField.CALLS_SUM).forEach(this::reset);
+    public void resetOptionPositionsSum() {
+        UnderlyingDataField.optionPositionSumFields().forEach(this::reset);
     }
 
     public ReentrantLock getRiskCalculationLock() {
@@ -231,6 +240,11 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         return LocalDateTime.now().isAfter(lastDeltaHedgeTime.plusSeconds(HopSettings.DELTA_HEDGE_MIN_INTERVAL_SEC));
     }
 
+    public boolean isMarketOpen() {
+        LocalTime now = LocalTime.now();
+        return now.isAfter(marketOpen) && now.isBefore(marketClose);
+    }
+
     public void updatePortfolioUnrealizedPnl(double unrealizedPnl) {
         update(UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL, unrealizedPnl);
     }
@@ -275,12 +289,20 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         return getCurrent(UnderlyingDataField.IV_CLOSE).doubleValue();
     }
 
-    public int getPutsSum() {
-        return getCurrent(UnderlyingDataField.PUTS_SUM).intValue();
+    public int getPutsShort() {
+        return getCurrent(UnderlyingDataField.PUTS_SHORT).intValue();
     }
 
-    public int getCallsSum() {
-        return getCurrent(UnderlyingDataField.CALLS_SUM).intValue();
+    public int getPutsLong() {
+        return getCurrent(UnderlyingDataField.PUTS_LONG).intValue();
+    }
+
+    public int getCallsShort() {
+        return getCurrent(UnderlyingDataField.CALLS_SHORT).intValue();
+    }
+
+    public int getCallsLong() {
+        return getCurrent(UnderlyingDataField.CALLS_LONG).intValue();
     }
 
     public double getIvChangePct() {

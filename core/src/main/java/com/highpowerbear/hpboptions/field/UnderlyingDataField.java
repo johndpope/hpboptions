@@ -25,13 +25,25 @@ public enum UnderlyingDataField implements DataField {
         }
     },
     IV_CLOSE,
-    PUTS_SUM {
+    PUTS_SHORT {
         @Override
         public Number getInitialValue() {
             return 0;
         }
     },
-    CALLS_SUM {
+    PUTS_LONG {
+        @Override
+        public Number getInitialValue() {
+            return 0;
+        }
+    },
+    CALLS_SHORT {
+        @Override
+        public Number getInitialValue() {
+            return 0;
+        }
+    },
+    CALLS_LONG {
         @Override
         public Number getInitialValue() {
             return 0;
@@ -82,6 +94,13 @@ public enum UnderlyingDataField implements DataField {
             CFD_MARGIN
     ).collect(Collectors.toList());
 
+    private static List<UnderlyingDataField> optionPositionSumFields = Stream.of(
+            PUTS_SHORT,
+            PUTS_LONG,
+            CALLS_SHORT,
+            CALLS_LONG
+    ).collect(Collectors.toList());
+
     private static List<UnderlyingDataField> riskDataFields = Stream.of(
             PORTFOLIO_DELTA,
             PORTFOLIO_DELTA_ONE_PCT,
@@ -99,6 +118,10 @@ public enum UnderlyingDataField implements DataField {
 
     public static List<UnderlyingDataField> cfdFields() {
         return cfdFields;
+    }
+
+    public static List<UnderlyingDataField> optionPositionSumFields() {
+        return optionPositionSumFields;
     }
 
     public static List<UnderlyingDataField> riskDataFields() {
