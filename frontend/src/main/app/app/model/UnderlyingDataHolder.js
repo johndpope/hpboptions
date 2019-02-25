@@ -6,6 +6,8 @@ Ext.define('HopGui.model.UnderlyingDataHolder', {
 
     fields: [
         'ibHistDataRequestId',
+        'ibPnlRequestId',
+        'deltaHedge',
         'optionImpliedVol',
         'cfdPositionSize',
         'cfdUnrealizedPnl',

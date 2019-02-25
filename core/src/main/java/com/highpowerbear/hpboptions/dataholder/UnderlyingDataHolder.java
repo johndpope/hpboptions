@@ -10,6 +10,7 @@ import com.highpowerbear.hpboptions.field.DerivedMktDataField;
 import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,7 +31,7 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
     @JsonIgnore
     private final Set<DataField> ivHistoryDependentFields;
 
-    private boolean deltaHedgeEnabled = false;
+    private boolean deltaHedge = false;
     private LocalDateTime lastDeltaHedgeTime;
     private final LocalTime marketOpen;
     private final LocalTime marketClose;
@@ -224,12 +225,12 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
         UnderlyingDataField.riskDataFields().forEach(this::reset);
     }
 
-    public boolean isDeltaHedgeEnabled() {
-        return deltaHedgeEnabled;
+    public boolean isDeltaHedge() {
+        return deltaHedge;
     }
 
-    public void setDeltaHedgeEnabled(boolean deltaHedgeEnabled) {
-        this.deltaHedgeEnabled = deltaHedgeEnabled;
+    public void setDeltaHedge(boolean deltaHedge) {
+        this.deltaHedge = deltaHedge;
     }
 
     public void updateLastDeltaHedgeTime() {
@@ -241,8 +242,10 @@ public class UnderlyingDataHolder extends AbstractMarketDataHolder {
     }
 
     public boolean isMarketOpen() {
-        LocalTime now = LocalTime.now();
-        return now.isAfter(marketOpen) && now.isBefore(marketClose);
+        LocalTime time = LocalTime.now();
+        DayOfWeek dayOfWeek = LocalDate.now().getDayOfWeek();
+
+        return time.isAfter(marketOpen) && time.isBefore(marketClose) && dayOfWeek != DayOfWeek.SATURDAY && dayOfWeek != DayOfWeek.SUNDAY;
     }
 
     public void updatePortfolioUnrealizedPnl(double unrealizedPnl) {

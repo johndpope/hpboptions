@@ -8,11 +8,11 @@ import com.highpowerbear.hpboptions.dataholder.OrderDataHolder;
 import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
 import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
 import com.highpowerbear.hpboptions.enums.PositionSortOrder;
-import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
-import com.highpowerbear.hpboptions.rest.model.SendOrderParams;
-import com.highpowerbear.hpboptions.rest.model.RestList;
-import com.highpowerbear.hpboptions.service.*;
 import com.highpowerbear.hpboptions.model.*;
+import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
+import com.highpowerbear.hpboptions.rest.model.RestList;
+import com.highpowerbear.hpboptions.rest.model.SendOrderParams;
+import com.highpowerbear.hpboptions.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -80,6 +80,15 @@ public class AppRestController {
     public ResponseEntity<?> getUnderlyingDataHolders() {
         List<UnderlyingDataHolder> underlyingDataHolders = underlyingService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
+    }
+
+    @RequestMapping(method = RequestMethod.PUT, value = "underlying/{conid}/delta-hedge/{deltaHedge}")
+    public ResponseEntity<?> setDeltaHedge(
+            @PathVariable("conid") int conid,
+            @PathVariable("deltaHedge") boolean deltaHedge) {
+
+        underlyingService.setDeltaHedge(conid, deltaHedge);
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping("/position/sort-order")

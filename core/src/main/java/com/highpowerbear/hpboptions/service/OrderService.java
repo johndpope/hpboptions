@@ -73,7 +73,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
             } else {
                 quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
             }
-            createOrder(pdh.getInstrument(), pdh.getInstrument().getMinTick(), pdh.getBid(), pdh.getAsk(), action, quantity);
+            createOrder(pdh.getInstrument(), pdh.getInstrument().getMinTick(), pdh.getBid(), pdh.getAsk(), action, quantity, OrderSource.PM);
         } else {
             log.warn("cannot create order from position, no conid " + conid + " found");
         }
@@ -84,14 +84,14 @@ public class OrderService extends AbstractMarketDataService implements Connectio
 
         if (cdh != null) {
             int quantity = HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
-            createOrder(cdh.getInstrument(), cdh.getInstrument().getMinTick(), cdh.getBid(), cdh.getAsk(), action, quantity);
+            createOrder(cdh.getInstrument(), cdh.getInstrument().getMinTick(), cdh.getBid(), cdh.getAsk(), action, quantity, OrderSource.CM);
         } else {
             log.warn("cannot create order from chain, no conid " + conid + " found");
         }
     }
 
-    public void createOrderFromUnderlying(int conid, Types.Action action) {
-        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(conid);
+    public void createOrderFromUnderlying(int underlyingConid, Types.Action action) {
+        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
             Instrument cfdInstrument = udh.getCfdInstrument();
@@ -105,21 +105,43 @@ public class OrderService extends AbstractMarketDataService implements Connectio
                 } else {
                     quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
                 }
-                createOrder(cfdInstrument, cfdInstrument.getMinTick(), udh.getBid(), udh.getAsk(), action, quantity);
+                createOrder(cfdInstrument, cfdInstrument.getMinTick(), udh.getBid(), udh.getAsk(), action, quantity, OrderSource.UM);
             } else {
-                log.warn("cannot create order from underlying conid=" + conid + ", cfd parameters not defined");
+                log.warn("cannot create order from underlying conid=" + underlyingConid + ", cfd parameters not defined");
             }
         } else {
-            log.warn("cannot create order from underlying, no conid " + conid + " found");
+            log.warn("cannot create order from underlying, no conid " + underlyingConid + " found");
         }
     }
 
-    private void createOrder(Instrument instrument, double minTick, double bid, double ask, Types.Action action, int quantity) {
+    public void createAndSendAdaptiveCfdOrder(int underlyingConid, Types.Action action, int quantity, OrderSource orderSource) {
+        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+
+        if (udh != null) {
+            Instrument cfdInstrument = udh.getCfdInstrument();
+
+            if (cfdInstrument != null) {
+                int orderId = createOrder(cfdInstrument, cfdInstrument.getMinTick(), udh.getBid(), udh.getAsk(), action, quantity, orderSource);
+
+                OrderDataHolder odh = orderMap.get(orderId);
+                HopOrder hopOrder = odh.getHopOrder();
+                hopOrder.setAdapt(true);
+
+                ibController.placeOrder(hopOrder, cfdInstrument);
+            } else {
+                log.warn("cannot create and send adaptive cfd order for underlying conid=" + underlyingConid + ", cfd parameters not defined");
+            }
+        } else {
+            log.warn("cannot create and send adaptive cfd order for underlying, no conid " + underlyingConid + " found");
+        }
+    }
+
+    private int createOrder(Instrument instrument, double minTick, double bid, double ask, Types.Action action, int quantity, OrderSource orderSource) {
         log.info("creating order " + action + " " + quantity + " " + instrument.getSymbol() + ", conid=" + instrument.getConid());
 
         int orderId = ibOrderIdGenerator.incrementAndGet();
 
-        HopOrder hopOrder = new HopOrder(orderId, action, OrderType.LMT);
+        HopOrder hopOrder = new HopOrder(orderId, action, OrderType.LMT, orderSource);
         hopOrder.setQuantity(quantity);
 
         if (HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
@@ -131,6 +153,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
         requestMktData(odh);
 
         messageService.sendWsReloadRequestMessage(DataHolderType.ORDER);
+        return orderId;
     }
 
     // submit new or modify working order
@@ -303,7 +326,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
 
         // potential open orders received upon application restart
         if (odh == null) {
-            HopOrder hopOrder = new HopOrder(orderId, order.action(), order.orderType());
+            HopOrder hopOrder = new HopOrder(orderId, order.action(), order.orderType(), OrderSource.OOR);
 
             hopOrder.setPermId(order.permId());
             hopOrder.setQuantity((int) order.totalQuantity());

@@ -3,6 +3,7 @@ package com.highpowerbear.hpboptions.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.HopOrderState;
+import com.highpowerbear.hpboptions.enums.OrderSource;
 import com.ib.client.Order;
 import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
@@ -18,6 +19,7 @@ public class HopOrder {
     private final int orderId;
     private final Types.Action action;
     private final OrderType orderType;
+    private final OrderSource orderSource;
 
     private int quantity;
     private double limitPrice;
@@ -28,10 +30,11 @@ public class HopOrder {
     private Integer permId;
     private int heartbeatCount;
 
-    public HopOrder(int orderId, Types.Action action, OrderType orderType) {
+    public HopOrder(int orderId, Types.Action action, OrderType orderType, OrderSource orderSource) {
         this.orderId = orderId;
         this.action = action;
         this.orderType = orderType;
+        this.orderSource = orderSource;
 
         quantity = 1;
         limitPrice = 0d;
@@ -95,6 +98,10 @@ public class HopOrder {
 
     public OrderType getOrderType() {
         return orderType;
+    }
+
+    public OrderSource getOrderSource() {
+        return orderSource;
     }
 
     public int getQuantity() {

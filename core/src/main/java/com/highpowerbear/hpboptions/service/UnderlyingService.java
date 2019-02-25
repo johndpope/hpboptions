@@ -337,6 +337,13 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         return new UnderlyingMktDataSnapshot(price, udh.getOptionImpliedVol());
     }
 
+    public void setDeltaHedge(int conid, boolean deltaHedge) {
+        UnderlyingDataHolder udh = underlyingMap.get(conid);
+        if (udh != null) {
+            udh.setDeltaHedge(deltaHedge);
+        }
+    }
+
     public Underlying getUnderlying(int conid) {
         return underlyingEntityMap.get(conid);
     }

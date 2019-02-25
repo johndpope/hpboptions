@@ -16,17 +16,20 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
         stripeRows: true
     },
     columns: [{
-        text: 'Sec',
-        width: 55,
-        dataIndex: 'secType'
+        text: 'Underlying',
+        width: 110,
+        dataIndex: 'secType',
+        renderer: function(val, metadata, record) {
+            return record.data['symbol'] + ',' + record.data['secType'] + ',' + record.data['currency'];
+        }
     }, {
-        text: 'Sym',
-        width: 55,
-        dataIndex: 'symbol'
-    }, {
-        text: 'Cur',
-        width: 55,
-        dataIndex: 'currency'
+        text: 'Dh',
+        width: 50,
+        dataIndex: 'deltaHedge',
+        xtype: 'checkcolumn',
+        listeners: {
+            checkchange: 'toggleDeltaHedge'
+        }
     }, {
         text: 'P',
         width: 50,

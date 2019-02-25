@@ -4,10 +4,13 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.RiskEvent;
-import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.enums.OrderSource;
+import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.field.UnderlyingDataField;
 import com.ib.client.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
@@ -15,13 +18,17 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by robertk on 1/28/2019.
  */
 @Service
 public class RiskService {
+    private static final Logger log = LoggerFactory.getLogger(RiskService.class);
 
     private final HopDao hopDao;
     private final UnderlyingService underlyingService;
@@ -62,19 +69,20 @@ public class RiskService {
 
                     if (field == UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
                             udh.getCfdInstrument() != null &&
-                            udh.isDeltaHedgeEnabled() &&
+                            udh.isDeltaHedge() &&
                             udh.isDeltaHedgeDue() &&
                             udh.isMarketOpen() &&
                             !orderService.hasWorkingOrder(udh.getCfdInstrument().getConid())) {
 
                         udh.updateLastDeltaHedgeTime();
-
                         int quantity = HopSettings.DELTA_HEDGE_QUANTITY_STEP;
                         Types.Action action = udh.getPortfolioDeltaOnePct() > 0 ? Types.Action.SELL : Types.Action.BUY;
 
-                        // TODO create and send order
+                        String resolution = "delta hedge " + action.name() + " " + quantity;
+                        log.info(resolution);
 
-                        createRiskEvent(udh, field, "delta hedge " + action.name() + " " + quantity);
+                        orderService.createAndSendAdaptiveCfdOrder(underlyingConid, action, quantity, OrderSource.RDH);
+                        createRiskEvent(udh, field, resolution);
 
                     } else if (!riskEventMap.get(underlyingConid).contains(field)) {
                         createRiskEvent(udh, field, null);

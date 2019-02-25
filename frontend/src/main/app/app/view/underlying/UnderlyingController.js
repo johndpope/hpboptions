@@ -149,8 +149,9 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         });
     },
 
-    createOrder: function (view, cell, cellIndex, record, row, rowIndex, e) {
+    createOrder: function(view, cell, cellIndex, record, row, rowIndex, e) {
         var dataIndex = e.position.column.dataIndex;
+
         if (dataIndex !== 'bid' && dataIndex !== 'ask') {
             return;
         }
@@ -168,5 +169,22 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                 //
             }
         });
+    },
+
+    toggleDeltaHedge: function(comp, rowIndex, checked, eventColumn) {
+        var me = this,
+            underlyingDataHolders = me.getStore('underlyingDataHolders'),
+            record = underlyingDataHolders.getAt(rowIndex),
+            deltaHedge = record.data.deltaHedge;
+
+        console.log('toggling delta hedge for underlying ' + record.data.symbol + ', deltaHedge=' + deltaHedge);
+        Ext.Ajax.request({
+            method: 'PUT',
+            url: HopGui.common.Definitions.urlPrefix + '/underlying/' + record.data.conid + '/delta-hedge/' + deltaHedge,
+            success: function(response, opts) {
+                underlyingDataHolders.reload();
+            }
+        });
+
     }
 });

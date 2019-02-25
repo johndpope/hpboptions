@@ -60,14 +60,14 @@ Ext.define('HopGui.view.order.OrderGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 80,
+        width: 70,
         dataIndex: 'bid',
         tdCls: 'bid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 80,
+        width: 70,
         dataIndex: 'ask',
         tdCls: 'ask hop-price hop-unchanged',
         align: 'right',
@@ -81,7 +81,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 80,
+        width: 70,
         dataIndex: 'last',
         tdCls: 'last hop-price hop-unchanged',
         align: 'right',
@@ -95,12 +95,12 @@ Ext.define('HopGui.view.order.OrderGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'OrdId',
-        width: 80,
+        width: 70,
         dataIndex: 'orderId',
         align: 'right'
     }, {
         text: 'Action',
-        width: 70,
+        width: 60,
         dataIndex: 'action'
     }, {
         text: 'Qnt',
@@ -145,6 +145,10 @@ Ext.define('HopGui.view.order.OrderGrid', {
         dataIndex: 'fillPrice',
         align: 'right',
         renderer: 'orderPriceRenderer'
+    }, {
+        text: 'Src',
+        width: 60,
+        dataIndex: 'orderSource'
     }, {
         text: 'State',
         width: 90,
