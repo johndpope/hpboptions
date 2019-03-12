@@ -102,7 +102,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
             success: function(response) {
                 var ibConnectionInfo = Ext.decode(response.responseText);
-                var text = 'IB' + ibConnectionInfo.host + ':' + ibConnectionInfo.port + ':' + ibConnectionInfo.clientId;
+                var text = 'IB ' + ibConnectionInfo.host + ':' + ibConnectionInfo.port + ':' + ibConnectionInfo.clientId;
 
                 infoField.update(text);
                 infoField.removeCls('hop-connected');

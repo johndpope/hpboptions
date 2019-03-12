@@ -17,14 +17,14 @@ Ext.define('HopGui.view.underlying.UnderlyingGrid', {
     },
     columns: [{
         text: 'Underlying',
-        width: 110,
+        width: 115,
         dataIndex: 'secType',
         renderer: function(val, metadata, record) {
-            return record.data['symbol'] + ',' + record.data['secType'] + ',' + record.data['currency'];
+            return '<span style="font-weight: bold;">' + record.data['symbol'] + '</span>' + '&nbsp;&nbsp;' + record.data['secType'] + ',' + record.data['currency'];
         }
     }, {
         text: 'Dh',
-        width: 50,
+        width: 45,
         dataIndex: 'deltaHedge',
         xtype: 'checkcolumn',
         listeners: {

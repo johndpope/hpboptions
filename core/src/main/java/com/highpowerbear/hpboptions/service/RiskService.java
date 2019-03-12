@@ -65,8 +65,6 @@ public class RiskService {
                 Number fieldValue = udh.getCurrent(field);
 
                 if (field.thresholdBreached(fieldValue)) {
-                    riskEventMap.get(underlyingConid).add(field);
-
                     if (field == UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
                             udh.getCfdInstrument() != null &&
                             udh.isDeltaHedge() &&
@@ -87,6 +85,7 @@ public class RiskService {
                     } else if (!riskEventMap.get(underlyingConid).contains(field)) {
                         createRiskEvent(udh, field, null);
                     }
+                    riskEventMap.get(underlyingConid).add(field);
                 }
             }
         } finally {
