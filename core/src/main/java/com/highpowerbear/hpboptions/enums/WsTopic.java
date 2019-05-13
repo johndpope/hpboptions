@@ -9,7 +9,8 @@ public enum WsTopic {
     UNDERLYING,
     ORDER,
     POSITION,
-    CHAIN;
+    CHAIN,
+    SCANNER;
 
     public String suffix() {
         return this.name().toLowerCase();

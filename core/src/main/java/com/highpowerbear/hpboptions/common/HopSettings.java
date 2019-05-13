@@ -22,6 +22,7 @@ public class HopSettings {
     public static final int ORDER_IB_REQUEST_ID_INITIAL = 100000;
     public static final int POSITION_IB_REQUEST_ID_INITIAL = 500000;
     public static final int CHAIN_IB_REQUEST_ID_INITIAL = 1000000;
+    public static final int SCANNER_IB_REQUEST_ID_INITIAL = 2000000;
     public static final int CHAIN_REBUILD_DELAY_MILLIS = 20000;
     public static final int CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS = 6000;
     public static final int CHAIN_STRIKES_STD_DEVIATIONS = 2;

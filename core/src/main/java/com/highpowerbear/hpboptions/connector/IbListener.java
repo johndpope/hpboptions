@@ -180,6 +180,18 @@ public class IbListener extends GenericIbListener {
         orderService.orderStatusReceived(orderId, status, remaining, avgFillPrice);
     }
 
+    @Override
+    public void scannerData(int reqId, int rank, ContractDetails contractDetails, String distance, String benchmark, String projection, String legsStr) {
+        super.scannerData(reqId, rank, contractDetails, distance, benchmark, projection, legsStr);
+        // TODO
+    }
+
+    @Override
+    public void scannerDataEnd(int reqId) {
+        super.scannerDataEnd(reqId);
+        // TODO
+    }
+
     private MarketDataService getDataService(int requestId) {
         if (isUnderlyingIbRequest(requestId)) {
             return underlyingService;
@@ -188,6 +200,8 @@ public class IbListener extends GenericIbListener {
         } else if (isPositionIbRequest(requestId)) {
             return positionService;
         } else if (isChainIbRequest(requestId)) {
+            return chainService;
+        } else if (isScannerIbRequest(requestId)) {
             return chainService;
         } else {
             throw new IllegalStateException("no market data service for requestId " + requestId);
@@ -207,6 +221,10 @@ public class IbListener extends GenericIbListener {
     }
 
     private boolean isChainIbRequest(int requestId) {
-        return requestId >= HopSettings.CHAIN_IB_REQUEST_ID_INITIAL;
+        return requestId >= HopSettings.CHAIN_IB_REQUEST_ID_INITIAL && requestId < HopSettings.SCANNER_IB_REQUEST_ID_INITIAL;
+    }
+
+    private boolean isScannerIbRequest(int requestId) {
+        return requestId >= HopSettings.SCANNER_IB_REQUEST_ID_INITIAL;
     }
 }

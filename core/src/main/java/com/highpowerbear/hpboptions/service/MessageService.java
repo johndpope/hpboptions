@@ -69,6 +69,7 @@ public class MessageService {
             case ORDER: topic = WsTopic.ORDER; break;
             case POSITION: topic = WsTopic.POSITION; break;
             case CHAIN: topic = WsTopic.CHAIN; break;
+            case SCANNER: topic = WsTopic.SCANNER; break;
             default: throw new IllegalStateException("no ws topic for " + type);
         }
         sendWsMessage(topic, message);
