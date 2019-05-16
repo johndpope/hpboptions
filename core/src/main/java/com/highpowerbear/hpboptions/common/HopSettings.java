@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.common;
 
 import com.highpowerbear.hpboptions.field.DataField;
-import com.highpowerbear.hpboptions.field.UnderlyingDataField;
+import com.highpowerbear.hpboptions.field.ActiveUnderlyingDataField;
 import com.highpowerbear.hpboptions.model.RiskThreshold;
 
 import java.time.format.DateTimeFormatter;
@@ -42,9 +42,9 @@ public class HopSettings {
 
     private static final Map<DataField, RiskThreshold> riskThresholdMap = new HashMap<>();
     static {
-        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, new RiskThreshold(-50.0, 50.0));
-        riskThresholdMap.put(UnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, new RiskThreshold(-100.0, 100.0));
-        riskThresholdMap.put(UnderlyingDataField.ALLOCATION_PCT, new RiskThreshold(null, 15.0));
+        riskThresholdMap.put(ActiveUnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT, new RiskThreshold(-50.0, 50.0));
+        riskThresholdMap.put(ActiveUnderlyingDataField.PORTFOLIO_GAMMA_ONE_PCT_PCT, new RiskThreshold(-100.0, 100.0));
+        riskThresholdMap.put(ActiveUnderlyingDataField.ALLOCATION_PCT, new RiskThreshold(null, 15.0));
     }
     public static RiskThreshold getRiskThreshold(DataField dataField) {
         return riskThresholdMap.get(dataField);

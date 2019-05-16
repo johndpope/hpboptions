@@ -20,7 +20,7 @@ import static com.highpowerbear.hpboptions.field.OptionDataField.*;
 /**
  * Created by robertk on 12/6/2018.
  */
-public class AbstractOptionDataHolder extends AbstractMarketDataHolder implements OptionDataHolder {
+public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder implements OptionDataHolder {
 
     private final Map<TickType, Map<OptionDataField, Double>> computationMap = new HashMap<>();
 

@@ -1,5 +1,6 @@
 package com.highpowerbear.hpboptions.service;
 
+import com.ib.client.Bar;
 import com.ib.client.ContractDetails;
 import com.ib.client.TickType;
 
@@ -11,4 +12,6 @@ public interface MarketDataService {
     void optionDataReceived(int requestId, TickType tickType, double delta, double gamma, double vega, double theta, double impliedVolatility, double optionPrice, double underlyingPrice);
     void contractDetailsReceived(int requestId, ContractDetails contractDetails);
     void contractDetailsEndReceived(int requestId);
+    void historicalDataReceived(int requestId, Bar bar);
+    void historicalDataEndReceived(int requestId);
 }

@@ -4,10 +4,10 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.RiskEvent;
-import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
 import com.highpowerbear.hpboptions.enums.OrderSource;
 import com.highpowerbear.hpboptions.field.DataField;
-import com.highpowerbear.hpboptions.field.UnderlyingDataField;
+import com.highpowerbear.hpboptions.field.ActiveUnderlyingDataField;
 import com.ib.client.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,15 +57,15 @@ public class RiskService {
 
     @JmsListener(destination = HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED)
     public void underlyingRiskDataCalculated(int underlyingConid) {
-        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
         udh.getRiskCalculationLock().lock();
         try {
-            for (UnderlyingDataField field : UnderlyingDataField.riskDataFields()) {
+            for (ActiveUnderlyingDataField field : ActiveUnderlyingDataField.riskDataFields()) {
                 Number fieldValue = udh.getCurrent(field);
 
                 if (field.thresholdBreached(fieldValue)) {
-                    if (field == UnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
+                    if (field == ActiveUnderlyingDataField.PORTFOLIO_DELTA_ONE_PCT &&
                             udh.getCfdInstrument() != null &&
                             udh.isDeltaHedge() &&
                             udh.isDeltaHedgeDue() &&
@@ -93,7 +93,7 @@ public class RiskService {
         }
     }
 
-    private void createRiskEvent(UnderlyingDataHolder udh, DataField dataField, String resolution) {
+    private void createRiskEvent(ActiveUnderlyingDataHolder udh, DataField dataField, String resolution) {
         RiskEvent riskEvent = new RiskEvent();
 
         riskEvent.setDate(LocalDateTime.now());

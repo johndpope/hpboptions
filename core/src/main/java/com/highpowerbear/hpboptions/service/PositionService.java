@@ -8,7 +8,7 @@ import com.highpowerbear.hpboptions.dataholder.OptionDataHolder;
 import com.highpowerbear.hpboptions.field.PositionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
-import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.Types;
@@ -175,7 +175,7 @@ public class PositionService extends AbstractMarketDataService implements Connec
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
-        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
         if (udh != null) {
             pdh.setDisplayRank(udh.getDisplayRank());
             underlyingService.addOptionPosition(underlyingConid, pdh);

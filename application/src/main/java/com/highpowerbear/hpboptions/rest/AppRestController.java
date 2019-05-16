@@ -6,7 +6,7 @@ import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.dataholder.AccountDataHolder;
 import com.highpowerbear.hpboptions.dataholder.OrderDataHolder;
 import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
-import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
 import com.highpowerbear.hpboptions.enums.PositionSortOrder;
 import com.highpowerbear.hpboptions.model.*;
 import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
@@ -78,7 +78,7 @@ public class AppRestController {
 
     @RequestMapping("underlying/data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<UnderlyingDataHolder> underlyingDataHolders = underlyingService.getSortedUnderlyingDataHolders();
+        List<ActiveUnderlyingDataHolder> underlyingDataHolders = underlyingService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 

@@ -91,7 +91,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     }
 
     public void createOrderFromUnderlying(int underlyingConid, Types.Action action) {
-        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
             Instrument cfdInstrument = udh.getCfdInstrument();
@@ -115,7 +115,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     }
 
     public void createAndSendAdaptiveCfdOrder(int underlyingConid, Types.Action action, int quantity, OrderSource orderSource) {
-        UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
             Instrument cfdInstrument = udh.getCfdInstrument();
@@ -284,7 +284,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
 
         Contract ibContract;
         if (mdh.getInstrument().getSecType() == Types.SecType.CFD) {
-            UnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
+            ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
             ibContract = udh.getInstrument().createIbContract();
         } else {
             ibContract = mdh.getInstrument().createIbContract();

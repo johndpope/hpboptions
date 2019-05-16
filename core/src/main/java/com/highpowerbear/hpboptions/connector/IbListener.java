@@ -24,16 +24,18 @@ public class IbListener extends GenericIbListener {
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
+    private final ScannerService scannerService;
     private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, MessageService messageService) {
+    public IbListener(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService, MessageService messageService) {
         this.ibController = ibController;
         this.accountService = accountService;
         this.underlyingService = underlyingService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
+        this.scannerService = scannerService;
         this.messageService = messageService;
 
         ibController.initialize(this);
@@ -98,13 +100,13 @@ public class IbListener extends GenericIbListener {
     @Override
     public void historicalData(int requestId, Bar bar) {
         //super.historicalData(requestId, bar);
-        underlyingService.historicalDataReceived(requestId, bar);
+        getDataService(requestId).historicalDataReceived(requestId, bar);
     }
 
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        underlyingService.historicalDataEndReceived(requestId);
+        getDataService(requestId).historicalDataEndReceived(requestId);
     }
 
     @Override
@@ -202,7 +204,7 @@ public class IbListener extends GenericIbListener {
         } else if (isChainIbRequest(requestId)) {
             return chainService;
         } else if (isScannerIbRequest(requestId)) {
-            return chainService;
+            return scannerService;
         } else {
             throw new IllegalStateException("no market data service for requestId " + requestId);
         }

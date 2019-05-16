@@ -6,15 +6,13 @@ import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.HopDao;
 import com.highpowerbear.hpboptions.database.Underlying;
-import com.highpowerbear.hpboptions.enums.Currency;
-import com.highpowerbear.hpboptions.enums.*;
-import com.highpowerbear.hpboptions.field.UnderlyingDataField;
-import com.highpowerbear.hpboptions.model.Instrument;
+import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
 import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
-import com.highpowerbear.hpboptions.dataholder.UnderlyingDataHolder;
+import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.field.ActiveUnderlyingDataField;
+import com.highpowerbear.hpboptions.model.Instrument;
 import com.highpowerbear.hpboptions.model.UnderlyingInfo;
 import com.highpowerbear.hpboptions.model.UnderlyingMktDataSnapshot;
-import com.ib.client.Bar;
 import com.ib.client.Contract;
 import com.ib.client.Types;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,12 +37,11 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     private final Map<Integer, Underlying> underlyingEntityMap = new HashMap<>(); // conid -> underlying
     private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
 
-    private final Map<Integer, UnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
-    private final Map<Integer, UnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
-    private final Map<Integer, UnderlyingDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
+    private final Map<Integer, ActiveUnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
+    private final Map<Integer, ActiveUnderlyingDataHolder> underlyingCfdMap = new HashMap<>(); // cfd conid -> underlyingDataHolder
+    private final Map<Integer, ActiveUnderlyingDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final Map<Integer, Map<Integer, PositionDataHolder>> underlyingPositionMap = new ConcurrentHashMap<>(); // underlying conid -> (position conid -> positionDataHolder)
 
-    private final Map<Integer, UnderlyingDataHolder> histDataRequestMap = new HashMap<>(); // ib request id -> underlyingDataHolder
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.UNDERLYING_IB_REQUEST_ID_INITIAL);
 
     @Value("${ib.account}")
@@ -81,7 +77,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
                 cfdInstrument.setMinTick(u.getCfdMinTick());
             }
 
-            UnderlyingDataHolder udh = new UnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose());
+            ActiveUnderlyingDataHolder udh = new ActiveUnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose());
             if (u.isCfdDefined()) {
                 underlyingCfdMap.put(u.getCfdConid(), udh);
             }
@@ -118,19 +114,6 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         underlyingMap.values().forEach(this::requestImpliedVolatilityHistory);
     }
 
-    private void requestImpliedVolatilityHistory(UnderlyingDataHolder udh) {
-        histDataRequestMap.putIfAbsent(udh.getIbHistDataRequestId(), udh);
-
-        ibController.requestHistData(
-                udh.getIbHistDataRequestId(),
-                udh.getInstrument().createIbContract(),
-                LocalDate.now().atStartOfDay().format(HopSettings.IB_DATETIME_FORMATTER),
-                IbDurationUnit.YEAR_1.getValue(),
-                IbBarSize.DAY_1.getValue(),
-                IbHistDataType.OPTION_IMPLIED_VOLATILITY.name(),
-                IbTradingHours.REGULAR.getValue());
-    }
-
     public void addOptionPosition(int underlyingConid, PositionDataHolder pdh) {
         if (underlyingMap.containsKey(underlyingConid)) {
             underlyingPositionMap.get(underlyingConid).put(pdh.getInstrument().getConid(), pdh);
@@ -146,7 +129,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     }
 
     public void calculateOptionPositionsSum(int underlyingConid) {
-        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null) {
             return;
         }
@@ -162,7 +145,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
 
             udh.updateOptionPositionsSum(putsShort, putsLong, callsShort, callsLong);
         }
-        UnderlyingDataField.optionPositionSumFields().forEach(field -> messageService.sendWsMessage(udh, field));
+        ActiveUnderlyingDataField.optionPositionSumFields().forEach(field -> messageService.sendWsMessage(udh, field));
     }
 
     private int optionPositionsSumPerType(int underlyingConid, Types.Right right, int sign) {
@@ -174,7 +157,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     }
 
     public void calculateRiskDataPerUnderlying(int underlyingConid) {
-        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null || !udh.getRiskCalculationLock().tryLock()) {
             return;
         }
@@ -227,9 +210,9 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         }
     }
 
-    private void sendRiskMessages(UnderlyingDataHolder udh) {
+    private void sendRiskMessages(ActiveUnderlyingDataHolder udh) {
         messageService.sendJmsMesage(HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED, udh.getInstrument().getConid());
-        UnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
+        ActiveUnderlyingDataField.riskDataFields().forEach(field -> messageService.sendWsMessage(udh, field));
     }
 
     private double calculateDeltaOnePct(double delta, double price) {
@@ -252,7 +235,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     }
 
     public void calculateUnrealizedPnlPerUnderlying(int underlyingConid) {
-        UnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
+        ActiveUnderlyingDataHolder udh = underlyingMap.get(underlyingConid);
         if (udh == null || !udh.getPnlCalculationLock().tryLock()) {
             return;
         }
@@ -272,38 +255,23 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
                 }
                 udh.updatePortfolioUnrealizedPnl(unrealizedPnl);
             }
-            messageService.sendWsMessage(udh, UnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
+            messageService.sendWsMessage(udh, ActiveUnderlyingDataField.PORTFOLIO_UNREALIZED_PNL);
         } finally {
             udh.getPnlCalculationLock().unlock();
         }
     }
 
-    public void historicalDataReceived(int requestId, Bar bar) {
-        UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
-
-        LocalDate date = LocalDate.parse(bar.time(), HopSettings.IB_DATE_FORMATTER);
-        double value = bar.close();
-        udh.addImpliedVolatility(date, value);
-    }
-
-    public void historicalDataEndReceived(int requestId) {
-        UnderlyingDataHolder udh = histDataRequestMap.get(requestId);
-        udh.impliedVolatilityHistoryCompleted();
-
-        udh.getIvHistoryDependentFields().forEach(field -> messageService.sendWsMessage(udh, field));
-    }
-
     public void positionReceived(Contract contract, int positionSize) {
         int conid = contract.conid();
-        UnderlyingDataHolder udh = underlyingCfdMap.get(conid);
+        ActiveUnderlyingDataHolder udh = underlyingCfdMap.get(conid);
 
         if (udh != null) {
             udh.updateCfdPositionSize(positionSize);
-            messageService.sendWsMessage(udh, UnderlyingDataField.CFD_POSITION_SIZE);
+            messageService.sendWsMessage(udh, ActiveUnderlyingDataField.CFD_POSITION_SIZE);
 
             if (positionSize == 0) {
                 udh.resetCfdFields();
-                UnderlyingDataField.cfdFields().forEach(field -> messageService.sendWsMessage(udh, field));
+                ActiveUnderlyingDataField.cfdFields().forEach(field -> messageService.sendWsMessage(udh, field));
                 calculateUnrealizedPnlPerUnderlying(udh.getInstrument().getConid());
             }
             calculateRiskDataPerUnderlying(udh.getInstrument().getConid());
@@ -311,19 +279,19 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     }
 
     public void unrealizedPnlReceived(int requestId, double unrealizedPnL) {
-        UnderlyingDataHolder udh = pnlRequestMap.get(requestId);
+        ActiveUnderlyingDataHolder udh = pnlRequestMap.get(requestId);
 
         if (udh != null) {
             if (udh.getCfdPositionSize() != 0) {
                 udh.updateCfdUnrealizedPnl(unrealizedPnL);
-                messageService.sendWsMessage(udh, UnderlyingDataField.CFD_UNREALIZED_PNL);
+                messageService.sendWsMessage(udh, ActiveUnderlyingDataField.CFD_UNREALIZED_PNL);
             }
             calculateUnrealizedPnlPerUnderlying(udh.getInstrument().getConid());
         }
     }
 
     public UnderlyingMktDataSnapshot createMktDataSnapshot(int conid) {
-        UnderlyingDataHolder udh = underlyingMap.get(conid);
+        ActiveUnderlyingDataHolder udh = underlyingMap.get(conid);
         double price = Double.NaN;
 
         if (HopUtil.isValidPrice(udh.getLast())) {
@@ -338,7 +306,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
     }
 
     public void setDeltaHedge(int conid, boolean deltaHedge) {
-        UnderlyingDataHolder udh = underlyingMap.get(conid);
+        ActiveUnderlyingDataHolder udh = underlyingMap.get(conid);
         if (udh != null) {
             udh.setDeltaHedge(deltaHedge);
         }
@@ -348,7 +316,7 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         return underlyingEntityMap.get(conid);
     }
 
-    public UnderlyingDataHolder getUnderlyingDataHolder(int conid) {
+    public ActiveUnderlyingDataHolder getUnderlyingDataHolder(int conid) {
         return underlyingMap.get(conid);
     }
 
@@ -356,8 +324,8 @@ public class UnderlyingService extends AbstractMarketDataService implements Conn
         return underlyingInfos;
     }
 
-    public List<UnderlyingDataHolder> getSortedUnderlyingDataHolders() {
+    public List<ActiveUnderlyingDataHolder> getSortedUnderlyingDataHolders() {
         return underlyingMap.values().stream().sorted(Comparator
-                .comparing(UnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
+                .comparing(ActiveUnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
     }
 }
