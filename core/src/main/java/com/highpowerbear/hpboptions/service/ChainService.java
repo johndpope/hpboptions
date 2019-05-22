@@ -44,7 +44,6 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     private final Map<Integer, SortedSet<LocalDate>> expirationsMap = new HashMap<>(); // underlying conid -> chain expirations
     private final Map<ChainKey, SortedMap<Double, ChainItem>> chainMap = new HashMap<>(); // chainKey -> (strike -> chainItem)
     private ChainKey activeChainKey;
-    private final Map<ChainKey, List<ChainDataHolder>> chainDataHolderMap = new HashMap<>(); // chainKey -> list of chain data holders
     private final Map<Integer, ChainDataHolder> conidMap = new HashMap<>(); // conid -> chainDataHolder
 
     private final Map<Integer, Integer> expirationsRequestMap = new ConcurrentHashMap<>(); // ib request id -> underlying conid
@@ -127,7 +126,6 @@ public class ChainService extends AbstractMarketDataService implements Connectio
             underlyingMktDataSnapshotMap.clear();
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
-            chainDataHolderMap.clear();
             conidMap.clear();
 
             underlyingService.getUnderlyingInfos().stream().map(UnderlyingInfo::getConid).forEach(underlyingConid -> {
@@ -150,7 +148,10 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     private void requestActiveChainMktData() {
         log.info("requesting active chain mkt data for chainKey=" + activeChainKey);
         cancelAllMktData();
-        chainDataHolderMap.get(activeChainKey).forEach(this::requestMktData);
+        chainMap.get(activeChainKey).forEach((strike, chainItem) -> {
+                    requestMktData(chainItem.getCall());
+                    requestMktData(chainItem.getPut());
+                });
     }
 
     private ChainKey chainKey(int underlyingConid, LocalDate expiration) {
@@ -259,10 +260,8 @@ public class ChainService extends AbstractMarketDataService implements Connectio
 
             chainMap.putIfAbsent(chainKey, new TreeMap<>());
             chainMap.get(chainKey).putIfAbsent(strike, new ChainItem(strike));
-            chainDataHolderMap.putIfAbsent(chainKey, new ArrayList<>());
 
             chainMap.get(chainKey).get(strike).setupDataHolder(chainDataHolder);
-            chainDataHolderMap.get(chainKey).add(chainDataHolder);
             conidMap.put(conid, chainDataHolder);
         }
     }

@@ -137,7 +137,6 @@ public abstract class AbstractMarketDataService implements MarketDataService {
         if (mdh == null) {
             return;
         }
-
         if (mdh.getType() == DataHolderType.UNDERLYING || mdh.getType() == DataHolderType.SCANNER) {
             UnderlyingDataHolder udh = (UnderlyingDataHolder) mdh;
             udh.impliedVolatilityHistoryCompleted();
