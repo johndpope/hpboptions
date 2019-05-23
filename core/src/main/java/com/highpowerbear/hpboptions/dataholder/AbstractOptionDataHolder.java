@@ -82,6 +82,7 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
         double underlyingPriceIntpl = interpolate(UNDERLYING_PRICE);
 
         if (valid(optionPriceIntpl) && valid(underlyingPriceIntpl)) {
+            double atmDistancePct = atmDistancePct(underlyingPriceIntpl);
             double intrinsicValue = intrinsicValue(underlyingPriceIntpl);
             double timeValue = optionPriceIntpl - intrinsicValue;
 
@@ -91,10 +92,22 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
 
             update(OPTION_PRICE, optionPriceIntpl);
             update(UNDERLYING_PRICE, underlyingPriceIntpl);
+            update(ATM_DISTANCE_PCT, atmDistancePct);
             update(INTRINSIC_VALUE, intrinsicValue);
             update(TIME_VALUE, timeValue);
             update(TIME_VALUE_PCT, timeValuePct);
         }
+    }
+
+    private double atmDistancePct(double underlyingPrice) {
+        Types.Right right = getInstrument().getRight();
+        double strike = getInstrument().getStrike();
+
+        double atmDistancePct = ((strike - underlyingPrice) / strike) * 100d;
+        if (right == Types.Right.Put) {
+            atmDistancePct *= -1d;
+        }
+        return atmDistancePct;
     }
 
     private double intrinsicValue(double underlyingPrice) {
@@ -154,6 +167,10 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
 
     public double getImpliedVol() {
         return getCurrent(IMPLIED_VOL).doubleValue();
+    }
+
+    public double getAtmDistancePct() {
+        return getCurrent(ATM_DISTANCE_PCT).doubleValue();
     }
 
     public double getIntrinsicValue() {

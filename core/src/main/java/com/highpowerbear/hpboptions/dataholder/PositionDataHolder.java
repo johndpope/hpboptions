@@ -2,6 +2,7 @@ package com.highpowerbear.hpboptions.dataholder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.field.OptionDataField;
 import com.highpowerbear.hpboptions.field.PositionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.ib.client.Types;
@@ -23,6 +24,7 @@ public class PositionDataHolder extends AbstractOptionDataHolder {
         PositionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
+                OptionDataField.ATM_DISTANCE_PCT,
                 PositionDataField.POSITION_SIZE,
                 PositionDataField.UNREALIZED_PNL,
                 PositionDataField.MARGIN

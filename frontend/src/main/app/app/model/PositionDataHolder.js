@@ -12,6 +12,7 @@ Ext.define('HopGui.model.PositionDataHolder', {
         'positionSize',
         'unrealizedPnl',
         'margin',
+        'atmDistancePct',
         'intrinsicValue',
         'timeValue',
         'timeValuePct',

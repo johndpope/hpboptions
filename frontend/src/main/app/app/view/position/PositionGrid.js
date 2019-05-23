@@ -74,6 +74,13 @@ Ext.define('HopGui.view.position.PositionGrid', {
         align: 'right',
         renderer: 'pnlRenderer'
     }, {
+        text: 'AtmD',
+        width: 70,
+        dataIndex: 'atmDistancePct',
+        tdCls: 'atmDistancePct hop-decimal-pct hop-unchanged',
+        align: 'right',
+        renderer: 'decimalPctRenderer'
+    }, {
         text: 'Itm',
         width: 60,
         dataIndex: 'intrinsicValue',
