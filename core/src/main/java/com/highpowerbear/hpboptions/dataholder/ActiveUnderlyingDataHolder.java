@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.enums.Exchange;
 import com.highpowerbear.hpboptions.field.ActiveUnderlyingDataField;
 import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
+import com.ib.client.Contract;
+import com.ib.client.Types;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -28,19 +31,25 @@ public class ActiveUnderlyingDataHolder extends AbstractUnderlyingDataHolder {
     private LocalDateTime lastDeltaHedgeTime;
     private final LocalTime marketOpen;
     private final LocalTime marketClose;
+    private final Exchange chainExchange;
+    private final int chainMultiplier;
+    private final boolean chainRoundStrikes;
 
     @JsonIgnore
     private final ReentrantLock riskCalculationLock = new ReentrantLock();
     @JsonIgnore
     private final ReentrantLock pnlCalculationLock = new ReentrantLock();
 
-    public ActiveUnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId, LocalTime marketOpen, LocalTime marketClose) {
+    public ActiveUnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId, LocalTime marketOpen, LocalTime marketClose, Exchange chainExchange, int chainMultiplier, boolean chainRoundStrikes) {
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId, ibHistDataRequestId);
 
         this.cfdInstrument = cfdInstrument;
         this.ibPnlRequestId = ibPnlRequestId;
         this.marketOpen = marketOpen;
         this.marketClose = marketClose;
+        this.chainExchange = chainExchange;
+        this.chainRoundStrikes = chainRoundStrikes;
+        this.chainMultiplier = chainMultiplier;
 
         ActiveUnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
@@ -63,6 +72,17 @@ public class ActiveUnderlyingDataHolder extends AbstractUnderlyingDataHolder {
         ).collect(Collectors.toSet()));
 
         updateLastDeltaHedgeTime();
+    }
+
+    public Contract createChainRequestContract(LocalDate expiration) {
+        Contract contract = new Contract();
+        contract.symbol(instrument.getSymbol());
+        contract.secType(Types.SecType.OPT);
+        contract.lastTradeDateOrContractMonth(expiration.format(HopSettings.IB_DATE_FORMATTER));
+        contract.currency(instrument.getCurrency().name());
+        contract.exchange(chainExchange.name());
+
+        return contract;
     }
 
     public void updateCfdPositionSize(int cfdPositionSize) {
@@ -165,6 +185,18 @@ public class ActiveUnderlyingDataHolder extends AbstractUnderlyingDataHolder {
 
     public int getIbPnlRequestId() {
         return ibPnlRequestId;
+    }
+
+    public Exchange getChainExchange() {
+        return chainExchange;
+    }
+
+    public int getChainMultiplier() {
+        return chainMultiplier;
+    }
+
+    public boolean isChainRoundStrikes() {
+        return chainRoundStrikes;
     }
 
     public int getCfdPositionSize() {

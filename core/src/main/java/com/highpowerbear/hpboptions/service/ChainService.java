@@ -3,7 +3,7 @@ package com.highpowerbear.hpboptions.service;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.database.Underlying;
+import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
 import com.highpowerbear.hpboptions.dataholder.ChainDataHolder;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
@@ -102,7 +102,7 @@ public class ChainService extends AbstractMarketDataService {
                     requestActiveChainMktData();
                 }
             }
-            return new ChainActivationResult(true, underlyingConid, activeUnderlyingService.getUnderlying(underlyingConid).getSymbol(), expiration);
+            return new ChainActivationResult(true, underlyingConid, activeUnderlyingService.getUnderlyingDataHolder(underlyingConid).getInstrument().getSymbol(), expiration);
         } finally {
             chainLock.unlock();
         }
@@ -135,8 +135,8 @@ public class ChainService extends AbstractMarketDataService {
             for (int requestId : expirationsRequestMap.keySet()) {
                 int underlyingConid = expirationsRequestMap.get(requestId);
 
-                Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConid);
-                ibController.requestOptionChainParams(requestId, underlying.getSymbol(), underlying.getSecType(), underlyingConid);
+                ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
+                ibController.requestOptionChainParams(requestId, udh.getInstrument().getSymbol(), udh.getInstrument().getSecType(), underlyingConid);
             }
 
         } finally {
@@ -154,9 +154,9 @@ public class ChainService extends AbstractMarketDataService {
     }
 
     private ChainKey chainKey(int underlyingConid, LocalDate expiration) {
-        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConid);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
-        return underlying != null && expirationsMap.get(underlyingConid).contains(expiration) ?
+        return udh != null && expirationsMap.get(underlyingConid).contains(expiration) ?
                 new ChainKey(underlyingConid, expiration) :
                 null;
     }
@@ -164,11 +164,11 @@ public class ChainService extends AbstractMarketDataService {
     private boolean isEligibleToAdd(ChainDataHolder cdh) {
         int underlyingConId = cdh.getInstrument().getUnderlyingConid();
 
-        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConId);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConId);
         UnderlyingMktDataSnapshot snapshot = underlyingMktDataSnapshotMap.get(cdh.getInstrument().getUnderlyingConid());
         double strike = cdh.getInstrument().getStrike();
 
-        if (!snapshot.isValid() || (underlying.isChainRoundStrikes() && !HopUtil.isRound(strike))) {
+        if (!snapshot.isValid() || (udh.isChainRoundStrikes() && !HopUtil.isRound(strike))) {
             return false;
         }
         double priceStdDev = snapshot.getPrice() * snapshot.getOptionImpliedVol() * Math.sqrt((double) cdh.getDaysToExpiration() / 365);
@@ -179,10 +179,10 @@ public class ChainService extends AbstractMarketDataService {
     }
 
     public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirationsStringSet) {
-        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConId);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConId);
         LocalDate now = LocalDate.now();
 
-        if (underlying.getChainExchange().name().equals(exchange) && multiplier == underlying.getChainMultiplier()) {
+        if (udh.getChainExchange().name().equals(exchange) && multiplier == udh.getChainMultiplier()) {
             expirationsStringSet.stream()
                     .map(exp -> LocalDate.parse(exp, HopSettings.IB_DATE_FORMATTER))
                     .filter(exp -> !now.isAfter(exp))
@@ -219,9 +219,9 @@ public class ChainService extends AbstractMarketDataService {
         executor.execute(() -> {
             for (int requestId : prioritizedRequests) {
                 ChainKey chainKey = contractDetailsRequestMap.get(requestId);
-                Underlying underlying = activeUnderlyingService.getUnderlying(chainKey.getUnderlyingConid());
+                ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(chainKey.getUnderlyingConid());
 
-                ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.getExpiration()));
+                ibController.requestContractDetails(requestId, udh.createChainRequestContract(chainKey.getExpiration()));
                 HopUtil.waitMilliseconds(HopSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);
             }
         });

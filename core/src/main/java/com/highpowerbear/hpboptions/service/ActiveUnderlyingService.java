@@ -33,7 +33,6 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
     private final HopDao hopDao;
     private final AccountService accountService;
 
-    private final Map<Integer, Underlying> underlyingEntityMap = new HashMap<>(); // conid -> underlying
     private final List<UnderlyingInfo> underlyingInfos = new ArrayList<>();
 
     private final Map<Integer, ActiveUnderlyingDataHolder> underlyingMap = new HashMap<>(); // conid -> underlyingDataHolder
@@ -60,7 +59,6 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
         for (Underlying u : hopDao.getActiveUnderlyings()) {
             int conid = u.getConid();
 
-            underlyingEntityMap.put(conid, u);
             underlyingInfos.add(new UnderlyingInfo(u.getConid(), u.getSymbol()));
 
             Instrument instrument = new Instrument(conid, u.getSecType(),null, u.getSymbol(), u.getCurrency());
@@ -76,7 +74,7 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
                 cfdInstrument.setMinTick(u.getCfdMinTick());
             }
 
-            ActiveUnderlyingDataHolder udh = new ActiveUnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose());
+            ActiveUnderlyingDataHolder udh = new ActiveUnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose(), u.getChainExchange(), u.getChainMultiplier(), u.isChainRoundStrikes());
             if (u.isCfdDefined()) {
                 underlyingCfdMap.put(u.getCfdConid(), udh);
             }
@@ -309,10 +307,6 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
         if (udh != null) {
             udh.setDeltaHedge(deltaHedge);
         }
-    }
-
-    public Underlying getUnderlying(int conid) {
-        return underlyingEntityMap.get(conid);
     }
 
     public ActiveUnderlyingDataHolder getUnderlyingDataHolder(int conid) {

@@ -1,14 +1,11 @@
 package com.highpowerbear.hpboptions.database;
 
-import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.enums.Currency;
 import com.highpowerbear.hpboptions.enums.Exchange;
-import com.ib.client.Contract;
 import com.ib.client.Types;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -57,17 +54,6 @@ public class Underlying implements Serializable {
     @Override
     public int hashCode() {
         return id != null ? id.hashCode() : 0;
-    }
-
-    public Contract createChainRequestContract(LocalDate expiration) {
-        Contract contract = new Contract();
-        contract.symbol(symbol);
-        contract.secType(Types.SecType.OPT);
-        contract.lastTradeDateOrContractMonth(expiration.format(HopSettings.IB_DATE_FORMATTER));
-        contract.currency(currency.name());
-        contract.exchange(chainExchange.name());
-
-        return contract;
     }
 
     public boolean isCfdDefined() {
