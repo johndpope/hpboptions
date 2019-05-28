@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * Created by robertk on 12/3/2018.
  */
-public enum BasicMktDataField implements DataField {
+public enum BasicMarketDataField implements DataField {
     BID (TickType.BID, null),
     ASK (TickType.ASK, null),
     LAST (TickType.LAST, null),
@@ -28,7 +28,7 @@ public enum BasicMktDataField implements DataField {
     private TickType tickType;
     private Integer genericTick;
 
-    BasicMktDataField(TickType tickType, Integer genericTick) {
+    BasicMarketDataField(TickType tickType, Integer genericTick) {
         this.tickType = tickType;
         this.genericTick = genericTick;
     }
@@ -46,16 +46,16 @@ public enum BasicMktDataField implements DataField {
         return -1;
     }
 
-    private static final Map<TickType, BasicMktDataField> tickFieldMap = Arrays.stream(BasicMktDataField.values())
-            .collect(Collectors.toMap(BasicMktDataField::getTickType, bf -> bf));
+    private static final Map<TickType, BasicMarketDataField> tickFieldMap = Arrays.stream(BasicMarketDataField.values())
+            .collect(Collectors.toMap(BasicMarketDataField::getTickType, bf -> bf));
 
-    public static BasicMktDataField basicField(TickType tickType) {
+    public static BasicMarketDataField basicField(TickType tickType) {
         return tickFieldMap.get(tickType);
     }
 
-    private static List<BasicMktDataField> fields = Arrays.asList(BasicMktDataField.values());
+    private static List<BasicMarketDataField> fields = Arrays.asList(BasicMarketDataField.values());
 
-    public static List<BasicMktDataField> fields() {
+    public static List<BasicMarketDataField> fields() {
         return fields;
     }
 }

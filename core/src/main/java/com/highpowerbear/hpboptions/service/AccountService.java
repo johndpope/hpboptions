@@ -71,6 +71,10 @@ public class AccountService implements ConnectionListener {
     }
 
     @Override
+    public void preConnect() {
+    }
+
+    @Override
     public void postConnect() {
         ibController.requestAccountSummary(ibAccountSummaryRequestId, accountSummaryTagsCsv());
         cancelAllPnl();
@@ -81,6 +85,10 @@ public class AccountService implements ConnectionListener {
     public void preDisconnect() {
         ibController.cancelAccountSummary(ibAccountSummaryRequestId);
         cancelAllPnl();
+    }
+
+    @Override
+    public void postDisconnect() {
     }
 
     public boolean isReady(String account) {

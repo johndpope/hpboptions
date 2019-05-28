@@ -1,10 +1,10 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.field.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.BasicMarketDataField;
 import com.highpowerbear.hpboptions.field.DataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
@@ -36,18 +36,18 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
 
         id = type.name().toLowerCase() + "-" + instrument.getConid();
 
-        BasicMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
-        DerivedMktDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        BasicMarketDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
+        DerivedMarketDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         Stream.of(
-                BasicMktDataField.BID,
-                BasicMktDataField.ASK,
-                BasicMktDataField.LAST,
-                BasicMktDataField.CLOSE,
-                BasicMktDataField.BID_SIZE,
-                BasicMktDataField.ASK_SIZE,
-                BasicMktDataField.LAST_SIZE,
-                BasicMktDataField.VOLUME
+                BasicMarketDataField.BID,
+                BasicMarketDataField.ASK,
+                BasicMarketDataField.LAST,
+                BasicMarketDataField.CLOSE,
+                BasicMarketDataField.BID_SIZE,
+                BasicMarketDataField.ASK_SIZE,
+                BasicMarketDataField.LAST_SIZE,
+                BasicMarketDataField.VOLUME
         ).forEach(fieldsToDisplay::add);
 
         determineGenericTicks();
@@ -61,16 +61,16 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
     private void determineGenericTicks() {
         Set<Integer> genericTicksSet = new HashSet<>();
 
-        BasicMktDataField.fields().stream()
+        BasicMarketDataField.fields().stream()
                 .filter(fieldsToDisplay::contains)
-                .map(BasicMktDataField::getGenericTick)
+                .map(BasicMarketDataField::getGenericTick)
                 .filter(Objects::nonNull)
                 .forEach(genericTicksSet::add);
 
-        DerivedMktDataField.fields().stream()
+        DerivedMarketDataField.fields().stream()
                 .filter(fieldsToDisplay::contains)
                 .flatMap(derivedField -> derivedField.getDependencies().stream())
-                .map(BasicMktDataField::getGenericTick)
+                .map(BasicMarketDataField::getGenericTick)
                 .filter(Objects::nonNull)
                 .forEach(genericTicksSet::add);
 
@@ -83,41 +83,41 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
     }
 
     @Override
-    public void updateField(BasicMktDataField field, Number value) {
+    public void updateField(BasicMarketDataField field, Number value) {
         update(field, convert(field, value));
     }
 
     @Override
-    public void calculateField(DerivedMktDataField field) {
-        if (field == DerivedMktDataField.CHANGE) {
-            double l = getCurrent(BasicMktDataField.LAST).doubleValue();
-            double c = getCurrent(BasicMktDataField.CLOSE).doubleValue();
+    public void calculateField(DerivedMarketDataField field) {
+        if (field == DerivedMarketDataField.CHANGE) {
+            double l = getCurrent(BasicMarketDataField.LAST).doubleValue();
+            double c = getCurrent(BasicMarketDataField.CLOSE).doubleValue();
 
             if (isValidPrice(l) && isValidPrice(c)) {
                 double value = l - c;
                 update(field, value);
             }
 
-        } else if (field == DerivedMktDataField.CHANGE_PCT) {
-            double l = getCurrent(BasicMktDataField.LAST).doubleValue();
-            double c = getCurrent(BasicMktDataField.CLOSE).doubleValue();
+        } else if (field == DerivedMarketDataField.CHANGE_PCT) {
+            double l = getCurrent(BasicMarketDataField.LAST).doubleValue();
+            double c = getCurrent(BasicMarketDataField.CLOSE).doubleValue();
 
             if (isValidPrice(l) && isValidPrice(c)) {
                 double value = ((l - c) / c) * 100d;
                 update(field, value);
             }
 
-        } else if (field == DerivedMktDataField.OPTION_OPEN_INTEREST) {
-            int o = getCurrent(BasicMktDataField.OPTION_CALL_OPEN_INTEREST).intValue();
-            int p = getCurrent(BasicMktDataField.OPTION_PUT_OPEN_INTEREST).intValue();
+        } else if (field == DerivedMarketDataField.OPTION_OPEN_INTEREST) {
+            int o = getCurrent(BasicMarketDataField.OPTION_CALL_OPEN_INTEREST).intValue();
+            int p = getCurrent(BasicMarketDataField.OPTION_PUT_OPEN_INTEREST).intValue();
 
             int value = (isValidSize(o) ? o : 0) + (isValidSize(p) ? p : 0);
             update(field, value);
         }
     }
 
-    private Number convert(BasicMktDataField field, Number value) {
-        if (type == DataHolderType.UNDERLYING && field == BasicMktDataField.VOLUME && isValidSize(value.intValue())) {
+    private Number convert(BasicMarketDataField field, Number value) {
+        if (type == DataHolderType.UNDERLYING && field == BasicMarketDataField.VOLUME && isValidSize(value.intValue())) {
             return value.intValue() * 100;
         }
 
@@ -196,42 +196,42 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
     }
 
     public double getBid() {
-        return getCurrent(BasicMktDataField.BID).doubleValue();
+        return getCurrent(BasicMarketDataField.BID).doubleValue();
     }
 
     public double getAsk() {
-        return getCurrent(BasicMktDataField.ASK).doubleValue();
+        return getCurrent(BasicMarketDataField.ASK).doubleValue();
     }
 
     public double getLast() {
-        return getCurrent(BasicMktDataField.LAST).doubleValue();
+        return getCurrent(BasicMarketDataField.LAST).doubleValue();
     }
 
     public double getClose() {
-        return getCurrent(BasicMktDataField.CLOSE).doubleValue();
+        return getCurrent(BasicMarketDataField.CLOSE).doubleValue();
     }
 
     public int getBidSize() {
-        return getCurrent(BasicMktDataField.BID_SIZE).intValue();
+        return getCurrent(BasicMarketDataField.BID_SIZE).intValue();
     }
 
     public int getAskSize() {
-        return getCurrent(BasicMktDataField.ASK_SIZE).intValue();
+        return getCurrent(BasicMarketDataField.ASK_SIZE).intValue();
     }
 
     public int getLastSize() {
-        return getCurrent(BasicMktDataField.LAST_SIZE).intValue();
+        return getCurrent(BasicMarketDataField.LAST_SIZE).intValue();
     }
 
     public int getVolume() {
-        return getCurrent(BasicMktDataField.VOLUME).intValue();
+        return getCurrent(BasicMarketDataField.VOLUME).intValue();
     }
 
     public double getChange() {
-        return getCurrent(DerivedMktDataField.CHANGE).doubleValue();
+        return getCurrent(DerivedMarketDataField.CHANGE).doubleValue();
     }
 
     public double getChangePct() {
-        return getCurrent(DerivedMktDataField.CHANGE_PCT).doubleValue();
+        return getCurrent(DerivedMarketDataField.CHANGE_PCT).doubleValue();
     }
 }

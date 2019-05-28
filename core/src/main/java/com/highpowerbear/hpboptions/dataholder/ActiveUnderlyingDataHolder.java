@@ -5,7 +5,7 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.field.ActiveUnderlyingDataField;
-import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 
 import java.time.DayOfWeek;
@@ -196,19 +196,19 @@ public class ActiveUnderlyingDataHolder extends AbstractUnderlyingDataHolder {
     }
 
     public double getIvChangePct() {
-        return getCurrent(DerivedMktDataField.IV_CHANGE_PCT).doubleValue();
+        return getCurrent(DerivedMarketDataField.IV_CHANGE_PCT).doubleValue();
     }
 
     public double getIvRank() {
-        return getCurrent(DerivedMktDataField.IV_RANK).doubleValue();
+        return getCurrent(DerivedMarketDataField.IV_RANK).doubleValue();
     }
 
     public int getOptionVolume() {
-        return getCurrent(DerivedMktDataField.OPTION_VOLUME).intValue();
+        return getCurrent(DerivedMarketDataField.OPTION_VOLUME).intValue();
     }
 
     public int getOptionOpenInterest() {
-        return getCurrent(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
+        return getCurrent(DerivedMarketDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
     public double getPortfolioDelta() {

@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
-import com.highpowerbear.hpboptions.field.DerivedMktDataField;
+import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.field.OptionDataField;
 import com.highpowerbear.hpboptions.model.OptionInstrument;
 import com.ib.client.TickType;
@@ -40,8 +40,8 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
         OptionDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
-                DerivedMktDataField.CHANGE,
-                DerivedMktDataField.OPTION_OPEN_INTEREST,
+                DerivedMarketDataField.CHANGE,
+                DerivedMarketDataField.OPTION_OPEN_INTEREST,
                 DELTA,
                 GAMMA,
                 IMPLIED_VOL,
@@ -103,7 +103,7 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
         Types.Right right = getInstrument().getRight();
         double strike = getInstrument().getStrike();
 
-        double atmDistancePct = ((strike - underlyingPrice) / strike) * 100d;
+        double atmDistancePct = ((strike - underlyingPrice) / underlyingPrice) * 100d;
         if (right == Types.Right.Put) {
             atmDistancePct *= -1d;
         }
@@ -146,7 +146,7 @@ public abstract class AbstractOptionDataHolder extends AbstractMarketDataHolder 
     }
 
     public int getOptionOpenInterest() {
-        return getCurrent(DerivedMktDataField.OPTION_OPEN_INTEREST).intValue();
+        return getCurrent(DerivedMarketDataField.OPTION_OPEN_INTEREST).intValue();
     }
 
     public double getDelta() {

@@ -30,34 +30,34 @@ public abstract class AbstractUnderlyingDataHolder extends AbstractMarketDataHol
         UnderlyingDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
-                DerivedMktDataField.CHANGE_PCT,
-                BasicMktDataField.OPTION_IMPLIED_VOL,
-                DerivedMktDataField.IV_CHANGE_PCT,
-                DerivedMktDataField.IV_RANK,
-                DerivedMktDataField.OPTION_VOLUME,
-                DerivedMktDataField.OPTION_OPEN_INTEREST
+                DerivedMarketDataField.CHANGE_PCT,
+                BasicMarketDataField.OPTION_IMPLIED_VOL,
+                DerivedMarketDataField.IV_CHANGE_PCT,
+                DerivedMarketDataField.IV_RANK,
+                DerivedMarketDataField.OPTION_VOLUME,
+                DerivedMarketDataField.OPTION_OPEN_INTEREST
         ).collect(Collectors.toSet()));
 
         ivHistoryDependentFields = Stream.of(
                 UnderlyingDataField.IV_CLOSE,
-                DerivedMktDataField.IV_CHANGE_PCT,
-                DerivedMktDataField.IV_RANK
+                DerivedMarketDataField.IV_CHANGE_PCT,
+                DerivedMarketDataField.IV_RANK
         ).collect(Collectors.toSet());
     }
 
     @Override
-    public void calculateField(DerivedMktDataField field) {
+    public void calculateField(DerivedMarketDataField field) {
         super.calculateField(field);
 
-        if (field == DerivedMktDataField.IV_CHANGE_PCT) {
+        if (field == DerivedMarketDataField.IV_CHANGE_PCT) {
             updateIvChangePct();
 
-        } else if (field == DerivedMktDataField.IV_RANK) {
+        } else if (field == DerivedMarketDataField.IV_RANK) {
             updateIvRank();
 
-        } else if (field == DerivedMktDataField.OPTION_VOLUME) {
-            int o = getCurrent(BasicMktDataField.OPTION_CALL_VOLUME).intValue();
-            int p = getCurrent(BasicMktDataField.OPTION_PUT_VOLUME).intValue();
+        } else if (field == DerivedMarketDataField.OPTION_VOLUME) {
+            int o = getCurrent(BasicMarketDataField.OPTION_CALL_VOLUME).intValue();
+            int p = getCurrent(BasicMarketDataField.OPTION_PUT_VOLUME).intValue();
 
             int value = (isValidSize(o) ? o : 0) + (isValidSize(p) ? p : 0);
             update(field, value);
@@ -83,12 +83,12 @@ public abstract class AbstractUnderlyingDataHolder extends AbstractMarketDataHol
         if (ivHistoryMap.isEmpty()) {
             return;
         }
-        double ivCurrent = getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
+        double ivCurrent = getCurrent(BasicMarketDataField.OPTION_IMPLIED_VOL).doubleValue();
         double ivClose = ivHistoryMap.lastEntry().getValue();
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivClose)) {
             double value = ((ivCurrent - ivClose) / ivClose) * 100d;
-            update(DerivedMktDataField.IV_CHANGE_PCT, value);
+            update(DerivedMarketDataField.IV_CHANGE_PCT, value);
         }
     }
 
@@ -119,7 +119,7 @@ public abstract class AbstractUnderlyingDataHolder extends AbstractMarketDataHol
 
         if (isValidPrice(ivCurrent) && isValidPrice(ivYearLow) && isValidPrice(ivYearHigh)) {
             double ivRank = 100d * (ivCurrent - ivYearLow) / (ivYearHigh - ivYearLow);
-            update(DerivedMktDataField.IV_RANK, ivRank);
+            update(DerivedMarketDataField.IV_RANK, ivRank);
         }
     }
 
@@ -133,7 +133,7 @@ public abstract class AbstractUnderlyingDataHolder extends AbstractMarketDataHol
     }
 
     public double getOptionImpliedVol() {
-        return getCurrent(BasicMktDataField.OPTION_IMPLIED_VOL).doubleValue();
+        return getCurrent(BasicMarketDataField.OPTION_IMPLIED_VOL).doubleValue();
     }
 
     public double getIvClose() {

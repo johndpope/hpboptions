@@ -20,22 +20,24 @@ public class IbListener extends GenericIbListener {
 
     private final IbController ibController;
     private final AccountService accountService;
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
     private final ScannerService scannerService;
+    private final LinearService linearService;
     private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService, MessageService messageService) {
+    public IbListener(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService, LinearService linearService, MessageService messageService) {
         this.ibController = ibController;
         this.accountService = accountService;
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
         this.scannerService = scannerService;
+        this.linearService = linearService;
         this.messageService = messageService;
 
         ibController.initialize(this);
@@ -78,35 +80,46 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void tickPrice(int requestId, int tickType, double price, TickAttrib attrib) {
-        getDataService(requestId).mktDataReceived(requestId, tickType, price);
+        getMarketDataService(requestId).mktDataReceived(requestId, tickType, price);
     }
 
     @Override
     public void tickSize(int requestId, int tickType, int size) {
-        getDataService(requestId).mktDataReceived(requestId, tickType, size);
+        getMarketDataService(requestId).mktDataReceived(requestId, tickType, size);
     }
 
     @Override
     public void tickGeneric(int requestId, int tickType, double value) {
-        getDataService(requestId).mktDataReceived(requestId, tickType, value);
+        getMarketDataService(requestId).mktDataReceived(requestId, tickType, value);
     }
 
     @Override
     public void tickOptionComputation(int requestId, int tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         //super.tickOptionComputation(requestId, tickType, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice);
-        getDataService(requestId).optionDataReceived(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
+        getMarketDataService(requestId).optionDataReceived(requestId, TickType.get(tickType), delta, gamma, vega, theta, impliedVol, optPrice, undPrice);
     }
 
     @Override
     public void historicalData(int requestId, Bar bar) {
         //super.historicalData(requestId, bar);
-        getDataService(requestId).historicalDataReceived(requestId, bar);
+        if (isUnderlyingIbRequest(requestId)) {
+            activeUnderlyingService.historicalDataReceived(requestId, bar);
+
+        } else if (isScannerIbRequest(requestId)) {
+            scannerService.historicalDataReceived(requestId, bar);
+        }
     }
 
     @Override
     public void historicalDataEnd(int requestId, String startDateStr, String endDateStr) {
         super.historicalDataEnd(requestId, startDateStr, endDateStr);
-        getDataService(requestId).historicalDataEndReceived(requestId);
+
+        if (isUnderlyingIbRequest(requestId)) {
+            activeUnderlyingService.historicalDataEndReceived(requestId);
+
+        } else if (isScannerIbRequest(requestId)) {
+            scannerService.historicalDataEndReceived(requestId);
+        }
     }
 
     @Override
@@ -116,7 +129,10 @@ public class IbListener extends GenericIbListener {
             positionService.positionReceived(contract, (int) pos);
 
         } else if (Types.SecType.valueOf(contract.getSecType()) == Types.SecType.CFD) {
-            underlyingService.positionReceived(contract, (int) pos);
+            activeUnderlyingService.positionReceived(contract, (int) pos);
+
+        } else {
+            linearService.positionReceived(contract, (int) pos);
         }
     }
 
@@ -138,13 +154,13 @@ public class IbListener extends GenericIbListener {
             return;
         }
         //super.contractDetails(requestId, contractDetails);
-        getDataService(requestId).contractDetailsReceived(requestId, contractDetails);
+        getMarketDataService(requestId).contractDetailsReceived(requestId, contractDetails);
     }
 
     @Override
     public void	contractDetailsEnd(int requestId) {
         super.contractDetailsEnd(requestId);
-        getDataService(requestId).contractDetailsEndReceived(requestId);
+        getMarketDataService(requestId).contractDetailsEndReceived(requestId);
     }
 
     @Override
@@ -154,7 +170,10 @@ public class IbListener extends GenericIbListener {
             positionService.unrealizedPnlReceived(requestId, unrealizedPnL);
 
         } else if (isUnderlyingIbRequest(requestId)) {
-            underlyingService.unrealizedPnlReceived(requestId, unrealizedPnL);
+            activeUnderlyingService.unrealizedPnlReceived(requestId, unrealizedPnL);
+
+        } else if (isLinearIbRequest(requestId)) {
+            linearService.unrealizedPnlReceived(requestId, unrealizedPnL);
         }
     }
 
@@ -194,9 +213,9 @@ public class IbListener extends GenericIbListener {
         // TODO
     }
 
-    private MarketDataService getDataService(int requestId) {
+    private MarketDataService getMarketDataService(int requestId) {
         if (isUnderlyingIbRequest(requestId)) {
-            return underlyingService;
+            return activeUnderlyingService;
         } else if (isOrderIbRequest(requestId)) {
             return orderService;
         } else if (isPositionIbRequest(requestId)) {
@@ -205,6 +224,8 @@ public class IbListener extends GenericIbListener {
             return chainService;
         } else if (isScannerIbRequest(requestId)) {
             return scannerService;
+        } else if (isLinearIbRequest(requestId)) {
+            return linearService;
         } else {
             throw new IllegalStateException("no market data service for requestId " + requestId);
         }
@@ -227,6 +248,10 @@ public class IbListener extends GenericIbListener {
     }
 
     private boolean isScannerIbRequest(int requestId) {
-        return requestId >= HopSettings.SCANNER_IB_REQUEST_ID_INITIAL;
+        return requestId >= HopSettings.SCANNER_IB_REQUEST_ID_INITIAL && requestId < HopSettings.LINEAR_IB_REQUEST_ID_INITIAL;
+    }
+
+    private boolean isLinearIbRequest(int requestId) {
+        return requestId >= HopSettings.LINEAR_IB_REQUEST_ID_INITIAL;
     }
 }

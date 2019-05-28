@@ -43,7 +43,7 @@ public class Instrument {
         contract.exchange(exchange.getCode());
 
         if (primaryExchange != null) {
-            contract.primaryExch(primaryExchange.name());
+            contract.primaryExch(primaryExchange.getCode());
         }
         return contract;
     }

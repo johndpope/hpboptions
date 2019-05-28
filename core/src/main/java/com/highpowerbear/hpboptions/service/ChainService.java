@@ -2,7 +2,6 @@ package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.database.Underlying;
 import com.highpowerbear.hpboptions.dataholder.ChainDataHolder;
@@ -34,10 +33,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by robertk on 12/21/2018.
  */
 @Service
-public class ChainService extends AbstractMarketDataService implements ConnectionListener {
+public class ChainService extends AbstractMarketDataService {
     private static final Logger log = LoggerFactory.getLogger(ChainService.class);
 
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 
     private final Map<Integer, UnderlyingMktDataSnapshot> underlyingMktDataSnapshotMap = new HashMap<>(); // conid -> subset of mkt data
@@ -54,16 +53,16 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     private final AtomicInteger ibRequestIdGen = new AtomicInteger(HopSettings.CHAIN_IB_REQUEST_ID_INITIAL);
 
     @Autowired
-    public ChainService(IbController ibController, MessageService messageService, UnderlyingService underlyingService) {
+    public ChainService(IbController ibController, MessageService messageService, ActiveUnderlyingService activeUnderlyingService) {
         super(ibController, messageService);
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
 
         ibController.addConnectionListener(this);
     }
 
     @PostConstruct
     private void init() {
-        underlyingService.getUnderlyingInfos().forEach(ui -> expirationsMap.put(ui.getConid(), new TreeSet<>()));
+        activeUnderlyingService.getUnderlyingInfos().forEach(ui -> expirationsMap.put(ui.getConid(), new TreeSet<>()));
     }
 
     @Override
@@ -103,7 +102,7 @@ public class ChainService extends AbstractMarketDataService implements Connectio
                     requestActiveChainMktData();
                 }
             }
-            return new ChainActivationResult(true, underlyingConid, underlyingService.getUnderlying(underlyingConid).getSymbol(), expiration);
+            return new ChainActivationResult(true, underlyingConid, activeUnderlyingService.getUnderlying(underlyingConid).getSymbol(), expiration);
         } finally {
             chainLock.unlock();
         }
@@ -128,15 +127,15 @@ public class ChainService extends AbstractMarketDataService implements Connectio
             chainMap.clear();
             conidMap.clear();
 
-            underlyingService.getUnderlyingInfos().stream().map(UnderlyingInfo::getConid).forEach(underlyingConid -> {
+            activeUnderlyingService.getUnderlyingInfos().stream().map(UnderlyingInfo::getConid).forEach(underlyingConid -> {
                 expirationsRequestMap.put(ibRequestIdGen.incrementAndGet(), underlyingConid);
-                underlyingMktDataSnapshotMap.put(underlyingConid, underlyingService.createMktDataSnapshot(underlyingConid));
+                underlyingMktDataSnapshotMap.put(underlyingConid, activeUnderlyingService.createMktDataSnapshot(underlyingConid));
             });
 
             for (int requestId : expirationsRequestMap.keySet()) {
                 int underlyingConid = expirationsRequestMap.get(requestId);
 
-                Underlying underlying = underlyingService.getUnderlying(underlyingConid);
+                Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConid);
                 ibController.requestOptionChainParams(requestId, underlying.getSymbol(), underlying.getSecType(), underlyingConid);
             }
 
@@ -155,7 +154,7 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     }
 
     private ChainKey chainKey(int underlyingConid, LocalDate expiration) {
-        Underlying underlying = underlyingService.getUnderlying(underlyingConid);
+        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConid);
 
         return underlying != null && expirationsMap.get(underlyingConid).contains(expiration) ?
                 new ChainKey(underlyingConid, expiration) :
@@ -165,7 +164,7 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     private boolean isEligibleToAdd(ChainDataHolder cdh) {
         int underlyingConId = cdh.getInstrument().getUnderlyingConid();
 
-        Underlying underlying = underlyingService.getUnderlying(underlyingConId);
+        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConId);
         UnderlyingMktDataSnapshot snapshot = underlyingMktDataSnapshotMap.get(cdh.getInstrument().getUnderlyingConid());
         double strike = cdh.getInstrument().getStrike();
 
@@ -180,7 +179,7 @@ public class ChainService extends AbstractMarketDataService implements Connectio
     }
 
     public void expirationsReceived(int underlyingConId, String exchange, int multiplier, Set<String> expirationsStringSet) {
-        Underlying underlying = underlyingService.getUnderlying(underlyingConId);
+        Underlying underlying = activeUnderlyingService.getUnderlying(underlyingConId);
         LocalDate now = LocalDate.now();
 
         if (underlying.getChainExchange().name().equals(exchange) && multiplier == underlying.getChainMultiplier()) {
@@ -220,7 +219,7 @@ public class ChainService extends AbstractMarketDataService implements Connectio
         executor.execute(() -> {
             for (int requestId : prioritizedRequests) {
                 ChainKey chainKey = contractDetailsRequestMap.get(requestId);
-                Underlying underlying = underlyingService.getUnderlying(chainKey.getUnderlyingConid());
+                Underlying underlying = activeUnderlyingService.getUnderlying(chainKey.getUnderlyingConid());
 
                 ibController.requestContractDetails(requestId, underlying.createChainRequestContract(chainKey.getExpiration()));
                 HopUtil.waitMilliseconds(HopSettings.CHAIN_CONTRACT_DETAILS_REQUEST_WAIT_MILLIS);

@@ -1,7 +1,6 @@
 package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
-import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.enums.*;
 import com.highpowerbear.hpboptions.dataholder.OptionDataHolder;
@@ -30,9 +29,9 @@ import java.util.stream.Collectors;
  * Created by robertk on 1/23/2019.
  */
 @Service
-public class PositionService extends AbstractMarketDataService implements ConnectionListener {
+public class PositionService extends AbstractMarketDataService {
 
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
 
     private final Map<Integer, PositionDataHolder> positionMap = new ConcurrentHashMap<>(); // conid -> positionDataHolder
     private final Map<Integer, PositionDataHolder> pnlRequestMap = new HashMap<>(); // ib request id -> positionDataHolder
@@ -44,9 +43,9 @@ public class PositionService extends AbstractMarketDataService implements Connec
     @Value("${ib.account}")
     private String ibAccount;
 
-    public PositionService(IbController ibController, MessageService messageService, UnderlyingService underlyingService) {
+    public PositionService(IbController ibController, MessageService messageService, ActiveUnderlyingService activeUnderlyingService) {
         super(ibController, messageService);
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
 
         ibController.addConnectionListener(this);
     }
@@ -98,7 +97,7 @@ public class PositionService extends AbstractMarketDataService implements Connec
         pdh.calculateMargin();
         messageService.sendWsMessage(pdh, PositionDataField.MARGIN);
 
-        underlyingService.calculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+        activeUnderlyingService.calculateRiskDataPerUnderlying(pdh.getInstrument().getUnderlyingConid());
     }
 
     public void positionReceived(Contract contract, int positionSize) {
@@ -134,8 +133,8 @@ public class PositionService extends AbstractMarketDataService implements Connec
                         messageService.sendWsMessage(pdh, PositionDataField.POSITION_SIZE);
 
                         int underlyingConid = pdh.getInstrument().getUnderlyingConid();
-                        underlyingService.calculateOptionPositionsSum(underlyingConid);
-                        underlyingService.calculateRiskDataPerUnderlying(underlyingConid);
+                        activeUnderlyingService.calculateOptionPositionsSum(underlyingConid);
+                        activeUnderlyingService.calculateRiskDataPerUnderlying(underlyingConid);
                     }
                 } else {
                     cancelMktData(pdh);
@@ -144,9 +143,9 @@ public class PositionService extends AbstractMarketDataService implements Connec
                     positionMap.remove(conid);
                     int underlyingConid = pdh.getInstrument().getUnderlyingConid();
 
-                    underlyingService.removeOptionPosition(underlyingConid, conid);
-                    underlyingService.calculateRiskDataPerUnderlying(underlyingConid);
-                    underlyingService.calculateUnrealizedPnlPerUnderlying(underlyingConid);
+                    activeUnderlyingService.removeOptionPosition(underlyingConid, conid);
+                    activeUnderlyingService.calculateRiskDataPerUnderlying(underlyingConid);
+                    activeUnderlyingService.calculateUnrealizedPnlPerUnderlying(underlyingConid);
 
                     messageService.sendWsReloadRequestMessage(DataHolderType.POSITION);
                 }
@@ -175,10 +174,10 @@ public class PositionService extends AbstractMarketDataService implements Connec
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);
 
-        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
         if (udh != null) {
             pdh.setDisplayRank(udh.getDisplayRank());
-            underlyingService.addOptionPosition(underlyingConid, pdh);
+            activeUnderlyingService.addOptionPosition(underlyingConid, pdh);
         } else {
             pdh.setDisplayRank(-1);
         }
@@ -194,7 +193,7 @@ public class PositionService extends AbstractMarketDataService implements Connec
         if (pdh != null) {
             pdh.updateUnrealizedPnl(unrealizedPnL);
             messageService.sendWsMessage(pdh, PositionDataField.UNREALIZED_PNL);
-            underlyingService.calculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
+            activeUnderlyingService.calculateUnrealizedPnlPerUnderlying(pdh.getInstrument().getUnderlyingConid());
         }
     }
 

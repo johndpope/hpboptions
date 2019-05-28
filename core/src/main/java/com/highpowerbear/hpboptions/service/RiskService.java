@@ -31,7 +31,7 @@ public class RiskService {
     private static final Logger log = LoggerFactory.getLogger(RiskService.class);
 
     private final HopDao hopDao;
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
     private final OrderService orderService;
     private final MessageService messageService;
 
@@ -41,9 +41,9 @@ public class RiskService {
     private String ibAccount;
 
     @Autowired
-    public RiskService(HopDao hopDao, UnderlyingService underlyingService, OrderService orderService, MessageService messageService) {
+    public RiskService(HopDao hopDao, ActiveUnderlyingService activeUnderlyingService, OrderService orderService, MessageService messageService) {
         this.hopDao = hopDao;
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
         this.orderService = orderService;
         this.messageService = messageService;
 
@@ -57,7 +57,7 @@ public class RiskService {
 
     @JmsListener(destination = HopSettings.JMS_DEST_UNDERLYING_RISK_DATA_CALCULATED)
     public void underlyingRiskDataCalculated(int underlyingConid) {
-        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
         udh.getRiskCalculationLock().lock();
         try {

@@ -2,7 +2,6 @@ package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
 import com.highpowerbear.hpboptions.dataholder.*;
 import com.highpowerbear.hpboptions.enums.*;
@@ -27,10 +26,10 @@ import java.util.stream.Collectors;
  * Created by robertk on 11/8/2018.
  */
 @Service
-public class OrderService extends AbstractMarketDataService implements ConnectionListener {
+public class OrderService extends AbstractMarketDataService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
     private final PositionService positionService;
     private final ChainService chainService;
 
@@ -43,10 +42,10 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController, MessageService messageService, UnderlyingService underlyingService, PositionService positionService, ChainService chainService) {
+    public OrderService(IbController ibController, MessageService messageService, ActiveUnderlyingService activeUnderlyingService, PositionService positionService, ChainService chainService) {
         super(ibController, messageService);
 
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
         this.positionService = positionService;
         this.chainService = chainService;
 
@@ -91,7 +90,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     }
 
     public void createOrderFromUnderlying(int underlyingConid, Types.Action action) {
-        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
             Instrument cfdInstrument = udh.getCfdInstrument();
@@ -115,7 +114,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
     }
 
     public void createAndSendAdaptiveCfdOrder(int underlyingConid, Types.Action action, int quantity, OrderSource orderSource) {
-        ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(underlyingConid);
+        ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
             Instrument cfdInstrument = udh.getCfdInstrument();
@@ -284,7 +283,7 @@ public class OrderService extends AbstractMarketDataService implements Connectio
 
         Contract ibContract;
         if (mdh.getInstrument().getSecType() == Types.SecType.CFD) {
-            ActiveUnderlyingDataHolder udh = underlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
+            ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
             ibContract = udh.getInstrument().createIbContract();
         } else {
             ibContract = mdh.getInstrument().createIbContract();

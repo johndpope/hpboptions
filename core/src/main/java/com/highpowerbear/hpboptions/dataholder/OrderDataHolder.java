@@ -1,7 +1,7 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
-import com.highpowerbear.hpboptions.field.BasicMktDataField;
+import com.highpowerbear.hpboptions.field.BasicMarketDataField;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.model.HopOrder;
 import com.highpowerbear.hpboptions.model.Instrument;
@@ -25,15 +25,15 @@ public class OrderDataHolder extends AbstractMarketDataHolder {
     }
 
     public boolean isBidFalling() {
-        double currentBid = getCurrent(BasicMktDataField.BID).doubleValue();
-        double oldBid = getOld(BasicMktDataField.BID).doubleValue();
+        double currentBid = getCurrent(BasicMarketDataField.BID).doubleValue();
+        double oldBid = getOld(BasicMarketDataField.BID).doubleValue();
 
         return (HopUtil.isValidPrice(currentBid) && isValidPrice(oldBid) && currentBid < oldBid);
     }
 
     public boolean isAskRising() {
-        double currentAsk = getCurrent(BasicMktDataField.ASK).doubleValue();
-        double oldAsk = getOld(BasicMktDataField.ASK).doubleValue();
+        double currentAsk = getCurrent(BasicMarketDataField.ASK).doubleValue();
+        double oldAsk = getOld(BasicMarketDataField.ASK).doubleValue();
 
         return (HopUtil.isValidPrice(currentAsk) && isValidPrice(oldAsk) && currentAsk > oldAsk);
     }

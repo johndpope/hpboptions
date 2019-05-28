@@ -9,5 +9,6 @@ public enum DataHolderType {
     ORDER,
     POSITION,
     CHAIN,
-    SCANNER
+    SCANNER,
+    LINEAR
 }

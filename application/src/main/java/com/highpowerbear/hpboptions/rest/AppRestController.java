@@ -33,16 +33,16 @@ public class AppRestController {
 
     private final IbController ibController;
     private final AccountService accountService;
-    private final UnderlyingService underlyingService;
+    private final ActiveUnderlyingService activeUnderlyingService;
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
 
     @Autowired
-    public AppRestController(IbController ibController, AccountService accountService, UnderlyingService underlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
+    public AppRestController(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
         this.ibController = ibController;
         this.accountService = accountService;
-        this.underlyingService = underlyingService;
+        this.activeUnderlyingService = activeUnderlyingService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
@@ -78,7 +78,7 @@ public class AppRestController {
 
     @RequestMapping("underlying/data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<ActiveUnderlyingDataHolder> underlyingDataHolders = underlyingService.getSortedUnderlyingDataHolders();
+        List<ActiveUnderlyingDataHolder> underlyingDataHolders = activeUnderlyingService.getSortedUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 
@@ -87,7 +87,7 @@ public class AppRestController {
             @PathVariable("conid") int conid,
             @PathVariable("deltaHedge") boolean deltaHedge) {
 
-        underlyingService.setDeltaHedge(conid, deltaHedge);
+        activeUnderlyingService.setDeltaHedge(conid, deltaHedge);
         return ResponseEntity.ok().build();
     }
 
@@ -189,7 +189,7 @@ public class AppRestController {
 
     @RequestMapping("chain/underlying-infos")
     public ResponseEntity<?> getUnderlyingInfos() {
-        List<UnderlyingInfo> underlyingInfos = underlyingService.getUnderlyingInfos();
+        List<UnderlyingInfo> underlyingInfos = activeUnderlyingService.getUnderlyingInfos();
         return ResponseEntity.ok(new RestList<>(underlyingInfos, underlyingInfos.size()));
     }
 
