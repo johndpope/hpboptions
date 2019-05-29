@@ -199,7 +199,7 @@ Ext.define('HopGui.view.chain.ChainController', {
         console.log('requesting chain order creation ' + action + ' ' + symbol);
         Ext.Ajax.request({
             method: 'POST',
-            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/chain',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create-from/chain',
             jsonData: {
                 conid: conid,
                 action: action

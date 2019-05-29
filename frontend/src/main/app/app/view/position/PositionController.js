@@ -91,7 +91,7 @@ Ext.define('HopGui.view.position.PositionController', {
         console.log('requesting position order creation ' + action + ' ' + record.data.symbol);
         Ext.Ajax.request({
             method: 'POST',
-            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/position',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create-from/position',
             jsonData: {
                 conid: record.data.conid,
                 action: action

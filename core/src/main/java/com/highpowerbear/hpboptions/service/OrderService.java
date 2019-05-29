@@ -30,6 +30,7 @@ public class OrderService extends AbstractMarketDataService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private final ActiveUnderlyingService activeUnderlyingService;
+    private final LinearService linearService;
     private final PositionService positionService;
     private final ChainService chainService;
 
@@ -42,10 +43,11 @@ public class OrderService extends AbstractMarketDataService {
     private OrderFilter orderFilter = new OrderFilter();
 
     @Autowired
-    public OrderService(IbController ibController, MessageService messageService, ActiveUnderlyingService activeUnderlyingService, PositionService positionService, ChainService chainService) {
+    public OrderService(IbController ibController, MessageService messageService, ActiveUnderlyingService activeUnderlyingService, LinearService linearService, PositionService positionService, ChainService chainService) {
         super(ibController, messageService);
 
         this.activeUnderlyingService = activeUnderlyingService;
+        this.linearService = linearService;
         this.positionService = positionService;
         this.chainService = chainService;
 
@@ -65,12 +67,10 @@ public class OrderService extends AbstractMarketDataService {
 
         if (pdh != null) {
             int positionSize = pdh.getPositionSize();
-            int quantity;
+            int quantity = HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
 
-            if (action == Types.Action.BUY) {
-                quantity = positionSize < 0 ? Math.abs(positionSize) : HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
-            } else {
-                quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.OPTION_ORDER_DEFAULT_QUANTITY;
+            if (action == Types.Action.BUY && positionSize < 0 || action == Types.Action.SELL && positionSize > 0) {
+                quantity = Math.abs(positionSize);
             }
             createOrder(pdh.getInstrument(), pdh.getInstrument().getMinTick(), pdh.getBid(), pdh.getAsk(), action, quantity, OrderSource.PM);
         } else {
@@ -97,12 +97,10 @@ public class OrderService extends AbstractMarketDataService {
 
             if (cfdInstrument != null) {
                 int positionSize = udh.getCfdPositionSize();
-                int quantity;
+                int quantity = HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
 
-                if (action == Types.Action.BUY) {
-                    quantity = positionSize < 0 ? Math.abs(positionSize) : HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
-                } else {
-                    quantity = positionSize > 0 ? Math.abs(positionSize) : HopSettings.CFD_ORDER_DEFAULT_QUANTITY;
+                if (action == Types.Action.BUY && positionSize < 0 || action == Types.Action.SELL && positionSize > 0) {
+                    quantity = Math.abs(positionSize);
                 }
                 createOrder(cfdInstrument, cfdInstrument.getMinTick(), udh.getBid(), udh.getAsk(), action, quantity, OrderSource.UM);
             } else {
@@ -110,6 +108,23 @@ public class OrderService extends AbstractMarketDataService {
             }
         } else {
             log.warn("cannot create order from underlying, no conid " + underlyingConid + " found");
+        }
+    }
+
+    public void createOrderFromLinear(int linearConid, Types.Action action) {
+        LinearDataHolder ldh = linearService.getLinearDataHolder(linearConid);
+
+        if (ldh != null) {
+            int positionSize = ldh.getPositionSize();
+            int quantity = HopSettings.LINEAR_ORDER_DEFAULT_QUANTITY;
+
+            if (action == Types.Action.BUY && positionSize < 0 || action == Types.Action.SELL && positionSize > 0) {
+                quantity = Math.abs(positionSize);
+            }
+            createOrder(ldh.getInstrument(), ldh.getInstrument().getMinTick(), ldh.getBid(), ldh.getAsk(), action, quantity, OrderSource.LM);
+
+        } else {
+            log.warn("cannot create order from linear, no conid " + linearConid + " found");
         }
     }
 

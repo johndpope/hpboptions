@@ -3,10 +3,7 @@ package com.highpowerbear.hpboptions.rest;
 import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.dataholder.AccountDataHolder;
-import com.highpowerbear.hpboptions.dataholder.OrderDataHolder;
-import com.highpowerbear.hpboptions.dataholder.PositionDataHolder;
-import com.highpowerbear.hpboptions.dataholder.ActiveUnderlyingDataHolder;
+import com.highpowerbear.hpboptions.dataholder.*;
 import com.highpowerbear.hpboptions.enums.PositionSortOrder;
 import com.highpowerbear.hpboptions.model.*;
 import com.highpowerbear.hpboptions.rest.model.CreateOrderParams;
@@ -19,10 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by robertk on 11/22/2018.
@@ -34,18 +28,23 @@ public class AppRestController {
     private final IbController ibController;
     private final AccountService accountService;
     private final ActiveUnderlyingService activeUnderlyingService;
+    private final LinearService linearService;
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
+    private final ScannerService scannerService;
 
     @Autowired
-    public AppRestController(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, OrderService orderService, PositionService positionService, ChainService chainService) {
+    public AppRestController(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, LinearService linearService,
+                             OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService) {
         this.ibController = ibController;
         this.accountService = accountService;
         this.activeUnderlyingService = activeUnderlyingService;
+        this.linearService = linearService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
+        this.scannerService = scannerService;
     }
 
     @RequestMapping("connection/info")
@@ -78,7 +77,7 @@ public class AppRestController {
 
     @RequestMapping("underlying/data-holders")
     public ResponseEntity<?> getUnderlyingDataHolders() {
-        List<ActiveUnderlyingDataHolder> underlyingDataHolders = activeUnderlyingService.getSortedUnderlyingDataHolders();
+        List<ActiveUnderlyingDataHolder> underlyingDataHolders = activeUnderlyingService.getUnderlyingDataHolders();
         return ResponseEntity.ok(new RestList<>(underlyingDataHolders, underlyingDataHolders.size()));
     }
 
@@ -89,6 +88,12 @@ public class AppRestController {
 
         activeUnderlyingService.setDeltaHedge(conid, deltaHedge);
         return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping("linear/data-holders")
+    public ResponseEntity<?> getLinearDataHolders() {
+        List<LinearDataHolder> linearDataHolders = linearService.getLinearDataHolders();
+        return ResponseEntity.ok(new RestList<>(linearDataHolders, linearDataHolders.size()));
     }
 
     @RequestMapping("/position/sort-order")
@@ -129,7 +134,7 @@ public class AppRestController {
         return ResponseEntity.ok(new RestList<>(orderDataHolders, orderDataHolders.size()));
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "order/create/from/underlying")
+    @RequestMapping(method = RequestMethod.POST, value = "order/create-from/underlying")
     public ResponseEntity<?> createOrderFromUnderlying(
             @RequestBody CreateOrderParams createOrderParams) {
 
@@ -137,7 +142,15 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "order/create/from/position")
+    @RequestMapping(method = RequestMethod.POST, value = "order/create-from/linear")
+    public ResponseEntity<?> createOrderFromLinear(
+            @RequestBody CreateOrderParams createOrderParams) {
+
+        orderService.createOrderFromLinear(createOrderParams.getConid(), createOrderParams.getAction());
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(method = RequestMethod.POST, value = "order/create-from/position")
     public ResponseEntity<?> createOrderFromPosition(
             @RequestBody CreateOrderParams createOrderParams) {
 
@@ -145,7 +158,7 @@ public class AppRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "order/create/from/chain")
+    @RequestMapping(method = RequestMethod.POST, value = "order/create-from/chain")
     public ResponseEntity<?> createOrderFromChain(
             @RequestBody CreateOrderParams createOrderParams) {
 

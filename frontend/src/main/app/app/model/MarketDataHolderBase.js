@@ -14,6 +14,7 @@ Ext.define('HopGui.model.MarketDataHolderBase', {
         {name: 'underlyingSymbol', mapping: 'instrument.underlyingSymbol'},
         {name: 'currency', mapping: 'instrument.currency'},
         {name: 'exchange', mapping: 'instrument.exchange'},
+        {name: 'multiplier', mapping: 'instrument.multiplier'},
         'ibMktDataRequestId',
         'bid',
         'ask',

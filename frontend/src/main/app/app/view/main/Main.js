@@ -11,6 +11,7 @@ Ext.define('HopGui.view.main.Main', {
         'HopGui.view.main.MainController',
         'HopGui.view.main.MainModel',
         'HopGui.view.underlying.Underlying',
+        'HopGui.view.linear.Linear',
         'HopGui.view.order.Order',
         'HopGui.view.position.Position',
         'HopGui.view.chain.Chain'
@@ -28,6 +29,9 @@ Ext.define('HopGui.view.main.Main', {
     items: [{
         xtype: 'hop-underlying',
         reference: 'underlyingPanel'
+    }, {
+        xtype: 'hop-linear',
+        reference: 'linearPanel'
     }, {
         xtype: 'hop-order',
         reference: 'orderPanel'

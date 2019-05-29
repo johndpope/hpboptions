@@ -5,6 +5,7 @@ Ext.define('HopGui.model.PositionDataHolder', {
     extend: 'HopGui.model.MarketDataHolderBase',
 
     fields: [
+        'ibPnlRequestId',
         {name: 'right', mapping: 'instrument.right'},
         {name: 'strike', mapping: 'instrument.strike'},
         {name: 'expiration', type: 'date', dateFormat: 'Y-m-d', mapping: 'instrument.expiration'},

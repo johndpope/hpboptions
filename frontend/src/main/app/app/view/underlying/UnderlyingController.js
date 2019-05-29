@@ -160,7 +160,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
         console.log('requesting underlying order creation ' + action + ' ' + record.data.symbol);
         Ext.Ajax.request({
             method: 'POST',
-            url: HopGui.common.Definitions.urlPrefix + '/order/create/from/underlying',
+            url: HopGui.common.Definitions.urlPrefix + '/order/create-from/underlying',
             jsonData: {
                 conid: record.data.conid,
                 action: action
@@ -185,6 +185,5 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
                 underlyingDataHolders.reload();
             }
         });
-
     }
 });

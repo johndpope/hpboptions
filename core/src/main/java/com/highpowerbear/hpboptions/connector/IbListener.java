@@ -21,23 +21,24 @@ public class IbListener extends GenericIbListener {
     private final IbController ibController;
     private final AccountService accountService;
     private final ActiveUnderlyingService activeUnderlyingService;
+    private final LinearService linearService;
     private final OrderService orderService;
     private final PositionService positionService;
     private final ChainService chainService;
     private final ScannerService scannerService;
-    private final LinearService linearService;
     private final MessageService messageService;
 
     @Autowired
-    public IbListener(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService, LinearService linearService, MessageService messageService) {
+    public IbListener(IbController ibController, AccountService accountService, ActiveUnderlyingService activeUnderlyingService, LinearService linearService,
+                      OrderService orderService, PositionService positionService, ChainService chainService, ScannerService scannerService, MessageService messageService) {
         this.ibController = ibController;
         this.accountService = accountService;
         this.activeUnderlyingService = activeUnderlyingService;
+        this.linearService = linearService;
         this.orderService = orderService;
         this.positionService = positionService;
         this.chainService = chainService;
         this.scannerService = scannerService;
-        this.linearService = linearService;
         this.messageService = messageService;
 
         ibController.initialize(this);

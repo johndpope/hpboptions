@@ -5,6 +5,7 @@ package com.highpowerbear.hpboptions.enums;
  */
 public enum OrderSource {
     UM, // underlying manual
+    LM, // linear manual
     PM, // position manual
     CM, // chain manual
     RDH, // risk delta hedge

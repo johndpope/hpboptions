@@ -318,7 +318,7 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
         return underlyingInfos;
     }
 
-    public List<ActiveUnderlyingDataHolder> getSortedUnderlyingDataHolders() {
+    public List<ActiveUnderlyingDataHolder> getUnderlyingDataHolders() {
         return underlyingMap.values().stream().sorted(Comparator
                 .comparing(ActiveUnderlyingDataHolder::getDisplayRank)).collect(Collectors.toList());
     }

@@ -11,9 +11,12 @@ import com.ib.client.Contract;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * Created by robertk on 5/28/2019.
@@ -100,5 +103,14 @@ public class LinearService extends AbstractMarketDataService {
                 messageService.sendWsMessage(ldh, LinearDataField.UNREALIZED_PNL);
             }
         }
+    }
+
+    public LinearDataHolder getLinearDataHolder(int conid) {
+        return linearMap.get(conid);
+    }
+
+    public List<LinearDataHolder> getLinearDataHolders() {
+        return linearMap.values().stream().sorted(Comparator
+                .comparing(LinearDataHolder::getDisplayRank)).collect(Collectors.toList());
     }
 }
