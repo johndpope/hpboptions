@@ -19,6 +19,7 @@ public class Instrument {
     private Integer underlyingConid;
     private Exchange exchange;
     private Exchange primaryExchange;
+    private Double multiplier;
     private Double minTick;
 
     public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency) {
@@ -98,6 +99,14 @@ public class Instrument {
 
     public void setPrimaryExchange(Exchange primaryExchange) {
         this.primaryExchange = primaryExchange;
+    }
+
+    public Double getMultiplier() {
+        return multiplier;
+    }
+
+    public void setMultiplier(Double multiplier) {
+        this.multiplier = multiplier;
     }
 
     public Double getMinTick() {

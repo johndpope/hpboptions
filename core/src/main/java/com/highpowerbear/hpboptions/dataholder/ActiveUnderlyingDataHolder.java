@@ -40,7 +40,9 @@ public class ActiveUnderlyingDataHolder extends AbstractUnderlyingDataHolder {
     @JsonIgnore
     private final ReentrantLock pnlCalculationLock = new ReentrantLock();
 
-    public ActiveUnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId, LocalTime marketOpen, LocalTime marketClose, Exchange chainExchange, int chainMultiplier, boolean chainRoundStrikes) {
+    public ActiveUnderlyingDataHolder(Instrument instrument, Instrument cfdInstrument, int ibMktDataRequestId, int ibHistDataRequestId, int ibPnlRequestId,
+                                      LocalTime marketOpen, LocalTime marketClose, Exchange chainExchange, int chainMultiplier, boolean chainRoundStrikes) {
+
         super(DataHolderType.UNDERLYING, instrument, ibMktDataRequestId, ibHistDataRequestId);
 
         this.cfdInstrument = cfdInstrument;

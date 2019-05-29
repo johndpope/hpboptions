@@ -73,8 +73,9 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
                 cfdInstrument.setExchange(u.getExchange());
                 cfdInstrument.setMinTick(u.getCfdMinTick());
             }
+            ActiveUnderlyingDataHolder udh = new ActiveUnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(),
+                    ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose(), u.getChainExchange(), u.getChainMultiplier(), u.isChainRoundStrikes());
 
-            ActiveUnderlyingDataHolder udh = new ActiveUnderlyingDataHolder(instrument, cfdInstrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet(), u.getMarketOpen(), u.getMarketClose(), u.getChainExchange(), u.getChainMultiplier(), u.isChainRoundStrikes());
             if (u.isCfdDefined()) {
                 underlyingCfdMap.put(u.getCfdConid(), udh);
             }
@@ -178,7 +179,7 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
                 double gamma = 0d, vega = 0d, theta = 0d, timeValue = 0d, callMargin = 0d, putMargin = 0d;
 
                 for (PositionDataHolder pdh : pdhs) {
-                    int factor = pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
+                    double factor = pdh.getPositionSize() * pdh.getInstrument().getMultiplier();
 
                     delta += pdh.getDelta() * factor;
                     gamma += pdh.getGamma() * factor;

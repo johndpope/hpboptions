@@ -236,8 +236,8 @@ public class ChainService extends AbstractMarketDataService {
         String underlyingSymbol = contract.symbol();
         String symbol = contract.localSymbol();
         Currency currency = Currency.valueOf(contract.currency());
-        int multiplier = Integer.valueOf(contract.multiplier());
         Exchange exchange = Exchange.valueOf(contract.exchange());
+        double multiplier = Double.valueOf(contract.multiplier());
 
         double minTick = contractDetails.minTick();
         int underlyingConid = contractDetails.underConid();
@@ -247,8 +247,9 @@ public class ChainService extends AbstractMarketDataService {
         double strike = contract.strike();
         LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
 
-        OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
+        OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration);
         instrument.setExchange(exchange);
+        instrument.setMultiplier(multiplier);
         instrument.setMinTick(minTick);
         instrument.setUnderlyingConid(underlyingConid);
         instrument.setUnderlyingSecType(underlyingSecType);

@@ -14,8 +14,8 @@ public class LinearDataHolder extends AbstractMarketDataHolder {
 
     private final int ibPnlRequestId;
 
-    public LinearDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId, int ibPnlRequestId) {
-        super(type, instrument, ibMktDataRequestId);
+    public LinearDataHolder(Instrument instrument, int ibMktDataRequestId, int ibPnlRequestId) {
+        super(DataHolderType.LINEAR, instrument, ibMktDataRequestId);
         this.ibPnlRequestId = ibPnlRequestId;
 
         LinearDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
@@ -24,6 +24,10 @@ public class LinearDataHolder extends AbstractMarketDataHolder {
                 LinearDataField.POSITION_SIZE,
                 LinearDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));
+    }
+
+    public void resetFields() {
+        LinearDataField.fields().forEach(this::reset);
     }
 
     public int getIbPnlRequestId() {

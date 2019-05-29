@@ -343,11 +343,12 @@ public class OrderService extends AbstractMarketDataService {
                 Types.Right right = contract.right();
                 double strike = contract.strike();
                 LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
-                int multiplier = Integer.valueOf(contract.multiplier());
-                instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
+                instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration);
             } else {
                 instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency);
             }
+
+            instrument.setMultiplier(Double.valueOf(contract.multiplier()));
 
             odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
             orderMap.put(orderId, odh);

@@ -28,6 +28,7 @@ public class LinearInstrument implements Serializable {
     private Currency currency;
     @Enumerated(EnumType.STRING)
     private Exchange exchange;
+    private Exchange primaryExchange;
     private Double multiplier;
     private Double minTick;
     private LocalDate expirationDate;
@@ -103,6 +104,14 @@ public class LinearInstrument implements Serializable {
 
     public void setExchange(Exchange exchange) {
         this.exchange = exchange;
+    }
+
+    public Exchange getPrimaryExchange() {
+        return primaryExchange;
+    }
+
+    public void setPrimaryExchange(Exchange primaryExchange) {
+        this.primaryExchange = primaryExchange;
     }
 
     public Double getMultiplier() {

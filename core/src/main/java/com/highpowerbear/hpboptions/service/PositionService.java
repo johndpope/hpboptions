@@ -115,9 +115,10 @@ public class PositionService extends AbstractMarketDataService {
                     Types.Right right = contract.right();
                     double strike = contract.strike();
                     LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
-                    int multiplier = Integer.valueOf(contract.multiplier());
+                    double multiplier = Double.valueOf(contract.multiplier());
 
-                    OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration, multiplier);
+                    OptionInstrument instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration);
+                    instrument.setMultiplier(multiplier);
                     pdh = new PositionDataHolder(instrument, ibRequestIdGen.incrementAndGet(), ibRequestIdGen.incrementAndGet());
 
                     if (pdh.getDaysToExpiration() >= 0) {
