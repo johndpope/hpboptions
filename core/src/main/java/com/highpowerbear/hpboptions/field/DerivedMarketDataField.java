@@ -8,7 +8,7 @@ import java.util.*;
 public enum DerivedMarketDataField implements DataField {
 
     CHANGE (BasicMarketDataField.LAST, BasicMarketDataField.CLOSE),
-    CHANGE_PCT (BasicMarketDataField.LAST, BasicMarketDataField.CLOSE),
+    CHANGE_PCT (BasicMarketDataField.BID, BasicMarketDataField.ASK, BasicMarketDataField.LAST, BasicMarketDataField.CLOSE),
     IV_CHANGE_PCT (BasicMarketDataField.OPTION_IMPLIED_VOL),
     IV_RANK (BasicMarketDataField.OPTION_IMPLIED_VOL),
     OPTION_VOLUME (BasicMarketDataField.OPTION_CALL_VOLUME, BasicMarketDataField.OPTION_PUT_VOLUME) {

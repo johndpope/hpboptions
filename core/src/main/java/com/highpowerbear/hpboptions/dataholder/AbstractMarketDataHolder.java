@@ -99,12 +99,22 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
             }
 
         } else if (field == DerivedMarketDataField.CHANGE_PCT) {
-            double l = getCurrent(BasicMarketDataField.LAST).doubleValue();
-            double c = getCurrent(BasicMarketDataField.CLOSE).doubleValue();
+            double bid = getCurrent(BasicMarketDataField.BID).doubleValue();
+            double ask = getCurrent(BasicMarketDataField.ASK).doubleValue();
+            double last = getCurrent(BasicMarketDataField.LAST).doubleValue();
+            double close = getCurrent(BasicMarketDataField.CLOSE).doubleValue();
 
-            if (isValidPrice(l) && isValidPrice(c)) {
-                double value = ((l - c) / c) * 100d;
-                update(field, value);
+            if (isValidPrice(close)) {
+                double current = Double.NaN;
+                if (isValidPrice(bid) && isValidPrice(ask)) {
+                    current = (bid + ask) / 2d;
+                } else if (isValidPrice(last)) {
+                    current = last;
+                }
+                if (isValidPrice(current)) {
+                    double value = ((current - close) / close) * 100d;
+                    update(field, value);
+                }
             }
 
         } else if (field == DerivedMarketDataField.OPTION_OPEN_INTEREST) {
