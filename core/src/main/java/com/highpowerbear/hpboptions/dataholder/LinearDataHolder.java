@@ -1,6 +1,7 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.field.LinearDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
 
@@ -21,6 +22,7 @@ public class LinearDataHolder extends AbstractMarketDataHolder {
         LinearDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
 
         addFieldsToDisplay(Stream.of(
+                DerivedMarketDataField.CHANGE_PCT,
                 LinearDataField.POSITION_SIZE,
                 LinearDataField.UNREALIZED_PNL
         ).collect(Collectors.toSet()));

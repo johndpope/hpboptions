@@ -1,7 +1,6 @@
 package com.highpowerbear.hpboptions.common;
 
 import org.apache.commons.text.CaseUtils;
-
 import java.time.LocalDate;
 
 /**
@@ -28,6 +27,10 @@ public class HopUtil {
 
     public static double round4(double number) {
         return Double.isNaN(number) ? number : round(number, 4);
+    }
+
+    public static double roundUpMinTick(double price, double minTick) {
+        return Math.round(price / minTick) * minTick;
     }
 
     public static  boolean isValidPrice(double d) {

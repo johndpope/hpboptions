@@ -26,16 +26,16 @@ Ext.define('HopGui.view.order.OrderGrid', {
         width: 60,
         dataIndex: 'secType'
     }, {
-        text: 'Und',
-        width: 60,
+        text: 'Undl',
+        width: 70,
         dataIndex: 'underlyingSymbol'
     }, {
         text: 'Symbol',
-        width: 180,
+        width: 170,
         dataIndex: 'symbol'
     }, {
         text: 'Expiration',
-        width: 100,
+        width: 90,
         dataIndex: 'expiration',
         xtype: 'datecolumn',
         format: 'm/d/Y'
@@ -60,14 +60,14 @@ Ext.define('HopGui.view.order.OrderGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 70,
+        width: 80,
         dataIndex: 'bid',
         tdCls: 'bid hop-price hop-unchanged',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 70,
+        width: 80,
         dataIndex: 'ask',
         tdCls: 'ask hop-price hop-unchanged',
         align: 'right',
@@ -81,7 +81,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 70,
+        width: 80,
         dataIndex: 'last',
         tdCls: 'last hop-price hop-unchanged',
         align: 'right',
@@ -94,8 +94,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
         align: 'right',
         renderer: 'sizeRenderer'
     }, {
-        text: 'OrdId',
-        width: 70,
+        text: 'Oid',
+        width: 60,
         dataIndex: 'orderId',
         align: 'right'
     }, {
@@ -120,7 +120,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         dataIndex: 'orderType'
     }, {
         text: 'Lmt',
-        width: 70,
+        width: 90,
         dataIndex: 'limitPrice',
         align: 'right',
         tdCls: 'hop-pointer',
@@ -141,7 +141,7 @@ Ext.define('HopGui.view.order.OrderGrid', {
         }
     }, {
         text: 'Fill',
-        width: 70,
+        width: 80,
         dataIndex: 'fillPrice',
         align: 'right',
         renderer: 'orderPriceRenderer'
@@ -167,8 +167,8 @@ Ext.define('HopGui.view.order.OrderGrid', {
         dataIndex: 'permId',
         align: 'right'
     }, {
-        text: 'Hb',
-        width: 50,
+        text: 'h',
+        width: 40,
         dataIndex: 'heartbeatCount',
         align: 'right'
     }, {

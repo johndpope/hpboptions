@@ -12,13 +12,11 @@ public class OptionInstrument extends Instrument {
 
     private final Types.Right right;
     private final double strike;
-    private final LocalDate expiration;
 
     public OptionInstrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency, Types.Right right, double strike, LocalDate expiration) {
-        super(conid, secType, underlyingSymbol, symbol, currency);
+        super(conid, secType, underlyingSymbol, symbol, currency, expiration);
         this.right = right;
         this.strike = strike;
-        this.expiration = expiration;
     }
 
     public boolean isCall() {
@@ -35,9 +33,5 @@ public class OptionInstrument extends Instrument {
 
     public double getStrike() {
         return strike;
-    }
-
-    public LocalDate getExpiration() {
-        return expiration;
     }
 }

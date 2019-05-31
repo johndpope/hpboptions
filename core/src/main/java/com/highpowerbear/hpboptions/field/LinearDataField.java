@@ -15,9 +15,9 @@ public enum LinearDataField implements DataField {
     },
     UNREALIZED_PNL;
 
-    private static List<PositionDataField> fields = Arrays.asList(PositionDataField.values());
+    private static List<LinearDataField> fields = Arrays.asList(LinearDataField.values());
 
-    public static List<PositionDataField> fields() {
+    public static List<LinearDataField> fields() {
         return fields;
     }
 }

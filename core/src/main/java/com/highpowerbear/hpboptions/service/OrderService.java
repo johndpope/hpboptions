@@ -13,9 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,7 +125,7 @@ public class OrderService extends AbstractMarketDataService {
         }
     }
 
-    public void createAndSendAdaptiveCfdOrder(int underlyingConid, Types.Action action, int quantity, OrderSource orderSource) {
+    public void createAndSendCfdHedgeOrder(int underlyingConid, Types.Action action, int quantity, OrderSource orderSource) {
         ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
         if (udh != null) {
@@ -191,7 +188,7 @@ public class OrderService extends AbstractMarketDataService {
                     if (adapt && HopUtil.isValidPrice(bid) && HopUtil.isValidPrice(ask)) {
                         limitPrice = calculateLimitPrice(bid, ask, action, minTick);
                     } else {
-                        limitPrice = scaleLimitPrice(limitPrice, action, minTick);
+                        limitPrice = HopUtil.roundUpMinTick(limitPrice, minTick);
                     }
 
                     if (hopOrder.isNew() || quantity != hopOrder.getQuantity() || limitPrice != hopOrder.getLimitPrice()) {
@@ -237,22 +234,21 @@ public class OrderService extends AbstractMarketDataService {
     }
 
     private double calculateLimitPrice(double bid, double ask, Types.Action action, double minTick) {
-        double limitPrice = scaleLimitPrice((bid + ask) / 2d, action, minTick);
+        double limitPrice = HopUtil.roundUpMinTick((bid + ask) / 2d, minTick);
 
         if (action == Types.Action.BUY && limitPrice == ask) {
-            limitPrice = scaleLimitPrice(limitPrice - minTick, action, minTick);
+            limitPrice -= minTick;
+
+        } else if (action == Types.Action.BUY && limitPrice > ask) {
+                limitPrice -= 2 * minTick;
 
         } else if (action == Types.Action.SELL && limitPrice == bid) {
-            limitPrice = scaleLimitPrice(limitPrice + minTick, action, minTick);
+            limitPrice += minTick;
+
+        } else if (action == Types.Action.SELL && limitPrice < bid) {
+            limitPrice += 2 * minTick;
         }
         return limitPrice;
-    }
-
-    private double scaleLimitPrice(double limitPrice, Types.Action action, double minTick) {
-        RoundingMode roundingMode = action == Types.Action.BUY ? RoundingMode.HALF_UP : RoundingMode.HALF_DOWN;
-        int priceScale = BigDecimal.valueOf(minTick).scale();
-
-        return BigDecimal.valueOf(limitPrice).setScale(priceScale, roundingMode).doubleValue();
     }
 
     public void cancelOrder(int orderId) {
@@ -295,15 +291,16 @@ public class OrderService extends AbstractMarketDataService {
         int requestId = mdh.getIbMktDataRequestId();
 
         mktDataRequestMap.put(requestId, mdh);
-
+        OrderDataHolder odh = (OrderDataHolder) mdh;
         Contract ibContract;
-        if (mdh.getInstrument().getSecType() == Types.SecType.CFD) {
-            ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(mdh.getInstrument().getUnderlyingConid());
+
+        if (odh.getHopOrder().getOrderSource() == OrderSource.UM) {
+            ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(odh.getInstrument().getUnderlyingConid());
             ibContract = udh.getInstrument().createIbContract();
         } else {
-            ibContract = mdh.getInstrument().createIbContract();
+            ibContract = odh.getInstrument().createIbContract();
         }
-        ibController.requestMktData(requestId, ibContract, mdh.getGenericTicks());
+        ibController.requestMktData(requestId, ibContract, odh.getGenericTicks());
     }
 
     @Scheduled(fixedRate = 300000, initialDelay = 60000)
@@ -351,20 +348,22 @@ public class OrderService extends AbstractMarketDataService {
             String underlyingSymbol = contract.symbol();
             String symbol = contract.localSymbol();
             Currency currency = Currency.valueOf(contract.currency());
-
+            LocalDate expiration = null;
+            if (secType == Types.SecType.OPT || secType == Types.SecType.FUT) {
+                expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
+            }
             Instrument instrument;
-
             if (secType == Types.SecType.OPT) {
                 Types.Right right = contract.right();
                 double strike = contract.strike();
-                LocalDate expiration = LocalDate.parse(contract.lastTradeDateOrContractMonth(), HopSettings.IB_DATE_FORMATTER);
                 instrument = new OptionInstrument(conid, secType, underlyingSymbol, symbol, currency, right, strike, expiration);
             } else {
-                instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency);
+                instrument = new Instrument(conid, secType, underlyingSymbol, symbol, currency, expiration);
             }
 
-            instrument.setMultiplier(Double.valueOf(contract.multiplier()));
-
+            if (secType == Types.SecType.OPT || secType == Types.SecType.FUT) {
+                instrument.setMultiplier(Double.valueOf(contract.multiplier()));
+            }
             odh = new OrderDataHolder(instrument, ibRequestIdGen.incrementAndGet(), hopOrder);
             orderMap.put(orderId, odh);
 
@@ -385,6 +384,8 @@ public class OrderService extends AbstractMarketDataService {
     @Override
     public void contractDetailsReceived(int requestId, ContractDetails contractDetails) {
         Contract contract = contractDetails.contract();
+        log.info("contract details received for symbol=" + contract.localSymbol() + ", requestId=" + requestId);
+
         OrderDataHolder odh = contractDetailsRequestMap.get(requestId);
         contractDetailsRequestMap.remove(requestId);
 

@@ -151,9 +151,6 @@ public class IbListener extends GenericIbListener {
 
     @Override
     public void contractDetails(int requestId, ContractDetails contractDetails) {
-        if (Types.SecType.valueOf(contractDetails.contract().getSecType()) != Types.SecType.OPT) {
-            return;
-        }
         //super.contractDetails(requestId, contractDetails);
         getMarketDataService(requestId).contractDetailsReceived(requestId, contractDetails);
     }

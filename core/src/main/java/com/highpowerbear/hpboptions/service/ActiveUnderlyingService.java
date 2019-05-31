@@ -61,13 +61,13 @@ public class ActiveUnderlyingService extends AbstractUnderlyingService {
 
             underlyingInfos.add(new UnderlyingInfo(u.getConid(), u.getSymbol()));
 
-            Instrument instrument = new Instrument(conid, u.getSecType(),null, u.getSymbol(), u.getCurrency());
+            Instrument instrument = new Instrument(conid, u.getSecType(),null, u.getSymbol(), u.getCurrency(), null);
             instrument.setExchange(u.getExchange());
             instrument.setPrimaryExchange(u.getPrimaryExchange());
 
             Instrument cfdInstrument = null;
             if (u.isCfdDefined()) {
-                cfdInstrument = new Instrument(u.getCfdConid(), Types.SecType.CFD, u.getSymbol(), u.getCfdSymbol(), u.getCurrency());
+                cfdInstrument = new Instrument(u.getCfdConid(), Types.SecType.CFD, u.getSymbol(), u.getCfdSymbol(), u.getCurrency(), null);
                 cfdInstrument.setUnderlyingSecType(u.getSecType());
                 cfdInstrument.setUnderlyingConid(u.getConid());
                 cfdInstrument.setExchange(u.getExchange());

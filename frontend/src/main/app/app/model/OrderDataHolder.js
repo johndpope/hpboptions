@@ -7,7 +7,6 @@ Ext.define('HopGui.model.OrderDataHolder', {
     fields: [
         {name: 'right', mapping: 'instrument.right'},
         {name: 'strike', mapping: 'instrument.strike'},
-        {name: 'expiration', type: 'date', dateFormat: 'Y-m-d', mapping: 'instrument.expiration'},
         {name: 'orderId', mapping: 'hopOrder.orderId'},
         {name: 'action', mapping: 'hopOrder.action'},
         {name: 'orderType', mapping: 'hopOrder.orderType'},

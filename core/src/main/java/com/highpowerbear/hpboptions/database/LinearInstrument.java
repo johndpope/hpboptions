@@ -28,6 +28,7 @@ public class LinearInstrument implements Serializable {
     private Currency currency;
     @Enumerated(EnumType.STRING)
     private Exchange exchange;
+    @Enumerated(EnumType.STRING)
     private Exchange primaryExchange;
     private Double multiplier;
     private Double minTick;

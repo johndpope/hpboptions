@@ -66,6 +66,7 @@ public class MessageService {
         switch (type) {
             case ACCOUNT: topic = WsTopic.ACCOUNT; break;
             case UNDERLYING: topic = WsTopic.UNDERLYING; break;
+            case LINEAR: topic = WsTopic.LINEAR; break;
             case ORDER: topic = WsTopic.ORDER; break;
             case POSITION: topic = WsTopic.POSITION; break;
             case CHAIN: topic = WsTopic.CHAIN; break;

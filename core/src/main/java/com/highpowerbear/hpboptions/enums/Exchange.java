@@ -9,6 +9,7 @@ public enum Exchange {
     NASDAQ,
     NYSE,
     IDEALPRO,
+    IBCFD,
     CBOE,
     GLOBEX,
     ECBOT,

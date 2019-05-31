@@ -46,7 +46,7 @@ public class LinearService extends AbstractMarketDataService {
         for (LinearInstrument li : hopDao.getActiveLinearInstruments()) {
             int conid = li.getConid();
 
-            Instrument instrument = new Instrument(conid, li.getSecType(), li.getSymbolRoot(), li.getSymbol(), li.getCurrency());
+            Instrument instrument = new Instrument(conid, li.getSecType(), li.getSymbolRoot(), li.getSymbol(), li.getCurrency(), li.getExpirationDate());
             instrument.setExchange(li.getExchange());
             instrument.setPrimaryExchange(li.getPrimaryExchange());
             instrument.setMultiplier(li.getMultiplier());

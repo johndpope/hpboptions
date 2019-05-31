@@ -16,12 +16,32 @@ Ext.define('HopGui.view.linear.LinearGrid', {
         stripeRows: true
     },
     columns: [{
-        text: 'Instrument',
-        width: 115,
-        dataIndex: 'secType',
-        renderer: function(val, metadata, record) {
-            return '<span style="font-weight: bold;">' + record.data['symbol'] + '</span>' + '&nbsp;&nbsp;' + record.data['secType'] + ',' + record.data['currency'];
-        }
+        text: 'Symbol',
+        width: 80,
+        dataIndex: 'symbol'
+    }, {
+        text: 'Type',
+        width: 60,
+        dataIndex: 'secType'
+    }, {
+        text: 'Curr',
+        width: 60,
+        dataIndex: 'currency'
+    }, {
+        text: 'Exchange',
+        width: 80,
+        dataIndex: 'exchange'
+    }, {
+        text: 'Mult',
+        width: 60,
+        dataIndex: 'multiplier',
+        align: 'right'
+    }, {
+        text: 'Expiration',
+        width: 100,
+        dataIndex: 'expiration',
+        xtype: 'datecolumn',
+        format: 'm/d/Y'
     }, {
         text: 'P',
         width: 50,
@@ -45,14 +65,14 @@ Ext.define('HopGui.view.linear.LinearGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Bid',
-        width: 70,
+        width: 80,
         dataIndex: 'bid',
         tdCls: 'bid hop-price hop-unchanged hop-pointer',
         align: 'right',
         renderer: 'priceRenderer'
     }, {
         text: 'Ask',
-        width: 70,
+        width: 80,
         dataIndex: 'ask',
         tdCls: 'ask hop-price hop-unchanged hop-pointer',
         align: 'right',
@@ -66,7 +86,7 @@ Ext.define('HopGui.view.linear.LinearGrid', {
         renderer: 'sizeRenderer'
     }, {
         text: 'Last',
-        width: 70,
+        width: 80,
         dataIndex: 'last',
         tdCls: 'last hop-price hop-unchanged',
         align: 'right',
@@ -87,7 +107,7 @@ Ext.define('HopGui.view.linear.LinearGrid', {
         renderer: 'volumeRenderer'
     }, {
         text: 'Close',
-        width: 70,
+        width: 80,
         dataIndex: 'close',
         tdCls: 'close hop-price hop-unchanged',
         align: 'right',

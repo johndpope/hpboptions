@@ -79,7 +79,7 @@ public class RiskService {
                         String resolution = "delta hedge " + action.name() + " " + quantity;
                         log.info(resolution);
 
-                        orderService.createAndSendAdaptiveCfdOrder(underlyingConid, action, quantity, OrderSource.RDH);
+                        orderService.createAndSendCfdHedgeOrder(underlyingConid, action, quantity, OrderSource.RDH);
                         createRiskEvent(udh, field, resolution);
 
                     } else if (!riskEventMap.get(underlyingConid).contains(field)) {

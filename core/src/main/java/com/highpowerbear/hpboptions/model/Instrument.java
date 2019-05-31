@@ -5,6 +5,8 @@ import com.highpowerbear.hpboptions.enums.Exchange;
 import com.ib.client.Contract;
 import com.ib.client.Types;
 
+import java.time.LocalDate;
+
 /**
  * Created by robertk on 12/18/2018.
  */
@@ -21,13 +23,15 @@ public class Instrument {
     private Exchange primaryExchange;
     private Double multiplier;
     private Double minTick;
+    private final LocalDate expiration;
 
-    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency) {
+    public Instrument(int conid, Types.SecType secType, String underlyingSymbol, String symbol, Currency currency, LocalDate expiration) {
         this.conid = conid;
         this.secType = secType;
         this.underlyingSymbol = underlyingSymbol;
         this.symbol = symbol;
         this.currency = currency;
+        this.expiration = expiration;
     }
 
     public Contract createIbContract() {
@@ -115,6 +119,10 @@ public class Instrument {
 
     public void setMinTick(Double minTick) {
         this.minTick = minTick;
+    }
+
+    public LocalDate getExpiration() {
+        return expiration;
     }
 
     @Override
