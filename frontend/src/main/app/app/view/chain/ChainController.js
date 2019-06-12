@@ -17,7 +17,7 @@ Ext.define('HopGui.view.chain.ChainController', {
             wsStatusField = me.lookupReference('wsStatus');
 
         if (activeChainItems) {
-            activeChainItems.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/chain/active/items');
+            activeChainItems.getProxy().setUrl(HopGui.common.Definitions.urlPrefix + '/chain/active-items');
         }
         me.prepareUnderlyingCombo();
 
@@ -31,8 +31,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
             stompClient.subscribe('/topic/chain', function(message) {
                 if (message.body.startsWith('reloadRequest')) {
-                    me.prepareExpirationCombo();
-                    activeChainItems.removeAll();
+                    me.selectUnderlying();
                 } else {
                     me.updateData(message.body);
                 }
@@ -55,7 +54,7 @@ Ext.define('HopGui.view.chain.ChainController', {
             method: 'GET',
             url: HopGui.common.Definitions.urlPrefix + '/chain/underlying-infos',
 
-            success: function(response, opts) {
+            success: function (response, opts) {
                 var infos = Ext.decode(response.responseText).items;
                 var comboData = [];
 
@@ -65,19 +64,27 @@ Ext.define('HopGui.view.chain.ChainController', {
                 var comboStore = underlyingCombo.getStore();
                 comboStore.loadData(comboData);
 
-                Ext.Ajax.request({
-                    method: 'GET',
-                    url: HopGui.common.Definitions.urlPrefix + '/chain/active/key',
+                me.selectUnderlying();
+            }
+        });
+    },
 
-                    success: function(response, opts) {
-                        if (response.responseText === 'NA') {
-                            underlyingCombo.select(comboStore.getAt(0));
-                        } else {
-                            var activeUnderlyingConid = Ext.decode(response.responseText).underlyingConid;
-                            underlyingCombo.select(activeUnderlyingConid);
-                        }
-                    }
-                });
+    selectUnderlying: function() {
+        var me = this,
+            underlyingCombo =  me.lookupReference('underlyingCombo');
+
+        Ext.Ajax.request({
+            method: 'GET',
+            url: HopGui.common.Definitions.urlPrefix + '/chain/active-key',
+
+            success: function(response, opts) {
+                if (response.responseText === 'NA') {
+                    var comboStore = underlyingCombo.getStore();
+                    underlyingCombo.select(comboStore.getAt(0));
+                } else {
+                    var activeChainKey = Ext.decode(response.responseText);
+                    underlyingCombo.select(activeChainKey.underlyingConid);
+                }
             }
         });
     },
@@ -85,7 +92,9 @@ Ext.define('HopGui.view.chain.ChainController', {
     prepareExpirationCombo: function() {
         var me = this,
             underlyingCombo =  me.lookupReference('underlyingCombo'),
-            expirationCombo =  me.lookupReference('expirationCombo');
+            expirationCombo =  me.lookupReference('expirationCombo'),
+            activeChainItems = me.getStore('activeChainItems'),
+            chainStatus = me.lookupReference('chainStatus');
 
         Ext.Ajax.request({
             method: 'GET',
@@ -106,25 +115,37 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                 Ext.Ajax.request({
                     method: 'GET',
-                    url: HopGui.common.Definitions.urlPrefix + '/chain/active/key',
+                    url: HopGui.common.Definitions.urlPrefix + '/chain/active-key',
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
                             expirationCombo.select(comboStore.getAt(0));
                         } else {
-                            var activeExpiration = Ext.decode(response.responseText).expiration;
+                            var activeChainKey = Ext.decode(response.responseText);
                             var match = false;
 
                             for (var i = 0; i < expirations.length; i++) {
-                                if (expirations[i] === activeExpiration) {
+                                if (expirations[i] === activeChainKey.expiration) {
                                     match = true;
                                     break;
                                 }
                             }
                             if (match) {
-                                expirationCombo.select(activeExpiration);
+                                expirationCombo.select(activeChainKey.expiration);
+                                activeChainItems.load(function (records, operation, success) {
+                                    if (success) {
+                                        console.log('loaded activeChainItems');
+                                        chainStatus.removeCls('hop-failure');
+                                        chainStatus.addCls('hop-success');
+                                        chainStatus.update('Chain activated ' + activeChainKey.underlyingSymbol +' ' + me.formatDate(activeChainKey.expiration));
+                                    }
+                                });
+
                             } else {
                                 expirationCombo.select(comboStore.getAt(0));
+                                chainStatus.removeCls('hop-success');
+                                chainStatus.addCls('hop-failure');
+                                chainStatus.update('Chain not ready');
                             }
                         }
                     }
@@ -133,17 +154,10 @@ Ext.define('HopGui.view.chain.ChainController', {
         });
     },
 
-    formatDate: function(date) { // yyyy-MM-dd
-        var dateArr = date.split('-');
-        return dateArr[1] +'/' + dateArr[2] + '/' + dateArr[0]; // MM/dd/yyyy
-    },
-
-    loadChain: function() {
+    activateChain: function() {
         var me = this,
             underlyingConid =  me.lookupReference('underlyingCombo').getValue(),
-            expiration =  me.lookupReference('expirationCombo').getValue(),
-            activeChainItems = me.getStore('activeChainItems'),
-            chainStatus = me.lookupReference('chainStatus');
+            expiration =  me.lookupReference('expirationCombo').getValue();
 
         if (!expiration) {
             console.log('expirations not ready');
@@ -151,29 +165,7 @@ Ext.define('HopGui.view.chain.ChainController', {
         }
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration,
-
-            success: function(response, opts) {
-                var chainActivationResult = Ext.decode(response.responseText)
-
-                if (chainActivationResult.success) {
-                    chainStatus.removeCls('hop-failure');
-                    chainStatus.addCls('hop-success');
-
-                    activeChainItems.load(function (records, operation, success) {
-                        if (success) {
-                            console.log('loaded activeChainItems');
-                            chainStatus.update('Chain loaded ' + chainActivationResult.underlyingSymbol +' ' + me.formatDate(chainActivationResult.expiration));
-                        }
-                    });
-                } else {
-                    chainStatus.update('Chain not ready');
-                    chainStatus.removeCls('hop-success');
-                    chainStatus.addCls('hop-failure');
-
-                    activeChainItems.removeAll();
-                }
-            }
+            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration
         });
     },
 
@@ -208,5 +200,10 @@ Ext.define('HopGui.view.chain.ChainController', {
                 //
             }
         });
-    }
+    },
+
+    formatDate: function(date) { // yyyy-MM-dd
+        var dateArr = date.split('-');
+        return dateArr[1] +'/' + dateArr[2] + '/' + dateArr[0]; // MM/dd/yyyy
+    },
 });

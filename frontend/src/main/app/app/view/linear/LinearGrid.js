@@ -52,7 +52,7 @@ Ext.define('HopGui.view.linear.LinearGrid', {
     }, {
         text: 'Pl',
         width: 50,
-        dataIndex: 'un1realizedPnl',
+        dataIndex: 'unrealizedPnl',
         tdCls: 'unrealizedPnl hop-pnl hop-unchanged',
         align: 'right',
         renderer: 'pnlRenderer'

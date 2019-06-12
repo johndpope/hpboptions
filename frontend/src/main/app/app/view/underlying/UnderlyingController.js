@@ -44,9 +44,7 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
             });
 
             stompClient.subscribe('/topic/account', function(message) {
-                if (message.body.startsWith('reloadRequest')) {
-                    me.refreshAccountData();
-                }
+                me.accountDataMessageReceived(message.body);
             });
 
             stompClient.subscribe('/topic/underlying', function(message) {
@@ -114,28 +112,63 @@ Ext.define('HopGui.view.underlying.UnderlyingController', {
 
     refreshAccountData: function() {
         var me = this,
-            accountDataHolders = me.getStore('accountDataHolders'),
-            accountDataField = me.lookupReference('accountData');
+            accountDataHolders = me.getStore('accountDataHolders');
 
         accountDataHolders.load(function(records, operation, success) {
             if (success) {
                 console.log('loaded accountDataHolders');
-                var text = '';
-
-                accountDataHolders.each(function(record) {
-                    var adh = record.data;
-                    var netLiq = adh.netLiquidationValue ? 'NetLiq ' + me.formatWhole(adh.netLiquidationValue) : '';
-                    var availFunds = adh.availableFunds ? 'AvailFunds ' + me.formatWhole(adh.availableFunds) : '';
-                    var unrlzPnl = adh.unrealizedPnl ? 'UnrlzPnl ' + me.formatWhole(adh.unrealizedPnl) : '';
-
-                    text = text + adh.ibAccount + ' ' + adh.baseCurrency + ': ' + netLiq + ', ' + availFunds + ', ' + unrlzPnl + ' ';
-                });
-
-                if (accountDataHolders.getCount() > 0) {
-                    accountDataField.update(text);
-                }
+                me.updateAccountData();
             }
         });
+    },
+
+    accountDataMessageReceived: function(msg) {
+        var me = this;
+
+        var arr = msg.split(','),
+            id = arr[0],
+            ibAccount = id.split('-')[1],
+            field = arr[1],
+            oldVal = arr[2],
+            val = arr[3];
+
+        if (!me.getAccountDataHolder(ibAccount)) {
+            me.refreshAccountData();
+        }
+
+        var accountDataHolder = me.getAccountDataHolder(ibAccount);
+        if (accountDataHolder) {
+            accountDataHolder.set(field, val);
+            me.updateAccountData();
+        }
+    },
+
+    getAccountDataHolder: function(ibAccount) {
+        var me = this,
+            accountDataHolders = me.getStore('accountDataHolders');
+
+        return accountDataHolders.findRecord('ibAccount', ibAccount);
+    },
+
+    updateAccountData: function() {
+        var me = this,
+            accountDataHolders = me.getStore('accountDataHolders'),
+            accountDataField = me.lookupReference('accountData');
+
+        var text = '';
+
+        accountDataHolders.each(function(record) {
+            var adh = record.data;
+            var netLiq = adh.netLiquidationValue ? 'NetLiq ' + me.formatWhole(adh.netLiquidationValue) : '';
+            var availFunds = adh.availableFunds ? 'AvailFunds ' + me.formatWhole(adh.availableFunds) : '';
+            var unrlzPnl = adh.unrealizedPnl ? 'UnrlzPnl ' + me.formatWhole(adh.unrealizedPnl) : '';
+
+            text = text + adh.ibAccount + ' ' + adh.baseCurrency + ': ' + netLiq + ', ' + availFunds + ', ' + unrlzPnl + ' ';
+        });
+
+        if (accountDataHolders.getCount() > 0) {
+            accountDataField.update(text);
+        }
     },
 
     loadUnderlyingDataHolders: function() {

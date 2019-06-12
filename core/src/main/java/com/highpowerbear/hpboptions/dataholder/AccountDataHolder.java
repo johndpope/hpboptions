@@ -1,37 +1,31 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
+import com.highpowerbear.hpboptions.field.AccountDataField;
 import com.ib.controller.AccountSummaryTag;
 
 /**
  * Created by robertk on 2/12/2019.
  */
-public class AccountDataHolder {
+public class AccountDataHolder extends AbstractDataHolder {
 
     private final String ibAccount;
     private final int ibPnlRequestId;
-
     private Currency baseCurrency;
-    private Double netLiquidationValue;
-    private Double availableFunds;
-    private Double unrealizedPnl;
 
     public AccountDataHolder(String ibAccount, int ibPnlRequestId) {
+        super(DataHolderType.ACCOUNT);
         this.ibAccount = ibAccount;
         this.ibPnlRequestId = ibPnlRequestId;
+
+        id = type.name().toLowerCase() + "-" + ibAccount;
+
+        AccountDataField.fields().forEach(field -> valueMap.put(field, createValueQueue(field.getInitialValue())));
     }
 
     public boolean isReady() {
-        return baseCurrency != null && netLiquidationValue != null && availableFunds != null && unrealizedPnl != null;
-    }
-
-    public void updateAccountSummary(AccountSummaryTag tag, double value) {
-        if (tag == AccountSummaryTag.NetLiquidation) {
-            setNetLiquidationValue(value);
-
-        } else if (tag == AccountSummaryTag.AvailableFunds) {
-            setAvailableFunds(value);
-        }
+        return baseCurrency != null && !Double.isNaN(getNetLiquidationValue()) && !Double.isNaN(getAvailableFunds()) && !Double.isNaN(getUnrealizedPnl());
     }
 
     public String getIbAccount() {
@@ -55,27 +49,36 @@ public class AccountDataHolder {
         }
     }
 
-    public Double getNetLiquidationValue() {
-        return netLiquidationValue;
+    public void updateAccountSummary(AccountSummaryTag tag, double value) {
+        if (tag == AccountSummaryTag.NetLiquidation) {
+            updateNetLiquidationValue(value);
+
+        } else if (tag == AccountSummaryTag.AvailableFunds) {
+            updateAvailableFunds(value);
+        }
     }
 
-    public void setNetLiquidationValue(double netLiquidationValue) {
-        this.netLiquidationValue = netLiquidationValue;
+    public double getNetLiquidationValue() {
+        return getCurrent(AccountDataField.NET_LIQUIDATION_VALUE).doubleValue();
     }
 
-    public Double getAvailableFunds() {
-        return availableFunds;
+    public void updateNetLiquidationValue(double netLiquidationValue) {
+        update(AccountDataField.NET_LIQUIDATION_VALUE, netLiquidationValue);
     }
 
-    public void setAvailableFunds(double availableFunds) {
-        this.availableFunds = availableFunds;
+    public double getAvailableFunds() {
+        return getCurrent(AccountDataField.AVAILABLE_FUNDS).doubleValue();
     }
 
-    public Double getUnrealizedPnl() {
-        return unrealizedPnl;
+    public void updateAvailableFunds(double availableFunds) {
+        update(AccountDataField.AVAILABLE_FUNDS, availableFunds);
     }
 
-    public void setUnrealizedPnl(double unrealizedPnl) {
-        this.unrealizedPnl = unrealizedPnl;
+    public double getUnrealizedPnl() {
+        return getCurrent(AccountDataField.UNREALIZED_PNL).doubleValue();
+    }
+
+    public void updateUnrealizedPnl(double unrealizedPnl) {
+        update(AccountDataField.UNREALIZED_PNL, unrealizedPnl);
     }
 }

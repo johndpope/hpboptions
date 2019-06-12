@@ -8,10 +8,12 @@ import java.time.LocalDate;
 public class ChainKey {
 
     private final int underlyingConid;
+    private final String underlyingSymbol;
     private final LocalDate expiration;
 
-    public ChainKey(int underlyingConid, LocalDate expiration) {
+    public ChainKey(int underlyingConid, String underlyingSymbol, LocalDate expiration) {
         this.underlyingConid = underlyingConid;
+        this.underlyingSymbol = underlyingSymbol;
         this.expiration = expiration;
     }
 
@@ -35,6 +37,10 @@ public class ChainKey {
 
     public int getUnderlyingConid() {
         return underlyingConid;
+    }
+
+    public String getUnderlyingSymbol() {
+        return underlyingSymbol;
     }
 
     public LocalDate getExpiration() {

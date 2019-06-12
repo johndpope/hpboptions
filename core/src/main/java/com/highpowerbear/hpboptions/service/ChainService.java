@@ -73,6 +73,7 @@ public class ChainService extends AbstractMarketDataService {
             executor.schedule(this::rebuildChains, HopSettings.CHAIN_REBUILD_DELAY_MILLIS, TimeUnit.MILLISECONDS);
 
         } else if (activeChainKey != null) {
+            cancelAllMktData();
             requestActiveChainMktData();
         }
     }
@@ -89,20 +90,23 @@ public class ChainService extends AbstractMarketDataService {
         executor.execute(this::rebuildChains);
     }
 
-    public ChainActivationResult activateChain(int underlyingConid, LocalDate expiration) {
+    public void activateChain(int underlyingConid, LocalDate expiration) {
         chainLock.lock();
         try {
+            if (ibController.isConnected()) {
+                cancelAllMktData();
+            }
+            activeChainKey = null;
             ChainKey chainKey = chainKey(underlyingConid, expiration);
             if (chainKey == null || chainMap.get(chainKey) == null) {
-                return new ChainActivationResult(false, null, null, null);
-            }
-            if (activeChainKey == null || !activeChainKey.equals(chainKey)) {
+                messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+            } else {
                 activeChainKey = chainKey;
                 if (ibController.isConnected()) {
                     requestActiveChainMktData();
                 }
+                messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
             }
-            return new ChainActivationResult(true, underlyingConid, activeUnderlyingService.getUnderlyingDataHolder(underlyingConid).getInstrument().getSymbol(), expiration);
         } finally {
             chainLock.unlock();
         }
@@ -122,6 +126,8 @@ public class ChainService extends AbstractMarketDataService {
             }
             cancelAllMktData();
             activeChainKey = null;
+            messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+
             underlyingMktDataSnapshotMap.clear();
             expirationsMap.values().forEach(Set::clear);
             chainMap.clear();
@@ -146,7 +152,6 @@ public class ChainService extends AbstractMarketDataService {
 
     private void requestActiveChainMktData() {
         log.info("requesting active chain mkt data for chainKey=" + activeChainKey);
-        cancelAllMktData();
         chainMap.get(activeChainKey).forEach((strike, chainItem) -> {
                     requestMktData(chainItem.getCall());
                     requestMktData(chainItem.getPut());
@@ -157,7 +162,7 @@ public class ChainService extends AbstractMarketDataService {
         ActiveUnderlyingDataHolder udh = activeUnderlyingService.getUnderlyingDataHolder(underlyingConid);
 
         return udh != null && expirationsMap.get(underlyingConid).contains(expiration) ?
-                new ChainKey(underlyingConid, expiration) :
+                new ChainKey(underlyingConid, activeUnderlyingService.getUnderlyingDataHolder(underlyingConid).getInstrument().getSymbol(), expiration) :
                 null;
     }
 

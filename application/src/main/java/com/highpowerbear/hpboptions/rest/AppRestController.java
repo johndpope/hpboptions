@@ -219,17 +219,17 @@ public class AppRestController {
             @PathVariable("underlyingConid") int underlyingConid,
             @PathVariable("expiration") @DateTimeFormat(pattern = HopSettings.JSON_DATE_FORMAT) LocalDate expiration) {
 
-        ChainActivationResult chainActivationResult = chainService.activateChain(underlyingConid, expiration);
-        return ResponseEntity.ok(chainActivationResult);
+        chainService.activateChain(underlyingConid, expiration);
+        return ResponseEntity.ok().build();
     }
 
-    @RequestMapping("chain/active/key")
+    @RequestMapping("chain/active-key")
     public ResponseEntity<?> getActiveChainKey() {
         ChainKey activeChainKey = chainService.getActiveChainKey();
         return activeChainKey != null ? ResponseEntity.ok(chainService.getActiveChainKey()) : ResponseEntity.ok("NA");
     }
 
-    @RequestMapping("chain/active/items")
+    @RequestMapping("chain/active-items")
     public ResponseEntity<?> getActiveChainItems() {
         Collection<ChainItem> chainItems = chainService.getActiveChainItems();
         return ResponseEntity.ok(new RestList<>(chainItems, chainItems.size()));

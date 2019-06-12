@@ -1,10 +1,10 @@
 package com.highpowerbear.hpboptions.service;
 
 import com.highpowerbear.hpboptions.common.HopSettings;
-import com.highpowerbear.hpboptions.field.DataField;
+import com.highpowerbear.hpboptions.dataholder.DataHolder;
 import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.enums.WsTopic;
-import com.highpowerbear.hpboptions.dataholder.MarketDataHolder;
+import com.highpowerbear.hpboptions.field.DataField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,9 +76,9 @@ public class MessageService {
         sendWsMessage(topic, message);
     }
 
-    public void sendWsMessage(MarketDataHolder mdh, DataField field) {
-        if (mdh.isSendMessage(field)) {
-            sendWsMessage(mdh.getType(), mdh.createMessage(field));
+    public void sendWsMessage(DataHolder dh, DataField field) {
+        if (dh.isSendMessage(field)) {
+            sendWsMessage(dh.getType(), dh.createMessage(field));
         }
     }
 

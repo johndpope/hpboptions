@@ -1,24 +1,23 @@
 package com.highpowerbear.hpboptions.dataholder;
 
 import com.highpowerbear.hpboptions.common.HopUtil;
+import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.field.BasicMarketDataField;
 import com.highpowerbear.hpboptions.field.DataField;
-import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.field.DerivedMarketDataField;
 import com.highpowerbear.hpboptions.model.Instrument;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
  * Created by robertk on 11/27/2018.
  */
-public abstract class AbstractMarketDataHolder implements MarketDataHolder {
+public abstract class AbstractMarketDataHolder extends AbstractDataHolder implements MarketDataHolder {
 
-    protected String id;
-    private final DataHolderType type;
     protected final Instrument instrument;
     private final int ibMktDataRequestId;
 
@@ -27,10 +26,8 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
 
     private int displayRank;
 
-    protected final Map<DataField, CircularFifoQueue<Number>> valueMap = new HashMap<>(); // field -> queue[value, oldValue]
-
     AbstractMarketDataHolder(DataHolderType type, Instrument instrument, int ibMktDataRequestId) {
-        this.type = type;
+        super(type);
         this.instrument = instrument;
         this.ibMktDataRequestId = ibMktDataRequestId;
 
@@ -75,11 +72,6 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
                 .forEach(genericTicksSet::add);
 
         genericTicks = StringUtils.join(genericTicksSet, ",");
-    }
-
-    @Override
-    public String getId() {
-        return id;
     }
 
     @Override
@@ -134,41 +126,12 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
         return value;
     }
 
-    protected void update(DataField field, Number value) {
-        valueMap.get(field).add(value instanceof Double ? HopUtil.round4(value.doubleValue()) : value);
-    }
-
-    protected void reset(DataField field) {
-        update(field, field.getInitialValue());
-    }
-
-    protected CircularFifoQueue<Number> createValueQueue(Number initialValue) {
-        CircularFifoQueue<Number> valueQueue = new CircularFifoQueue<>(2);
-        valueQueue.add(initialValue); // old value
-        valueQueue.add(initialValue); // current value
-
-        return valueQueue;
-    }
-
-    public Number getCurrent(DataField field) {
-        return valueMap.get(field).get(1);
-    }
-
-    protected Number getOld(DataField field) {
-        return valueMap.get(field).peek();
-    }
-
     protected boolean isValidPrice(double d) {
         return HopUtil.isValidPrice(d);
     }
 
     protected boolean isValidSize(int i) {
         return HopUtil.isValidSize(i);
-    }
-
-    @Override
-    public DataHolderType getType() {
-        return type;
     }
 
     @Override
@@ -188,11 +151,6 @@ public abstract class AbstractMarketDataHolder implements MarketDataHolder {
 
     public void setDisplayRank(int displayRank) {
         this.displayRank = displayRank;
-    }
-
-    @Override
-    public String createMessage(DataField dataField) {
-        return id + "," + HopUtil.toCamelCase(dataField.name()) + "," + getOld(dataField) + "," + getCurrent(dataField);
     }
 
     @Override

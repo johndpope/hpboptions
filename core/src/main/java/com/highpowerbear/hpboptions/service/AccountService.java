@@ -4,9 +4,9 @@ import com.highpowerbear.hpboptions.common.HopSettings;
 import com.highpowerbear.hpboptions.common.HopUtil;
 import com.highpowerbear.hpboptions.connector.ConnectionListener;
 import com.highpowerbear.hpboptions.connector.IbController;
-import com.highpowerbear.hpboptions.enums.Currency;
-import com.highpowerbear.hpboptions.enums.DataHolderType;
 import com.highpowerbear.hpboptions.dataholder.AccountDataHolder;
+import com.highpowerbear.hpboptions.enums.Currency;
+import com.highpowerbear.hpboptions.field.AccountDataField;
 import com.highpowerbear.hpboptions.model.ExchangeRates;
 import com.ib.controller.AccountSummaryTag;
 import org.apache.commons.lang3.StringUtils;
@@ -127,25 +127,24 @@ public class AccountService implements ConnectionListener {
     }
 
     public void accountSummaryReceived(String account, String tag, String value, String currency) {
-        AccountDataHolder adh = accountMap.get(account);
-
-        if (adh == null) {
-            adh = new AccountDataHolder(account, ibRequestIdGen.incrementAndGet());
-            accountMap.put(account, adh);
-            requestPnl(adh);
+        if (accountMap.get(account) == null) {
+            accountMap.put(account, new AccountDataHolder(account, ibRequestIdGen.incrementAndGet()));
+            requestPnl(accountMap.get(account));
         }
+
+        AccountDataHolder adh = accountMap.get(account);
         adh.setBaseCurrency(Currency.valueOf(currency));
         adh.updateAccountSummary(AccountSummaryTag.valueOf(tag), HopUtil.round4(Double.valueOf(value)));
 
-        messageService.sendWsReloadRequestMessage(DataHolderType.ACCOUNT);
+        AccountDataField.accountSummaryFields().forEach(field -> messageService.sendWsMessage(adh, field));
     }
 
     public void unrealizedPnlReceived(int requestId, double unrealizedPnL) {
         AccountDataHolder adh = pnlRequestMap.get(requestId);
 
         if (adh != null) {
-            adh.setUnrealizedPnl(HopUtil.round4(unrealizedPnL));
-            messageService.sendWsReloadRequestMessage(DataHolderType.ACCOUNT);
+            adh.updateUnrealizedPnl(unrealizedPnL);
+            messageService.sendWsMessage(adh, AccountDataField.UNREALIZED_PNL);
         }
     }
 

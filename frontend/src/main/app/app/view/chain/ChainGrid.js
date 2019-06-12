@@ -279,16 +279,9 @@ Ext.define('HopGui.view.chain.ChainGrid', {
                     {'formattedDate': 'formattedDate', 'date': 'date'}
                 ]
             }),
-            margin: '0 0 0 10'
-        }, {
-            xtype: 'button',
             margin: '0 0 0 10',
-            text: 'Load',
-            handler: 'loadChain',
             listeners: {
-                beforerender: function(c, eOpts) {
-                    c.setGlyph(HopGui.common.Glyphs.getGlyph('download'));
-                }
+                change: 'activateChain'
             }
         }, {
             xtype: 'tbtext',
