@@ -31,7 +31,7 @@ Ext.define('HopGui.view.chain.ChainController', {
 
             stompClient.subscribe('/topic/chain', function(message) {
                 if (message.body.startsWith('reloadRequest')) {
-                    me.selectUnderlying();
+                    me.prepareExpirationCombo();
                 } else {
                     me.updateData(message.body);
                 }
@@ -48,7 +48,11 @@ Ext.define('HopGui.view.chain.ChainController', {
 
     prepareUnderlyingCombo: function() {
         var me = this,
-            underlyingCombo =  me.lookupReference('underlyingCombo');
+            underlyingCombo =  me.lookupReference('underlyingCombo'),
+            comboStore = underlyingCombo.getStore();
+
+        comboStore.removeAll();
+        me.lookupReference('expirationCombo').getStore().removeAll();
 
         Ext.Ajax.request({
             method: 'GET',
@@ -61,56 +65,6 @@ Ext.define('HopGui.view.chain.ChainController', {
                 for (var i = 0; i < infos.length; i++) {
                     comboData.push([infos[i].symbol, infos[i].conid]);
                 }
-                var comboStore = underlyingCombo.getStore();
-                comboStore.loadData(comboData);
-
-                me.selectUnderlying();
-            }
-        });
-    },
-
-    selectUnderlying: function() {
-        var me = this,
-            underlyingCombo =  me.lookupReference('underlyingCombo');
-
-        Ext.Ajax.request({
-            method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/chain/active-key',
-
-            success: function(response, opts) {
-                if (response.responseText === 'NA') {
-                    var comboStore = underlyingCombo.getStore();
-                    underlyingCombo.select(comboStore.getAt(0));
-                } else {
-                    var activeChainKey = Ext.decode(response.responseText);
-                    underlyingCombo.select(activeChainKey.underlyingConid);
-                }
-            }
-        });
-    },
-
-    prepareExpirationCombo: function() {
-        var me = this,
-            underlyingCombo =  me.lookupReference('underlyingCombo'),
-            expirationCombo =  me.lookupReference('expirationCombo'),
-            activeChainItems = me.getStore('activeChainItems'),
-            chainStatus = me.lookupReference('chainStatus');
-
-        Ext.Ajax.request({
-            method: 'GET',
-            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingCombo.getValue() + '/expirations',
-
-            success: function(response, opts) {
-                var expirations = Ext.decode(response.responseText).items;
-                var comboData = [];
-
-                for (var i = 0; i < expirations.length; i++) {
-                    var date = expirations[i]; // yyyy-MM-dd
-                    var formattedDate = me.formatDate(date); // MM/dd/yyyy
-
-                    comboData.push([formattedDate, date]);
-                }
-                var comboStore = expirationCombo.getStore();
                 comboStore.loadData(comboData);
 
                 Ext.Ajax.request({
@@ -119,7 +73,57 @@ Ext.define('HopGui.view.chain.ChainController', {
 
                     success: function(response, opts) {
                         if (response.responseText === 'NA') {
+                            var comboStore = underlyingCombo.getStore();
+                            underlyingCombo.select(comboStore.getAt(0));
+                        } else {
+                            var activeChainKey = Ext.decode(response.responseText);
+                            underlyingCombo.select(activeChainKey.underlyingConid);
+                        }
+                    }
+                });
+            }
+        });
+    },
+
+    prepareExpirationCombo: function() {
+        var me = this,
+            underlyingCombo =  me.lookupReference('underlyingCombo'),
+            expirationCombo =  me.lookupReference('expirationCombo'),
+            comboStore = expirationCombo.getStore();
+
+        comboStore.removeAll();
+
+        Ext.Ajax.request({
+            method: 'GET',
+            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingCombo.getValue() + '/expirations',
+
+            success: function (response, opts) {
+                var result = Ext.decode(response.responseText);
+
+                if (result.total === 0) {
+                    console.log('expirations not ready');
+                    return;
+                }
+
+                var expirations = result.items;
+                var comboData = [];
+
+                for (var i = 0; i < expirations.length; i++) {
+                    var date = expirations[i]; // yyyy-MM-dd
+                    var formattedDate = me.formatDate(date); // MM/dd/yyyy
+
+                    comboData.push([formattedDate, date]);
+                }
+                comboStore.loadData(comboData);
+
+                Ext.Ajax.request({
+                    method: 'GET',
+                    url: HopGui.common.Definitions.urlPrefix + '/chain/active-key',
+
+                    success: function (response, opts) {
+                        if (response.responseText === 'NA') {
                             expirationCombo.select(comboStore.getAt(0));
+
                         } else {
                             var activeChainKey = Ext.decode(response.responseText);
                             var match = false;
@@ -132,20 +136,9 @@ Ext.define('HopGui.view.chain.ChainController', {
                             }
                             if (match) {
                                 expirationCombo.select(activeChainKey.expiration);
-                                activeChainItems.load(function (records, operation, success) {
-                                    if (success) {
-                                        console.log('loaded activeChainItems');
-                                        chainStatus.removeCls('hop-failure');
-                                        chainStatus.addCls('hop-success');
-                                        chainStatus.update('Chain activated ' + activeChainKey.underlyingSymbol +' ' + me.formatDate(activeChainKey.expiration));
-                                    }
-                                });
-
+                                me.activateChain(); // onChange not triggered, need to call explicitly
                             } else {
                                 expirationCombo.select(comboStore.getAt(0));
-                                chainStatus.removeCls('hop-success');
-                                chainStatus.addCls('hop-failure');
-                                chainStatus.update('Chain not ready');
                             }
                         }
                     }
@@ -156,16 +149,39 @@ Ext.define('HopGui.view.chain.ChainController', {
 
     activateChain: function() {
         var me = this,
+            activeChainItems = me.getStore('activeChainItems'),
             underlyingConid =  me.lookupReference('underlyingCombo').getValue(),
-            expiration =  me.lookupReference('expirationCombo').getValue();
+            underlyingSymbol = me.lookupReference('underlyingCombo').getRawValue(),
+            expiration =  me.lookupReference('expirationCombo').getValue(),
+            chainStatus = me.lookupReference('chainStatus');
 
         if (!expiration) {
             console.log('expirations not ready');
             return;
         }
+        activeChainItems.removeAll();
+
         Ext.Ajax.request({
             method: 'PUT',
-            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration
+            url: HopGui.common.Definitions.urlPrefix + '/chain/' + underlyingConid + '/activate/' + expiration,
+
+            success: function(response, opts) {
+                if (response.responseText === 'true') {
+                    chainStatus.removeCls('hop-failure');
+                    chainStatus.addCls('hop-success');
+                    chainStatus.update('Chain activated ' + underlyingSymbol +' ' + me.formatDate(expiration));
+
+                    activeChainItems.load(function (records, operation, success) {
+                        if (success) {
+                            console.log('loaded activeChainItems');
+                        }
+                    });
+                } else {
+                    chainStatus.removeCls('hop-success');
+                    chainStatus.addCls('hop-failure');
+                    chainStatus.update('Chain not ready');
+            }
+            }
         });
     },
 

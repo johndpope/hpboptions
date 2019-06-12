@@ -90,7 +90,7 @@ public class ChainService extends AbstractMarketDataService {
         executor.execute(this::rebuildChains);
     }
 
-    public void activateChain(int underlyingConid, LocalDate expiration) {
+    public boolean activateChain(int underlyingConid, LocalDate expiration) {
         chainLock.lock();
         try {
             if (ibController.isConnected()) {
@@ -99,13 +99,13 @@ public class ChainService extends AbstractMarketDataService {
             activeChainKey = null;
             ChainKey chainKey = chainKey(underlyingConid, expiration);
             if (chainKey == null || chainMap.get(chainKey) == null) {
-                messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+                return false;
             } else {
                 activeChainKey = chainKey;
                 if (ibController.isConnected()) {
                     requestActiveChainMktData();
                 }
-                messageService.sendWsReloadRequestMessage(DataHolderType.CHAIN);
+                return true;
             }
         } finally {
             chainLock.unlock();
